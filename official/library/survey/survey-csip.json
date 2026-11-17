@@ -1,0 +1,979 @@
+{
+  "Technical": {
+    "StimulusType": "Questionnaire",
+    "FileFormat": "tsv",
+    "Language": "de"
+  },
+  "Metadata": {
+    "SchemaVersion": "2.1.3",
+    "CreationDate": "2026-11-16",
+    "Creator": "PRISM Studio"
+  },
+  "I18n": {
+    "Languages": [
+      "de"
+    ]
+  },
+  "Study": {
+    "TaskName": "csip",
+    "ShortName": "CSIP",
+    "OriginalName": "Circumplex Scales of Interpersonal Problems – deutsche Version",
+    "Category": "Mood, Anxiety & Clinical Screening",
+    "Authors": [
+      "Wester, Robin",
+      "Rubel, Julian",
+      "Hall, Mila",
+      "Zimmermann, Julian"
+    ],
+    "Year": 2025,
+    "Citation": "Wester, R., Rubel, J., Hall, M., & Zimmermann, J. (2025). CSIP. Circumplex Scales of Interpersonal Problems – deutsche Version [Verfahrensdokumentation, Fragebogen mit Item-Skalenzuordnung, Auswertungsvorlage sowie -skripte für SPSS und R]. In Leibniz-Institut für Psychologie (ZPID) (Hrsg.), Open Test Archive. Trier: ZPID. https://doi.org/10.23668/psycharchives.16856",
+    "DOI": "10.23668/psycharchives.16856",
+    "Source": "https://doi.org/10.23668/psycharchives.16856",
+    "License": "\"Copyright Autor(-Innen); CC-BY-SA 4.0\" \"Es wird vom Testarchiv online und kostenlos zur Verfügung gestellt und ist urheberrechtlich geschützt, d. h. das Urheberrecht liegt weiterhin bei den AutorInnen.\" \"Mit der Nutzung des Verfahrens verpflichte ich mich, die Bedingungen der Creative Commons Lizenz CC BY-SA 4.0 zu beachten.\" \"Sie wurden uns durch die Rechteinhaber/-innen zur weiteren Nachnutzung zur Verfügung gestellt. (Open Test Archive, Nutzungsbedingungen, https://www.testarchiv.eu/de/nutzungsbedingungen)\" \"It is made available online and free of charge by the test archive and is protected by copyright, i.e. the copyright remains with the author(s).\" \"By using this test, I agree to abide by the terms of the Creative Commons License CC BY-SA 4.0.\"",
+    "LicenseID": "CC-BY-SA-4.0",
+    "LicenseURL": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "CopyrightHolder": "Wester, Robin; Rubel, Julian; Hall, Mila; Zimmermann, Julian",
+    "LicenseChecked": "2026-11-14",
+    "LicenseLanguages": [
+      "de"
+    ],
+    "LicenseTerms": [
+      "This template is released under CC BY-SA 4.0 (ShareAlike): derived versions must carry the same licence.",
+      "Converted from the PDF questionnaire to JSON; item wording taken over unchanged.",
+      "The authors of this version, as given by the Open Test Archive page, hold the rights in the template version published there. Rights in an original instrument (which the original authors, a journal or a publisher may hold separately) are not covered by this licence statement.",
+      "The authors ask users to send the feedback form after using the test (a request of the Open Test Archive, not a condition added by PRISM): https://www.testarchiv.eu/de/test/9009216",
+      "Reliability, validity and norming data come from the Open Test Archive page and apply to the published version only."
+    ],
+    "References": [
+      {
+        "Type": "primary",
+        "Citation": "Wester, R. A., Etzel, J., Zimmermann, J., Hanraths, S., Iovoli, F., Hall, M., & Rubel, J. A. (2025, eingereicht). Investigating the structure of interpersonal problems using two alternative instruments. Journal of Personality Assessment."
+      },
+      {
+        "Type": "other",
+        "Citation": "Boudreaux, M. J., Ozer, D. J., Oltmanns, T. F., & Wright, A. G. C. (2018). Development and validation of the Circumplex Scales of Interpersonal Problems. Psychological Assessment, 30(5), 594–609. https://doi.org/10.1037/pas0000505",
+        "DOI": "10.1037/pas0000505",
+        "Year": 2018
+      },
+      {
+        "Type": "other",
+        "Citation": "Browne, M. W. (1992). Circumplex models for correlation matrices. Psychometrika, 57(4), 469–497. https://doi.org/10.1007/BF02294416",
+        "DOI": "10.1007/BF02294416",
+        "Year": 1992
+      },
+      {
+        "Type": "other",
+        "Citation": "Nagy, G., Etzel, J. M., & Lüdtke, O. (2019). Integrating covariates into circumplex structures: An extension procedure for Browne’s circular stochastic process model. Multivariate Behavioral Research, 54(3), 404–428. https://doi.org/10.1080/00273171.2018.1534678",
+        "DOI": "10.1080/00273171.2018.1534678",
+        "Year": 2019
+      },
+      {
+        "Type": "primary",
+        "Citation": "Wester, R. A., Etzel, J., Zimmermann, J., Hanraths, S., Iovoli, F., Hall, M., & Rubel, J. A. (2025, eingereicht). Investigating the structure of interpersonal problems using two alternative instruments. Journal of Personality Assessment."
+      },
+      {
+        "Type": "other",
+        "Citation": "Boudreaux, M. J., Ozer, D. J., Oltmanns, T. F. & Wright, A. G. C. (2018). Development and Validation of the circumplex Circumplex Sscales of interpersonal Interpersonal problemsProblems. Psychological Assessment, 30 (5), 594–609. https://doi.org/10.1037/pas0000505",
+        "DOI": "10.1037/pas0000505",
+        "Year": 2018
+      }
+    ],
+    "Keywords": [
+      "Category: Clinical procedures / Therapy-related diagnostics",
+      "Category: Clinical procedures / Other clinical procedures",
+      "Engl. Name: Inventory of Interpersonal Problems – Circumplex (IIP-C; Boudreaux, M. J., Ozer, D. J., Oltmanns, T. F. & Wright, A. G. C., 2018) - German version"
+    ],
+    "Access": "public",
+    "Notes": "Format: Paper-Pencil. Contact data (section Kontaktdaten) and e-mail addresses are not copied (personal data). The English descriptions are machine translations (Claude, Anthropic) of the archive's German text, not verified by the test authors; the German original is on the archive page https://www.testarchiv.eu/de/test/9009216.",
+    "ArchiveMetadata": {
+      "fields": {
+        "Format": "Paper-pencil",
+        "Konstrukt": "Interpersonal problems",
+        "Itemzahl": "64 items",
+        "Subskalen": "1) PA: too autocratic/dominant, 2) BC too quarrelsome/competitive, 3) DE: too dismissive/cold, 4) FG: too introverted/socially avoidant, 5) HI: too insecure/submissive, 6) JK: too exploitable/submissive, 7) LM: too caring/friendly, 8) NO: too expressive/intrusive",
+        "Durchführungszeit": "4 minutes",
+        "Auswertungsdauer": "1 minute (SPSS/R script); 3 minutes (Excel template)",
+        "Reliabilität": "Internal consistency: McDonald's ω = .85-.94\nTest-retest reliability: rtt = .70-.87 (1-month interval)",
+        "Validität": "Findings on structural and convergent validity as well as criterion validity",
+        "Normierung": "None. Reference values: means and standard deviations.",
+        "Anwendungsbereich": "Research",
+        "Altersbereich": "18 to 90 years",
+        "Sprachversionen": "German"
+      },
+      "sections": {
+        "Kurzabstract": "The CSIP is a self-report questionnaire used to assess interpersonal problems in adults. It is a freely accessible supplement and alternative to the established IIP-C and, like it, is based on the interpersonal circumplex (IPC). It comprises 64 items assigned to the following eight scales: too autocratic/dominant (PA), too quarrelsome/competitive (BC), too dismissive/cold (DE), too introverted/socially avoidant (FG), too insecure/submissive (HI), too exploitable/submissive (JK), too caring/friendly (LM), too expressive/intrusive (NO). Reliability: McDonald's omega values were between ω = .85 and ω = .94. Test-retest correlations were between rtt = .70 and rtt = .87. Validity: Findings on structural and convergent validity as well as criterion validity are available.",
+        "Diagnostische Zielsetzung": "The CSIP is a self-report questionnaire used to assess interpersonal problems in adults. It is a freely accessible supplement and alternative to the established IIP-C and, like it, is based on the interpersonal circumplex (IPC). According to this model, interpersonal behaviours are arranged on a circle with two axes, control (vertical) and affiliation (horizontal). The blend of the two dimensions yields eight specific interpersonal styles.",
+        "Aufbau": "The CSIP comprises 64 items that are answered on a four-point scale (\"0 = stimme nicht zu\", \"1 = stimme ein wenig zu\", \"2 = stimme zu\", \"3 = stimme voll und ganz zu\"). Eight items each are assigned to the following eight scales: too autocratic/dominant (PA), too quarrelsome/competitive (BC), too dismissive/cold (DE), too introverted/socially avoidant (FG), too insecure/submissive (HI), too exploitable/submissive (JK), too caring/friendly (LM), too expressive/intrusive (NO).",
+        "Grundlagen und Konstruktion": "The German version of the CSIP is based on the English original version by Boudreaux et al. (2018). The translation was carried out by two authors, who first each produced a version independently and then merged them into a joint version. This was back-translated by a native speaker and revised using feedback from Aidan C. Wright, one of the original authors. The final version was confirmed by Aidan C. Wright and examined psychometrically.",
+        "Empirische Prüfung und Gütekriterien": "Reliability: McDonald's omega values were between ω = .85 and ω = .94. Test-retest correlations were between rtt = .70 and rtt = .87.\nValidity: The CSIP was validated on a population sample that was large with regard to gender and age. Findings on structural and convergent validity as well as criterion validity are available.\nNorms: No norm values are available. However, comparison values from a large German sample are available in the form of means and standard deviations.",
+        "Testkonzept/Theoretischer Hintergrund": "The Circumplex Scales of Interpersonal Problems - German version (CSIP) are used to assess interpersonal problems in adults. These play a central role in the development and maintenance of various mental disorders and are a decisive feature of personality disorders.\nThe CSIP was developed as a freely accessible supplement and alternative to the established \"Inventory of Interpersonal Problems - Circumplex\" (IIP-C). The German translation is based on the English original version by Boudreaux et al. (2018).\nThe CSIP is based on the interpersonal circumplex (IPC), a circular model with two orthogonal axes that represent the basic dimensions of interpersonal behaviour: control (vertical axis) and affiliation (horizontal axis). Control comprises behaviours ranging from dominance to submissiveness. Affiliation comprises behaviours ranging from closeness to distance. The blends of these dimensions yield eight specific interpersonal styles: too autocratic/dominant (PA), too quarrelsome/competitive (BC), too dismissive/cold (DE), too introverted/socially avoidant (FG), too insecure/submissive (HI), too exploitable/submissive (JK), too caring/friendly (LM), too expressive/intrusive (NO).",
+        "Testkonzept/Testaufbau": "The CSIP is a self-report questionnaire consisting of 64 items with a four-point response scale (\"0 = stimme nicht zu\", \"1 = stimme ein wenig zu\", \"2 = stimme zu\", \"3 = stimme voll und ganz zu\"). It comprises eight scales corresponding to those of the IIP-C, with eight items each:\nPA: too autocratic/dominant (items 1, 9, 17, 25, 33, 41, 49, 57)\nBC: too quarrelsome/competitive (items 2, 10, 18, 26, 34, 42, 50, 58)\nDE: too dismissive/cold (items 3, 11, 19, 27, 35, 43, 51, 59)\nFG: too introverted/socially avoidant (items 4, 12, 20, 28, 36, 44, 52, 60)\nHI: too insecure/submissive (items 5, 13, 21, 29, 37, 45, 53, 61)\nJK: too exploitable/submissive (items 6, 14, 22, 30, 38, 46, 54, 62)\nLM: too caring/friendly (items 7, 15, 23, 31, 39, 47, 55, 63)\nNO: too expressive/intrusive (items 8, 16, 24, 32, 40, 48, 56, 64)",
+        "Testkonzept/Auswertungsmodus": "To assess interpersonal styles, the means of the eight questionnaire scales can be calculated. The average of all 64 items is interpreted as general interpersonal distress. In addition, scores on the two superordinate dimensions control and affiliation can be calculated using the following formulas:\nControl = PA + (NO × .71) + (BC × .71)-(FG × .71) - (JK × .71) - HI\nAffiliation = LM + (NO × .71) + (JK × .71) - (BC × .71) - (FG × .71) - DE",
+        "Testkonzept/Auswertungshilfen": "No scoring aids are needed for manual scoring. A scoring aid as an Excel file as well as scoring scripts for SPSS and R are available.",
+        "Testkonzept/Auswertungszeit": "Scoring takes 1 minute electronically and 3 minutes by hand.",
+        "Durchführung/Testformen": "The present version of the CSIP is the German translation of the English-language original questionnaire of the same name by Boudreaux et al. (2018). A short form with 32 items is under development.",
+        "Durchführung/Altersbereiche": "The CSIP was validated in persons aged 18 to 90 years.",
+        "Durchführung/Durchführungszeit": "The average administration time is 4 minutes.",
+        "Durchführung/Material": "The CSIP can be used in paper-pencil or digital form.\nIn addition to the present documentation of the procedure, the test package contains the questionnaire with information on which items belong to which subscale. An Excel file as a scoring aid as well as scoring scripts for SPSS and R are also available for download.",
+        "Durchführung/Instruktion": "The instruction can be found on the questionnaire. It reads: „Im Folgenden finden Sie eine Liste mit persönlichen Problemen, über die Menschen häufig in ihrem Leben berichten. Dazu gehören eigene Gedanken, Gefühle oder Verhaltensweisen, die emotional belastend sein können und häufig Beziehungen beeinträchtigen. Lesen Sie jede Aussage sorgfältig durch und geben Sie an, wie stark Sie das jeweilige Problem erleben. Bitte markieren Sie Ihre Zustimmung auf der angegebenen Skala.“",
+        "Durchführung/Durchführungsvoraussetzungen": "The test situation should be as standardized as possible. The questionnaire should be completed alone and in a quiet environment. The participants should have basic reading ability.\nScoring and interpretation should be carried out by professionally qualified and experienced personnel.",
+        "Testkonstruktion": "The translation of the original questionnaire into German was carried out by two authors, who first each produced a version independently and then worked out a joint version from them. After back-translation by a native English speaker, the version was revised based on feedback from Aidan C. Wright, one of the authors of the original version, and finally confirmed by him.\nThe CSIP was validated in two waves one month apart on a large German sample (NT1 = 677, NT2 = 514) (see Table 1 under \"Reliability\"), which is representative of the German general population with regard to gender and age. Of the participants, 49.8% were female and 50.2% male. Age ranged from 18 to 90 years (M = 52.47).\nThe psychometric properties of the CSIP were examined with the Circular Stochastic Process Model For The Circumplex (SPMC) according to Browne (1992). This is a structural equation approach with which the circularity of the scales can be tested (i.e. whether they can be mapped in a three-dimensional space in a factor-analytic sense and whether their correlations show a circular arrangement). By means of an extension of the SPMC that allows covariates to be integrated (SPMC-E; Nagy et al., 2019), convergent validity in relation to the IIP-C was examined. In addition, internal consistencies and test-retest correlations (time interval: 1 month) of the scales were calculated.\nInformation on test construction and validation is described in detail in Wester et al. (2025, submitted).",
+        "Gütekriterien/Objektivität": "The objectivity of the CSIP is ensured by standardized specifications in administration, scoring and interpretation.",
+        "Gütekriterien/Reliabilität": "Internal consistency and test-retest reliability were calculated (see Table 1). McDonald's omega values were between ω = .85 and ω = .94. Test-retest correlations at an interval of one month were between rtt = .70 and rtt = .87.\nTable 1\nMeans, standard deviations, internal consistencies (McDonald's ω) T1 and T2 and test-retest reliabilities of the CSIP (time interval: one month; Wester, Etzel, Zimmermann, Hanraths, Iovoli, Hall, & Rubel, 2025, submitted)\nCSIP\nTime 1 (N = 677) | Time 2 (N = 514)\nM (SD) | ω | r(t1,t2) | M (SD) | ω\nLM | 0.84 (0.65) | .89 | .80 | 0.84 (0.67) | .90\nNO | 0.39 (0.46) | .85 | .76 | 0.39 (0.51) | .88\nPA | 0.29 (0.44) | .89 | .70 | 0.31 (0.49) | .92\nBC | 0.39 (0.48) | .86 | .73 | 0.40 (0.51) | .89\nDE | 0.71 (0.69) | .91 | .84 | 0.74 (0.74) | .93\nFG | 0.69 (0.74) | .93 | .87 | 0.71 (0.76) | .93\nHI | 0.7 (0.75) | .93 | .86 | 0.70 (0.75) | .94\nJK | 0.71 (0.66) | .9 | .85 | 0.73 (0.67) | .91\nNotes. M = mean, SD = standard deviation, N = sample size,\nr(t1,t2) = test-retest correlation. LM = too caring/friendly, NO = too expressive/intrusive, PA = too autocratic/dominant, BC = too quarrelsome/competitive, DE = too dismissive/cold, FG = too introverted/socially avoidant, HI = too insecure/submissive, JK = too exploitable/submissive.",
+        "Gütekriterien/Validität": "Validity was examined by Wester and colleagues (2025, submitted). The correlations between the scales followed the expected circular pattern, and the scale positions deviated only slightly from the positions theoretically assumed on the IPC. This structure proved to be stable over time.\nThe convergent validity of the CSIP was confirmed by comparisons with the established IIP-C. The scales of both instruments correlated highly with one another, and their positions in the IPC largely agreed. However, differences between the two questionnaires emerged with regard to the assessment of interpersonal problems at the dominance pole. In the comparison of the scales' content, it was found that the CSIP scales PA and BC capture more extreme forms of dominant behaviour than the corresponding IIP-C scales. It is therefore assumed that the CSIP is better suited than the IIP-C to distinguish between more strongly maladaptive forms of dominant behaviour.\nSignificant associations were also found between the German CSIP scales and clinically relevant characteristics such as dysphoria and level of personality functioning.",
+        "Gütekriterien/Normierung": "So far, only comparison values for the total sample are available (see Table 1; as of: June 2025).",
+        "Anwendungsmöglichkeiten": "The CSIP enables the assessment of interpersonal problems in adults. The information obtained can be used in individual diagnostics, for example to identify problematic interpersonal tendencies and to assess treatment progress. In research, it enables, for example, the investigation of the association between interpersonal problems and mental disorders. Unlike the IIP-C, the CSIP is a freely accessible instrument for this purpose. In addition, the results of the validation study indicate that the CSIP differentiates extreme behaviours in the dominant range better and could thus be better suited to assessing interpersonal styles.",
+        "Bewertung": "The German version of the CSIP shows good psychometric quality criteria and is thus a suitable instrument for assessing interpersonal problems. It is freely accessible and can be used as an alternative or supplement to the IIP-C. However, the differences between the CSIP and the IIP-C with regard to the measurement of dominant behaviour should be taken into account. In addition, the validation of the CSIP was carried out on a non-clinical sample. In future, the psychometric properties of the CSIP should also be examined in a clinical sample. The development of a short form of the CSIP is also desirable, as with 64 items it is relatively long.",
+        "Orginalfassung/Anderssprachlige Fassungen": "Boudreaux, M. J., Ozer, D. J., Oltmanns, T. F. & Wright, A. G. C. (2018). Development and Validation of the circumplex Circumplex Sscales of interpersonal Interpersonal problemsProblems. Psychological Assessment, 30 (5), 594–609. https://doi.org/10.1037/pas0000505",
+        "Testpaket (Paper-Pencil)/Rückmeldung an die Autor/-innen": "Please inform the authors about the use of the test instrument! The contact details can be found under \"Kontaktinformationen\"! If authors in the Open Test Archive have already died or if no contact details (e-mail or address) are available for them, users are exempt from the obligation to provide feedback."
+      }
+    },
+    "Construct": "Interpersonal problems",
+    "Description": "The CSIP is a self-report questionnaire used to assess interpersonal problems in adults. It is a freely accessible supplement and alternative to the established IIP-C and, like it, is based on the interpersonal circumplex (IPC). It comprises 64 items assigned to the following eight scales: too autocratic/dominant (PA), too quarrelsome/competitive (BC), too dismissive/cold (DE), too introverted/socially avoidant (FG), too insecure/submissive (HI), too exploitable/submissive (JK), too caring/friendly (LM), too expressive/intrusive (NO). Reliability: McDonald's omega values were between ω = .85 and ω = .94. Test-retest correlations were between rtt = .70 and rtt = .87. Validity: Findings on structural and convergent validity as well as criterion validity are available.",
+    "Reliability": "Internal consistency and test-retest reliability were calculated (see Table 1). McDonald's omega values were between ω = .85 and ω = .94. Test-retest correlations at an interval of one month were between rtt = .70 and rtt = .87.\nTable 1\nMeans, standard deviations, internal consistencies (McDonald's ω) T1 and T2 and test-retest reliabilities of the CSIP (time interval: one month; Wester, Etzel, Zimmermann, Hanraths, Iovoli, Hall, & Rubel, 2025, submitted)\nCSIP\nTime 1 (N = 677) | Time 2 (N = 514)\nM (SD) | ω | r(t1,t2) | M (SD) | ω\nLM | 0.84 (0.65) | .89 | .80 | 0.84 (0.67) | .90\nNO | 0.39 (0.46) | .85 | .76 | 0.39 (0.51) | .88\nPA | 0.29 (0.44) | .89 | .70 | 0.31 (0.49) | .92\nBC | 0.39 (0.48) | .86 | .73 | 0.40 (0.51) | .89\nDE | 0.71 (0.69) | .91 | .84 | 0.74 (0.74) | .93\nFG | 0.69 (0.74) | .93 | .87 | 0.71 (0.76) | .93\nHI | 0.7 (0.75) | .93 | .86 | 0.70 (0.75) | .94\nJK | 0.71 (0.66) | .9 | .85 | 0.73 (0.67) | .91\nNotes. M = mean, SD = standard deviation, N = sample size,\nr(t1,t2) = test-retest correlation. LM = too caring/friendly, NO = too expressive/intrusive, PA = too autocratic/dominant, BC = too quarrelsome/competitive, DE = too dismissive/cold, FG = too introverted/socially avoidant, HI = too insecure/submissive, JK = too exploitable/submissive.",
+    "Validity": "Validity was examined by Wester and colleagues (2025, submitted). The correlations between the scales followed the expected circular pattern, and the scale positions deviated only slightly from the positions theoretically assumed on the IPC. This structure proved to be stable over time.\nThe convergent validity of the CSIP was confirmed by comparisons with the established IIP-C. The scales of both instruments correlated highly with one another, and their positions in the IPC largely agreed. However, differences between the two questionnaires emerged with regard to the assessment of interpersonal problems at the dominance pole. In the comparison of the scales' content, it was found that the CSIP scales PA and BC capture more extreme forms of dominant behaviour than the corresponding IIP-C scales. It is therefore assumed that the CSIP is better suited than the IIP-C to distinguish between more strongly maladaptive forms of dominant behaviour.\nSignificant associations were also found between the German CSIP scales and clinically relevant characteristics such as dysphoria and level of personality functioning.",
+    "Norming": "So far, only comparison values for the total sample are available (see Table 1; as of: June 2025).",
+    "AdministrationTime": {
+      "min": 4,
+      "max": 4
+    },
+    "ScoringTime": "1 minute (SPSS/R script); 3 minutes (Excel template)",
+    "AgeRange": {
+      "min": 18,
+      "max": 90
+    },
+    "Instructions": "Im Folgenden finden Sie eine Liste mit persönlichen Problemen, über die Menschen häufig in ihrem Leben berichten. Dazu gehören eigene Gedanken, Gefühle oder Verhaltensweisen, die emotional belastend sein können und häufig Beziehungen beeinträchtigen. Lesen Sie jede Aussage sorgfältig durch und geben Sie an, wie stark Sie das jeweilige Problem erleben. Bitte markieren Sie Ihre Zustimmung auf der angegebenen Skala. Ich erlebe es als Problem, dass ich…"
+  },
+  "CSIP01": {
+    "Description": "andere Menschen zu sehr herumkommandiere",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP02": {
+    "Description": "mich unhöflich und rücksichtslos gegenüber anderen Menschen verhalte",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP03": {
+    "Description": "andere Menschen zurückweise, die mir zu nahe kommen",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP04": {
+    "Description": "Schwierigkeiten habe, Freunde zu finden",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP05": {
+    "Description": "kein Selbstvertrauen habe",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP06": {
+    "Description": "mich von anderen Menschen zu sehr herumkommandieren lasse",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP07": {
+    "Description": "die Bedürfnisse anderer Menschen zu sehr über meine eigenen stelle",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP08": {
+    "Description": "übermäßige Zuneigung zu anderen Menschen habe",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP09": {
+    "Description": "andere verbal oder körperlich misshandele",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP10": {
+    "Description": "mit anderen egoistisch umgehe",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP11": {
+    "Description": "Schwierigkeiten habe, anderen Liebe und Zuneigung zu zeigen",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP12": {
+    "Description": "Schwierigkeiten habe, mich in der Gegenwart von anderen wohl zu fühlen",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP13": {
+    "Description": "vor anderen leicht in Verlegenheit komme",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP14": {
+    "Description": "zu unterwürfig gegenüber anderen bin",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP15": {
+    "Description": "anderen zu viel gebe",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP16": {
+    "Description": "Schwierigkeiten habe, persönliche Angelegenheiten vor anderen für mich zu behalten",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP17": {
+    "Description": "Streit oder Konflikte mit anderen anfange",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP18": {
+    "Description": "unfähig bin, Schuldgefühle oder Reue zu empfinden",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP19": {
+    "Description": "nicht in der Lage bin, die Gesellschaft anderer zu genießen",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP20": {
+    "Description": "Menschen oder soziale Situationen meide",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP21": {
+    "Description": "Schwierigkeiten habe, die Führung zu übernehmen",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP22": {
+    "Description": "unfähig bin, Wut gegenüber anderen auszudrücken",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP23": {
+    "Description": "anderen Menschen zu leicht verzeihe",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP24": {
+    "Description": "zu viel rede",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP25": {
+    "Description": "zu sehr versuche, andere zu beeinflussen oder zu kontrollieren",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP26": {
+    "Description": "fehlenden Respekt vor den Überzeugungen, Einstellungen oder Meinungen anderer Menschen habe",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP27": {
+    "Description": "mich emotional von anderen getrennt fühle",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP28": {
+    "Description": "nicht in der Lage bin, Gespräche am Laufen zu halten",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP29": {
+    "Description": "Schwierigkeiten habe, mich durchzusetzen",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP30": {
+    "Description": "zu besorgt darüber bin, was andere Leute denken",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP31": {
+    "Description": "übermäßig gefühlsbetont oder weichherzig bin",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP32": {
+    "Description": "zu viel mit anderen Leuten flirte",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP33": {
+    "Description": "andere dominiere oder einschüchtere",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP34": {
+    "Description": "Schwierigkeiten habe, mit anderen zurechtzukommen",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP35": {
+    "Description": "Schwierigkeiten beim Aufbau enger und dauerhafter Beziehungen habe",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP36": {
+    "Description": "mich in den meisten sozialen Situationen wie ein Außenseiter fühle",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP37": {
+    "Description": "mich gegenüber dominanten Anderen schwach und unsicher fühle",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP38": {
+    "Description": "leicht ausgenutzt werde",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP39": {
+    "Description": "leicht vom Schmerz und Leid anderer betroffen bin",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP40": {
+    "Description": "Schwierigkeiten habe, die Privatsphäre anderer Personen zu respektieren",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP41": {
+    "Description": "gegenüber anderen aggressiv handle",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP42": {
+    "Description": "unsensibel gegenüber den Gedanken, Gefühlen und Bedürfnissen anderer bin",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP43": {
+    "Description": "nicht in der Lage bin, mich vollständig mit anderen verbunden zu fühlen",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP44": {
+    "Description": "unfähig bin, vor anderen ich selbst zu sein",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP45": {
+    "Description": "nicht in der Lage bin, mich anderen gegenüber zu behaupten",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP46": {
+    "Description": "zu viele Kompromisse mit anderen Menschen eingehe",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP47": {
+    "Description": "anderen Menschen zu leicht vertraue",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP48": {
+    "Description": "übertreibe, damit andere Leute mich respektieren",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP49": {
+    "Description": "andere Leute manipuliere, um das zu bekommen, was ich will",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP50": {
+    "Description": "die meisten Menschen nicht mag",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP51": {
+    "Description": "Schwierigkeiten habe, mich anderen zu öffnen",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP52": {
+    "Description": "mich in sozialen Situationen ängstlich oder nervös fühle",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP53": {
+    "Description": "Konfrontationen vermeide, wenn Probleme auftreten",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP54": {
+    "Description": "leicht von anderen beeinflusst werde",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP55": {
+    "Description": "zu sehr versuche, die Probleme anderer Menschen zu lösen",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP56": {
+    "Description": "Menschen zu schnell mit Problemen konfrontiere",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP57": {
+    "Description": "mich anderen gegenüber überlegen oder herablassend verhalte",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP58": {
+    "Description": "Schwierigkeiten habe, andere emotional oder moralisch zu unterstützen",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP59": {
+    "Description": "mich bei Nähe und Intimität mit anderen unwohl fühle",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP60": {
+    "Description": "schüchtern bin, wenn andere dabei sind",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP61": {
+    "Description": "anderen Menschen zu oft Entscheidungen überlasse",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP62": {
+    "Description": "nicht in der Lage bin, \"nein\" zu sagen",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP63": {
+    "Description": "mich zu sehr an andere binde",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "CSIP64": {
+    "Description": "im Mittelpunkt der Aufmerksamkeit stehen muss",
+    "Levels": {
+      "0": "stimme nicht zu",
+      "1": "stimme ein wenig zu",
+      "2": "stimme zu",
+      "3": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  }
+}

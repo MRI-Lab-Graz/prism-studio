@@ -1,0 +1,167 @@
+{
+  "RecipeVersion": "1.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "EFK",
+    "Reference": "survey-efk.json",
+    "TaskName": "efk"
+  },
+  "Transforms": {
+    "Invert": {
+      "Items": [
+        "EFK19",
+        "EFK33"
+      ],
+      "Scale": {
+        "min": 0,
+        "max": 4
+      }
+    }
+  },
+  "Scores": [
+    {
+      "Name": "HPC",
+      "Description": "Acting, problem-oriented coping: mean of its 5 items",
+      "Items": [
+        "EFK04",
+        "EFK06",
+        "EFK12",
+        "EFK26",
+        "EFK27"
+      ],
+      "Method": "mean",
+      "Range": {
+        "min": 0,
+        "max": 4
+      }
+    },
+    {
+      "Name": "AUS",
+      "Description": "Distance and self-building: mean of its 5 items",
+      "Items": [
+        "EFK03",
+        "EFK07",
+        "EFK18",
+        "EFK22",
+        "EFK36"
+      ],
+      "Method": "mean",
+      "Range": {
+        "min": 0,
+        "max": 4
+      }
+    },
+    {
+      "Name": "IUE",
+      "Description": "Information seeking and exchange of experience: mean of its 5 items",
+      "Items": [
+        "EFK01",
+        "EFK08",
+        "EFK10",
+        "EFK14",
+        "EFK20"
+      ],
+      "Method": "mean",
+      "Range": {
+        "min": 0,
+        "max": 4
+      }
+    },
+    {
+      "Name": "BWB",
+      "Description": "Trivialization, wishful thinking and threat denial: mean of its 5 items",
+      "Items": [
+        "EFK05",
+        "EFK13",
+        "EFK23",
+        "EFK39",
+        "EFK43"
+      ],
+      "Method": "mean",
+      "Range": {
+        "min": 0,
+        "max": 4
+      }
+    },
+    {
+      "Name": "DV",
+      "Description": "Depressive coping: mean of its 5 items",
+      "Items": [
+        "EFK21",
+        "EFK25",
+        "EFK29",
+        "EFK35",
+        "EFK40"
+      ],
+      "Method": "mean",
+      "Range": {
+        "min": 0,
+        "max": 4
+      }
+    },
+    {
+      "Name": "BAH",
+      "Description": "Willingness to accept help: mean of its 5 items",
+      "Items": [
+        "EFK09",
+        "EFK15",
+        "EFK30",
+        "EFK34",
+        "EFK45"
+      ],
+      "Method": "mean",
+      "Range": {
+        "min": 0,
+        "max": 4
+      }
+    },
+    {
+      "Name": "ASS",
+      "Description": "Active search for social integration: mean of its 5 items",
+      "Items": [
+        "EFK02",
+        "EFK17",
+        "EFK32",
+        "EFK38",
+        "EFK44"
+      ],
+      "Method": "mean",
+      "Range": {
+        "min": 0,
+        "max": 4
+      }
+    },
+    {
+      "Name": "VIA",
+      "Description": "Trust in medical skill: mean of its 5 items, items 19 and 33 reverse-coded",
+      "Items": [
+        "EFK16",
+        "EFK19",
+        "EFK24",
+        "EFK33",
+        "EFK41"
+      ],
+      "Method": "mean",
+      "Range": {
+        "min": 0,
+        "max": 4
+      }
+    },
+    {
+      "Name": "EIH",
+      "Description": "Working out an inner hold: mean of its 5 items",
+      "Items": [
+        "EFK11",
+        "EFK28",
+        "EFK31",
+        "EFK37",
+        "EFK42"
+      ],
+      "Method": "mean",
+      "Range": {
+        "min": 0,
+        "max": 4
+      }
+    }
+  ]
+}

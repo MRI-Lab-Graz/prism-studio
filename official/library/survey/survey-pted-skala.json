@@ -1,0 +1,500 @@
+{
+  "Technical": {
+    "StimulusType": "Questionnaire",
+    "FileFormat": "tsv",
+    "Language": "de"
+  },
+  "Metadata": {
+    "SchemaVersion": "2.1.3",
+    "CreationDate": "2026-11-16",
+    "Creator": "PRISM Studio"
+  },
+  "I18n": {
+    "Languages": [
+      "de"
+    ]
+  },
+  "Study": {
+    "TaskName": "pted-skala",
+    "ShortName": "PTED Skala",
+    "OriginalName": "Post-Traumatic Embitterment Disorder Selbstbeurteilungsfragebogen",
+    "Category": "Mood, Anxiety & Clinical Screening",
+    "Authors": [
+      "Linden, Michael",
+      "Baumann, Kai",
+      "Lieberei, Barbara",
+      "Rotter, Max"
+    ],
+    "Year": 2013,
+    "Citation": "Linden, M., Baumann, K., Lieberei, B. & Rotter, M. (2013). PTED Skala. Post-Traumatic Embitterment Disorder Selbstbeurteilungsfragebogen [Verfahrensdokumentation, Autorenbeschreibung englisch, Diagnostisches Interview Lang- und Kurzfassung, Fragebogen deutsch, kroatisch, koreanisch, türkisch und portugiesisch]. In Leibniz-Institut für Psychologie (ZPID) (Hrsg.), Open Test Archive. Trier: ZPID. https://doi.org/10.23668/psycharchives.4664",
+    "DOI": "10.23668/psycharchives.4664",
+    "Source": "https://doi.org/10.23668/psycharchives.4664",
+    "License": "\"Copyright Autor(-Innen); CC-BY-SA 4.0\" \"Es wird vom Testarchiv online und kostenlos zur Verfügung gestellt und ist urheberrechtlich geschützt, d. h. das Urheberrecht liegt weiterhin bei den AutorInnen.\" \"Mit der Nutzung des Verfahrens verpflichte ich mich, die Bedingungen der Creative Commons Lizenz CC BY-SA 4.0 zu beachten.\" \"Sie wurden uns durch die Rechteinhaber/-innen zur weiteren Nachnutzung zur Verfügung gestellt. (Open Test Archive, Nutzungsbedingungen, https://www.testarchiv.eu/de/nutzungsbedingungen)\" \"It is made available online and free of charge by the test archive and is protected by copyright, i.e. the copyright remains with the author(s).\" \"By using this test, I agree to abide by the terms of the Creative Commons License CC BY-SA 4.0.\"",
+    "LicenseID": "CC-BY-SA-4.0",
+    "LicenseURL": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "CopyrightHolder": "Linden, Michael; Baumann, Kai; Lieberei, Barbara; Rotter, Max",
+    "LicenseChecked": "2026-11-14",
+    "LicenseLanguages": [
+      "de"
+    ],
+    "LicenseTerms": [
+      "This template is released under CC BY-SA 4.0 (ShareAlike): derived versions must carry the same licence.",
+      "Converted from the PDF questionnaire to JSON; item wording taken over unchanged.",
+      "The authors of this version, as given by the Open Test Archive page, hold the rights in the template version published there. Rights in an original instrument (which the original authors, a journal or a publisher may hold separately) are not covered by this licence statement.",
+      "The authors ask users to send the feedback form after using the test (a request of the Open Test Archive, not a condition added by PRISM): https://www.testarchiv.eu/de/test/9006580",
+      "Reliability, validity and norming data come from the Open Test Archive page and apply to the published version only."
+    ],
+    "References": [
+      {
+        "Type": "primary",
+        "Citation": "Linden, M., Baumann, K., Lieberei, B. & Rotter, M. (2009). The Post-Traumatic Embitterment Disorder Self-Rating Scale (PTED Scale). Clinical Psychology and Psychotherapy, 16 (2), 139-147.",
+        "Year": 2009
+      },
+      {
+        "Type": "other",
+        "Citation": "Bale, T.L. (2006). Stress sensitivity and the development of affective disorders. Hormones and Behavior, 50, 529-533.",
+        "Year": 2006
+      },
+      {
+        "Type": "other",
+        "Citation": "Beck, A.T., Rush, A.J., Shaw, B. & Emery, G. (1979). Cognitive therapy of depression. New York: Guilford Press.",
+        "Year": 1979
+      },
+      {
+        "Type": "other",
+        "Citation": "Boelen, P.A. & Lensvelt-Mulders, G.J.M.L. (2005). Psychometric properties of the grief cognition questionnaire. Journal of Psychopathology and Behavioral Assessment, 27, 291-303.",
+        "Year": 2005
+      },
+      {
+        "Type": "other",
+        "Citation": "Cattell, R.B. (1966). The scree test for the number of factors. Multivariate Behavioral Research, 1, 245-276.",
+        "Year": 1966
+      },
+      {
+        "Type": "other",
+        "Citation": "Dalgleish, T. (2004). Cognitive approaches to posttraumatic stress disorder: The evolution of multirepresentational theorizing. Psychological Bulletin, 130, 228-260.",
+        "Year": 2004
+      },
+      {
+        "Type": "other",
+        "Citation": "Dalgleish, T. & Power, M.J. (2004). Emotion-specific and emotion-non-specific components of posttraumatic stress disorder (PTSD): Implications for a taxonomy of related psychopathology. Behaviour Research and Therapy, 42, 1069-1088.",
+        "Year": 2004
+      },
+      {
+        "Type": "other",
+        "Citation": "Derogatis, L.R. (1977). SCL-90-R, administration, scoring and procedures manual-I for the r(evised) version. Baltimore: John Hopkins University School of Medicine.",
+        "Year": 1977
+      },
+      {
+        "Type": "other",
+        "Citation": "Franke, G.H. (1995). SCL-90-R. Die Symptom-Checkliste von Derogatis - Deutsche Version. Weinheim: Beltz.",
+        "Year": 1995
+      },
+      {
+        "Type": "other",
+        "Citation": "Hauer, B.J.A., Wessel, I., & Merckelbach, H. (2006). Intrusions, avoidance and overgeneral memory in nonclinical sample. Clinical Psychology and Psychotherapy, 13, 264-268.",
+        "Year": 2006
+      },
+      {
+        "Type": "other",
+        "Citation": "Janoff-Bulman, R. (1992). Shattered assumptions: Towards a new psychology of trauma. New York: Free Press.",
+        "Year": 1992
+      },
+      {
+        "Type": "other",
+        "Citation": "Linden, M. (2003). The Posttraumatic Embitterment Disorder. Psychotherapy and Psychosomatics, 72, 195-202.",
+        "Year": 2003
+      },
+      {
+        "Type": "other",
+        "Citation": "Linden, M., Baumann, K., Lieberei, B. & Rotter, M. (2009). The Post-Traumatic Embitterment Disorder Self-Rating Scale (PTED Scale). Clinical Psychology and Psychotherapy, 16, 139-147.",
+        "Year": 2009
+      },
+      {
+        "Type": "other",
+        "Citation": "Linden, M., Baumann, K., Rotter, M. & Schippan, B. (2007a). The psychopathology of posttraumatic embitterment disorders (PTED). Psychopathology, 40, 159-165.",
+        "Year": 2007
+      },
+      {
+        "Type": "other",
+        "Citation": "Linden, M., Baumann, K., Rotter, M. & Schippan, B. (2007b). Posttraumatic embitterment disorder (PTED) in comparison to other mental disorders. Psychotherapy and Psychosomatics, 77, 50- 56.",
+        "Year": 2007
+      },
+      {
+        "Type": "other",
+        "Citation": "Linden, M., Baumann, K. & Schippan, B. (2006). Weisheitstherapie. Kognitive Therapie der Posttraumatischen Verbitterungsstörung. In A. Maercker & R. Rosner (Hrsg.), Psychotherapie der posttraumatischen Belastungsstörungen. Krankheitsmodelle und Therapiepraxis - störungsspezifisch und schulenübergreifend (S. 208-227). Stuttgart: Thieme.",
+        "Year": 2006
+      },
+      {
+        "Type": "other",
+        "Citation": "Linden, M., Rotter, M., Baumann, K. & Lieberei, B. (2007). Posttraumatic embitterment disorder. Toronto: Hogrefe and Huber.",
+        "Year": 2007
+      },
+      {
+        "Type": "other",
+        "Citation": "Maercker, A. & Schützwohl, M. (1998). Erfassung von psychischen Belastungsfolgen: Die Impact of Event Skala - revidierte Version (IES-R). Diagnostica, 44, 130-141.",
+        "Year": 1998
+      },
+      {
+        "Type": "other",
+        "Citation": "Mancini, A.D. & Bonanno, G.A. (2006). Resilience in the face of potential trauma: Clinical practices and illustrations. Journal of Clinical Psychology, 62, 971-985.",
+        "Year": 2006
+      },
+      {
+        "Type": "other",
+        "Citation": "Mol, S.S.L., Arntz, A., Metsemakers, J.F.M., Dinant, G.-J., Vilters-Van Montfort, P.A.P. & Knottnerus, J.A. (2005). Symptoms of post-traumatic stress disorder after non-traumatic events: Evidence from an open population study. British Journal of Psychiatry, 186, 494-499.",
+        "Year": 2005
+      },
+      {
+        "Type": "other",
+        "Citation": "Power, M.J. & Tarsia, M. (2007). Basic and complex emotions in depression and anxiety. Clinical Psychology and Psychotherapy, 14, 19-31.",
+        "Year": 2007
+      },
+      {
+        "Type": "other",
+        "Citation": "Schippan, B., Baumann, K. & Linden, M. (2004). Weisheitstherapie - kognitive Therapie der posttraumatischen Verbitterungsstörung. Verhaltenstherapie, 14, 284-293.",
+        "Year": 2004
+      },
+      {
+        "Type": "other",
+        "Citation": "Viinameaki, H., Koskela, K., Niskanen, L. & Taehkae, V. (1994). Mental adaptation to unemployment. European Journal of Psychiatry, 8, 243-252.",
+        "Year": 1994
+      },
+      {
+        "Type": "other",
+        "Citation": "Znoj, H. (2008). BVI. Berner Verbitterungs-Inventar. Bern: Huber.",
+        "Year": 2008
+      },
+      {
+        "Type": "other",
+        "Citation": "Linden, M. (2017). Verbitterung und Posttraumatische Verbitterungsstörung. Göttingen: Hogrefe. [PTED-Skala appended pp. 104-105; standardisiertes diagnostisches Interview für PTED p. 106]",
+        "Year": 2017
+      }
+    ],
+    "Keywords": [
+      "Category: Clinical procedures / Other clinical procedures",
+      "Engl. Name: Post-Traumatic Embitterment Disorder Self-Rating Scale"
+    ],
+    "Access": "public",
+    "Notes": "Other language versions listed by the archive (not converted): hr, ko, tr, pt. Format: Paper-Pencil. Contact data (section Kontaktdaten) and e-mail addresses are not copied (personal data). The English descriptions are machine translations (Claude, Anthropic) of the archive's German text, not verified by the test authors; the German original is on the archive page https://www.testarchiv.eu/de/test/9006580.",
+    "ArchiveMetadata": {
+      "fields": {
+        "Sprachversionen": "German, Croatian, Korean, Turkish, Portuguese",
+        "Format": "Paper-pencil",
+        "Konstrukt": "Post-traumatic embitterment disorder",
+        "Itemzahl": "19 items",
+        "Subskalen": "None; reactive embitterment",
+        "Durchführungszeit": "A few minutes.",
+        "Auswertungsdauer": "A few minutes.",
+        "Reliabilität": "Internal consistency: Cronbach's alpha = .93\nTest-retest reliability: rtt = .71 (Spearman rho correlation)",
+        "Validität": "Findings for a two-factor structure; group differences; association with a negative life event.",
+        "Normierung": "No norming. Cut-off value.",
+        "Anwendungsbereich": "Research, practice (professional qualification required)",
+        "Altersbereich": "from 18 years",
+        "Ältere Versionen": "Version 1: https://doi.org/10.23668/psycharchives.428"
+      },
+      "sections": {
+        "Kurzabstract": "The PTED scale, as a self-report questionnaire, contains 19 items for assessing the functions of embitterment reactions to negative life events. The questionnaire contains 19 individual statements. Reliability: Internal consistency (Cronbach's alpha = .93) and test-retest reliability (Spearman rho correlation was .71 for the total score, with a range of .53-.86 for individual items) were high. Validity: The PTED scale discriminated significantly between patients who, according to clinical assessment, suffered from pathological embitterment. Correlations with related instruments showed good convergent validity. The data of the non-clinical sample showed a prevalence of clinically relevant embitterment in the general population of 2.5%. The PTED scale allows a valid measurement of embitterment as an emotional reaction to a negative life event. In addition, the results show that reactive embitterment in connection with a negative life event is a widespread phenomenon in clinical and non-clinical populations.",
+        "Diagnostische Zielsetzung": "The Post-Traumatic Embitterment Disorder Selbstbeurteilungsfragebogen (PTED Skala) asks about persistent and impairing embitterment reactions in the aftermath of negative life events.",
+        "Aufbau": "The PTED self-report questionnaire contains 19 items for assessing the functions of embitterment reactions to negative life events. The questionnaire is completed by the patients themselves and begins with the line \"In den vergangenen Jahren hatte ich ein einschneidendes Lebensereignis zu verkraften, ...\" followed by 19 individual statements (to be answered on a 5-point scale: 0 does not apply, 1 hardly applies, 2 partly applies, 3 applies, 4 fully applies). A mean score of > = 2.5 indicates a clinically significant intensity of reactive embitterment.",
+        "Grundlagen und Konstruktion": "The PTED scale was administered to four independent samples of patients and control persons. Internal consistency and test-retest reliability were high. A factor analysis suggested a two-factor solution that explained 55.25% of the total variance.",
+        "Empirische Prüfung und Gütekriterien": "The PTED scale discriminated significantly between patients who, according to clinical assessment, suffered from pathological embitterment. Correlations with related instruments showed good convergent validity. The data from the non-clinical sample showed a prevalence of clinically relevant embitterment in the general population of 2.5%. The PTED scale allows a reliable and valid measurement of embitterment as an emotional reaction to a negative life event. In addition, the results show that reactive embitterment in connection with a negative life event is a widespread phenomenon in clinical and non-clinical populations.",
+        "Testkonzept/Theoretischer Hintergrund": "Negative life events can evoke very different psychological reactions, ranging from good coping to anxiety, depression or post-traumatic stress disorders (PTSD) (Bale, 2006; Boelen & Lensvelt-Mulders, 2005; Mancini & Bonanno, 2006; Mol et al., 2005; Viinameaki, Koskela, Niskanen, & Taehkae, 1994). One response to this can be embitterment, a feeling that most people know. Like anxiety, depression or stress reactions, the feeling of embitterment can become pathological when its intensity increases and feelings of helplessness, dysphoric mood, intrusive thoughts, aggression, suicidal thoughts, withdrawal from others, phobic avoidance of places or persons that remind one of the negative event occur, or when it is accompanied by somatic complaints (Hauer, Wessel, & Merckelbach, 2006).\nLinden, Baumann, Lieberei and Rotter (2009) described and summarised this clinical syndrome as \"post-traumatic embitterment disorder\" (engl. Post-traumatic embitterment disorder, PTED) (Linden, 2003; Linden, Baumann, Lieberei & Rotter, 2009; Linden, Baumann, Rotter & Schippan, 2007a, 2007b). PTED is regarded as a subtype of adjustment disorder and as a reaction to a severe, yet normal negative experience, such as unemployment, divorce or the death of a loved one.\nThe frequent commonality of such events is that they are experienced as unjustified and unfair and that they violate basic beliefs (Beck, Rush, Shaw & Emery, 1979; Janoff-Bulman, 1992) or overvalued schemata (Dalgleish, 2004; Dalgleish & Power, 2004).\nThe pathogenic mechanism of PTED does not lie in the characteristics of the event, but occurs when there is a match between the patient's ideas and value system on the one hand and the violation of these ideas by the negative event on the other. PTED, like PTSD, is characterised not by a specific stressful life event, but by various psychological processes (experiences of injustice and humiliation) and by a severe specific psychopathological profile (embitterment). Linden et al. (2009) were the first to describe an instrument that asks about embitterment and associated psychological symptoms in response to a stressful life event, namely the PTED self-report questionnaire.",
+        "Testkonzept/Testaufbau": "The PTED self-report questionnaire is available in paper-pencil format and contains 19 items for assessing the functions of embitterment reactions to negative life events.\nThe questionnaire is completed by the patients themselves and begins with the line \"In den vergangenen Jahren hatte ich ein einschneidendes Lebensereignis zu verkraften, ...\" followed by 19 individual statements. The participant is asked to rate these on a 5-point scale (0 does not apply, 1 hardly applies, 2 partly applies, 3 applies, 4 fully applies) and not to omit any item. A total mean score of > = 2.5 on the PTED scale indicates a clinically significant intensity of reactive embitterment.",
+        "Testkonzept/Auswertungsmodus": "For scoring, the point scores assigned to the responses are added up and divided by the number of items.",
+        "Testkonzept/Auswertungshilfen": "Special scoring aids are not necessary.",
+        "Testkonzept/Auswertungszeit": "Scoring takes only a few minutes per questionnaire.",
+        "Durchführung/Testformen": "The instrument can be administered as an individual or group test. In addition to the German version of the PTED self-report scale, there are translations into Turkish, Korean, Croatian and English. The German version also has a diagnostic interview.",
+        "Durchführung/Altersbereiche": "The instrument is designed for adults from 18 years of age.",
+        "Durchführung/Durchführungszeit": "Administration, including the time for instructions, takes only a few minutes.",
+        "Durchführung/Material": "Questionnaire and writing instrument.",
+        "Durchführung/Instruktion": "The questionnaire is preceded by a very short instruction: \"In den vergangenen Jahren hatte ich ein einschneidendes Lebensereignis zu verkraften, ...\"",
+        "Durchführung/Durchführungsvoraussetzungen": "No specific requirements are placed on the test administrator.",
+        "Testkonstruktion": "To examine the frequency and intensity of embitterment, the PTED scale was given to four independent samples: an inpatient PTED group (n = 49) with a matched control group (n = 48), selected by a clinical interview at the Heinrich-Heine-Klinik Potsdam; a group of unselected inpatients \"UI\" (n = 100) who suffered from other mental illnesses; a group of patients treated in a normal practice \"GP\" (n = 221); and a train sample \"TS\" (n = 158). The TS sample comprises a group of randomly selected persons travelling on a public train and is used as an estimate of embitterment in the general population. Here, 34.8% remembered a recent experience that evoked feelings of embitterment; 2.5% had a score of 2 or higher on the PTED scale, which indicates a PTED condition.",
+        "Gütekriterien/Objektivität": "Owing to the questionnaire format, the standardised procedure and the written instructions, the instrument can claim objectivity with regard to its administration and scoring.",
+        "Gütekriterien/Reliabilität": "The reliability of the PTED scale was determined by measuring internal consistency. In addition, a test-retest calculation was carried out with the UI sample. The alpha coefficient was .93 and indicates high internal consistency. The Spearman rho correlation was .71 for the total score, with a range of .53-.86 for individual items. This speaks for a good test-retest reliability of the PTED scale.",
+        "Gütekriterien/Validität": "The validity of the test was tested by a discriminant analysis of the PTED sample and the control group. A chi-square transformation of Wilks' lambda showed that the two groups differed significantly (chi-square = 76.94, p < 0.001). Of the 49 patients from the PTED group, 44 were diagnosed with PTED on the basis of the scale, as were 4 of the 48 patients from the control group. This indicates a sensitivity of the scale of 89.8% and a specificity of 91.7%. In general, the predicted classification of the PTED scale was in agreement with the clinical diagnosis.\nThe discriminant function indicated a total mean score of 1.6 as the critical value between the two groups. With regard to clinical applicability and in order to increase specificity, a mean score of 2.5 on the scale is recommended as the cut-off value. A value of > = 2.5 indicates a clinically significant intensity of reactive embitterment.\nModerate to high correlations were found consistently for every item. Particularly high correlations were found for items that ask about intrusive memories (items 5, 19 and 4), feelings of disempowerment, helplessness and injustice (items 12, 8, 3) and deterioration of mood and numbness (items 9, 15, 16). These results reflect the three characteristic features of PTED symptomatology:\nthe central role of negative life events, which frequently evoke painful and intrusive memories;\nthe feeling of helplessness and injustice caused by the event;\nthe resulting deterioration of psychological well-being.\nThe convergent validity of the PTED scale was tested in the PTED and control groups by comparison with the Bern Embitterment Scale (BVI; Znoj, 2009), a modified version of the Impact of Event Scale (IES-R; Maercker & Schützwohl, 1998) and the Symptom Checkliste SCL-90-R (Derogatis, 1977; German version Franke, 1995). The PTED scale correlated significantly (p < 0.001) with the IES scale (r = .76) and the Bern Embitterment Scale (r = .67). In addition, significant correlations were found between the PTED scale and global indices of the SCL-90-R. The PTED scale correlated with the GSI (Global Severity Index, measures general psychological burden) (r = .57), the PST (Positive Symptom Total, records the number of symptoms for which a burden is present) (r = .53) and with the SCL depression scale (r = .52). This speaks for good convergent validity.\nAn exploratory principal component analysis with all items of the PTED scale was carried out on the UI sample in order to determine the factorial structure. The number of factors to be extracted was determined by the \"scree plot method\" (Cattell, 1966). Two factors emerged, which explained 55.25% of the total variance. Factor 1 was defined by items that ask about psychological status and social functioning. Factor 2 contains items that ask about emotional reaction to an event and thoughts of revenge. This factor solution contains the two core dimensions of reactive embitterment: the pathological emotional reaction following a negative event and the resulting impairment of well-being and social functions (Linden, Rotter, Baumann & Lieberei, 2007). It therefore seems appropriate that the severity of reactive embitterment and the symptomatology of PTED be evaluated by a total score of the scale.",
+        "Gütekriterien/Normierung": "Norming was not carried out.",
+        "Anwendungsmöglichkeiten": "The Post-Traumatic Embitterment Disorder Selbstbeurteilungsfragebogen (PTED Skala) asks about persistent and impairing embitterment reactions in the aftermath of negative life events.",
+        "Bewertung": "Embitterment is an emotion that is probably familiar to everyone. The data of Linden et al. (2009) suggest that a third of the general population remember feelings of embitterment and that in a quarter this occurs in a more intense form (PTED total score > 1). However, only 2-3% were found with a form of reactive embitterment of clinically relevant intensity. Accordingly, embitterment should be understood as a dimensional phenomenon, similar to anxiety or depressed mood.\nThe PTED scale is an instrument that can be used for a classification of reactive embitterment and its severity. Based on the results of the UI and GP samples, it can be assumed that some cases diagnosed as depression or phobia are actually cases of PTED (Power & Tarsia, 2007). In such cases, the PTED scale can draw physicians' attention to these special aspects of the illness and entail corresponding consequences for treatment (Linden, Baumann, & Schippan, 2006; Linden, Rotter et al., 2007; Schippan, Baumann, & Linden, 2004). The data suggest that a mean total score of > = 2.5 on the PTED scale indicates a clinically significant intensity of reactive embitterment.\nInternal consistency and test-retest reliability were high. The construct validity of the scale was shown by the level of agreement (90.7%) with clinical assessments. Convergent validity was shown by significant correlations with the Bern Embitterment Scale, the IES and the SCL-90-R.\nIn interpreting the study, it should be taken into account that the data were collected with two different versions of the PTED scale (17- and 19-item versions). The instructions in each sample were standardised and every participant signed a declaration of consent. However, a 17-item version was given to the PTED and GP groups, of which two items were later each split into two items for reasons of clarity. This resulted in a version of 19 items, which was given to the UI and GP samples. This could be a limitation of the study, although it is unlikely that the results were influenced by it.",
+        "Wichtige neuere Publikationen": "Linden, M. (2017). Verbitterung und Posttraumatische Verbitterungsstörung. Göttingen: Hogrefe. [PTED-Skala appended pp. 104-105; standardisiertes diagnostisches Interview für PTED p. 106]",
+        "Testpaket (Paper-Pencil)/Rückmeldung an die Autor/-innen": "Please inform the authors about the use of the test instrument! The contact details can be found under \"Kontaktinformationen\"! If authors in the Open Test Archive have already died or no contact details (e-mail or postal address) are available for them, the obligation to give feedback does not apply to users."
+      }
+    },
+    "Construct": "Post-traumatic embitterment disorder",
+    "Description": "The PTED scale, as a self-report questionnaire, contains 19 items for assessing the functions of embitterment reactions to negative life events. The questionnaire contains 19 individual statements. Reliability: Internal consistency (Cronbach's alpha = .93) and test-retest reliability (Spearman rho correlation was .71 for the total score, with a range of .53-.86 for individual items) were high. Validity: The PTED scale discriminated significantly between patients who, according to clinical assessment, suffered from pathological embitterment. Correlations with related instruments showed good convergent validity. The data of the non-clinical sample showed a prevalence of clinically relevant embitterment in the general population of 2.5%. The PTED scale allows a valid measurement of embitterment as an emotional reaction to a negative life event. In addition, the results show that reactive embitterment in connection with a negative life event is a widespread phenomenon in clinical and non-clinical populations.",
+    "Reliability": "The reliability of the PTED scale was determined by measuring internal consistency. In addition, a test-retest calculation was carried out with the UI sample. The alpha coefficient was .93 and indicates high internal consistency. The Spearman rho correlation was .71 for the total score, with a range of .53-.86 for individual items. This speaks for a good test-retest reliability of the PTED scale.",
+    "Validity": "The validity of the test was tested by a discriminant analysis of the PTED sample and the control group. A chi-square transformation of Wilks' lambda showed that the two groups differed significantly (chi-square = 76.94, p < 0.001). Of the 49 patients from the PTED group, 44 were diagnosed with PTED on the basis of the scale, as were 4 of the 48 patients from the control group. This indicates a sensitivity of the scale of 89.8% and a specificity of 91.7%. In general, the predicted classification of the PTED scale was in agreement with the clinical diagnosis.\nThe discriminant function indicated a total mean score of 1.6 as the critical value between the two groups. With regard to clinical applicability and in order to increase specificity, a mean score of 2.5 on the scale is recommended as the cut-off value. A value of > = 2.5 indicates a clinically significant intensity of reactive embitterment.\nModerate to high correlations were found consistently for every item. Particularly high correlations were found for items that ask about intrusive memories (items 5, 19 and 4), feelings of disempowerment, helplessness and injustice (items 12, 8, 3) and deterioration of mood and numbness (items 9, 15, 16). These results reflect the three characteristic features of PTED symptomatology:\nthe central role of negative life events, which frequently evoke painful and intrusive memories;\nthe feeling of helplessness and injustice caused by the event;\nthe resulting deterioration of psychological well-being.\nThe convergent validity of the PTED scale was tested in the PTED and control groups by comparison with the Bern Embitterment Scale (BVI; Znoj, 2009), a modified version of the Impact of Event Scale (IES-R; Maercker & Schützwohl, 1998) and the Symptom Checkliste SCL-90-R (Derogatis, 1977; German version Franke, 1995). The PTED scale correlated significantly (p < 0.001) with the IES scale (r = .76) and the Bern Embitterment Scale (r = .67). In addition, significant correlations were found between the PTED scale and global indices of the SCL-90-R. The PTED scale correlated with the GSI (Global Severity Index, measures general psychological burden) (r = .57), the PST (Positive Symptom Total, records the number of symptoms for which a burden is present) (r = .53) and with the SCL depression scale (r = .52). This speaks for good convergent validity.\nAn exploratory principal component analysis with all items of the PTED scale was carried out on the UI sample in order to determine the factorial structure. The number of factors to be extracted was determined by the \"scree plot method\" (Cattell, 1966). Two factors emerged, which explained 55.25% of the total variance. Factor 1 was defined by items that ask about psychological status and social functioning. Factor 2 contains items that ask about emotional reaction to an event and thoughts of revenge. This factor solution contains the two core dimensions of reactive embitterment: the pathological emotional reaction following a negative event and the resulting impairment of well-being and social functions (Linden, Rotter, Baumann & Lieberei, 2007). It therefore seems appropriate that the severity of reactive embitterment and the symptomatology of PTED be evaluated by a total score of the scale.",
+    "Norming": "Norming was not carried out.",
+    "AdministrationTime": "A few minutes.",
+    "ScoringTime": "A few minutes.",
+    "AgeRange": "from 18 years",
+    "Instructions": "Bitte beantworten Sie die folgenden Aussagen und Feststellungen und kreuzen Sie die für Sie zutreffende Spalte an. Bitte lassen Sie keine Zeile aus!\nIn den vergangenen Jahren hatte ich ein einschneidendes Lebensereignis zu verkraften,"
+  },
+  "PTEDSKALA01": {
+    "Description": "das mich äußerst gekränkt oder verbittert hat.",
+    "Levels": {
+      "0": "trifft nicht zu",
+      "1": "trifft kaum zu",
+      "2": "trifft teilweise zu",
+      "3": "trifft zu",
+      "4": "trifft voll zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "PTEDSKALA02": {
+    "Description": "wodurch sich meine psychische Befindlichkeit deutlich und bis heute negativ verändert hat.",
+    "Levels": {
+      "0": "trifft nicht zu",
+      "1": "trifft kaum zu",
+      "2": "trifft teilweise zu",
+      "3": "trifft zu",
+      "4": "trifft voll zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "PTEDSKALA03": {
+    "Description": "das aus meiner Sicht äußerst ungerecht oder nicht fair war.",
+    "Levels": {
+      "0": "trifft nicht zu",
+      "1": "trifft kaum zu",
+      "2": "trifft teilweise zu",
+      "3": "trifft zu",
+      "4": "trifft voll zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "PTEDSKALA04": {
+    "Description": "an das ich immer wieder denken muss.",
+    "Levels": {
+      "0": "trifft nicht zu",
+      "1": "trifft kaum zu",
+      "2": "trifft teilweise zu",
+      "3": "trifft zu",
+      "4": "trifft voll zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "PTEDSKALA05": {
+    "Description": "das mich heftig aufregt, wenn ich daran erinnert werde.",
+    "Levels": {
+      "0": "trifft nicht zu",
+      "1": "trifft kaum zu",
+      "2": "trifft teilweise zu",
+      "3": "trifft zu",
+      "4": "trifft voll zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "PTEDSKALA06": {
+    "Description": "das in mir Gedanken an Rache auslöst.",
+    "Levels": {
+      "0": "trifft nicht zu",
+      "1": "trifft kaum zu",
+      "2": "trifft teilweise zu",
+      "3": "trifft zu",
+      "4": "trifft voll zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "PTEDSKALA07": {
+    "Description": "wegen dem ich mir Vorwürfe mache und ärgerlich auf mich selbst bin.",
+    "Levels": {
+      "0": "trifft nicht zu",
+      "1": "trifft kaum zu",
+      "2": "trifft teilweise zu",
+      "3": "trifft zu",
+      "4": "trifft voll zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "PTEDSKALA08": {
+    "Description": "weswegen ich häufiger das Gefühl habe, dass es keinen Sinn macht, Dinge anzupacken und sich anzustrengen.",
+    "Levels": {
+      "0": "trifft nicht zu",
+      "1": "trifft kaum zu",
+      "2": "trifft teilweise zu",
+      "3": "trifft zu",
+      "4": "trifft voll zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "PTEDSKALA09": {
+    "Description": "durch das meine Stimmung häufig niedergeschlagen und gedrückt ist.",
+    "Levels": {
+      "0": "trifft nicht zu",
+      "1": "trifft kaum zu",
+      "2": "trifft teilweise zu",
+      "3": "trifft zu",
+      "4": "trifft voll zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "PTEDSKALA10": {
+    "Description": "das dazu geführt hat, dass ich mich in allgemein schlechter körperlicher Verfassung fühle.",
+    "Levels": {
+      "0": "trifft nicht zu",
+      "1": "trifft kaum zu",
+      "2": "trifft teilweise zu",
+      "3": "trifft zu",
+      "4": "trifft voll zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "PTEDSKALA11": {
+    "Description": "weswegen ich bestimmte Orte oder Personen meide, um nicht daran erinnert zu werden.",
+    "Levels": {
+      "0": "trifft nicht zu",
+      "1": "trifft kaum zu",
+      "2": "trifft teilweise zu",
+      "3": "trifft zu",
+      "4": "trifft voll zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "PTEDSKALA12": {
+    "Description": "dem gegenüber ich mich ohnmächtig und hilflos ausgeliefert fühle.",
+    "Levels": {
+      "0": "trifft nicht zu",
+      "1": "trifft kaum zu",
+      "2": "trifft teilweise zu",
+      "3": "trifft zu",
+      "4": "trifft voll zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "PTEDSKALA13": {
+    "Description": "das in mir Gefühle der Genugtuung auslöst, beim Gedanken, der Verursacher würde einmal Ähnliches erleiden.",
+    "Levels": {
+      "0": "trifft nicht zu",
+      "1": "trifft kaum zu",
+      "2": "trifft teilweise zu",
+      "3": "trifft zu",
+      "4": "trifft voll zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "PTEDSKALA14": {
+    "Description": "das dazu geführt hat, dass meine Kraft und mein Antrieb reduziert und nicht mehr wie früher sind.",
+    "Levels": {
+      "0": "trifft nicht zu",
+      "1": "trifft kaum zu",
+      "2": "trifft teilweise zu",
+      "3": "trifft zu",
+      "4": "trifft voll zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "PTEDSKALA15": {
+    "Description": "das dazu geführt hat, dass ich gereizter bin als früher.",
+    "Levels": {
+      "0": "trifft nicht zu",
+      "1": "trifft kaum zu",
+      "2": "trifft teilweise zu",
+      "3": "trifft zu",
+      "4": "trifft voll zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "PTEDSKALA16": {
+    "Description": "weshalb ich mich ablenken muss, wenn ich vorübergehend eine normale und ausgeglichene Stimmung erleben will.",
+    "Levels": {
+      "0": "trifft nicht zu",
+      "1": "trifft kaum zu",
+      "2": "trifft teilweise zu",
+      "3": "trifft zu",
+      "4": "trifft voll zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "PTEDSKALA17": {
+    "Description": "das dazu geführt hat, dass ich meinen beruflichen und/oder familiären Aktivitäten nicht mehr wie früher nachgehe.",
+    "Levels": {
+      "0": "trifft nicht zu",
+      "1": "trifft kaum zu",
+      "2": "trifft teilweise zu",
+      "3": "trifft zu",
+      "4": "trifft voll zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "PTEDSKALA18": {
+    "Description": "das dazu geführt hat, dass ich mich von Freunden und geselligen Aktivitäten zurückgezogen habe.",
+    "Levels": {
+      "0": "trifft nicht zu",
+      "1": "trifft kaum zu",
+      "2": "trifft teilweise zu",
+      "3": "trifft zu",
+      "4": "trifft voll zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "PTEDSKALA19": {
+    "Description": ". zu dem sich mir immer wieder belastende Erinnerungen aufdrängen",
+    "Levels": {
+      "0": "trifft nicht zu",
+      "1": "trifft kaum zu",
+      "2": "trifft teilweise zu",
+      "3": "trifft zu",
+      "4": "trifft voll zu"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  }
+}

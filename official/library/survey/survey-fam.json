@@ -1,0 +1,346 @@
+{
+  "Technical": {
+    "StimulusType": "Questionnaire",
+    "FileFormat": "tsv",
+    "Language": "de"
+  },
+  "Metadata": {
+    "SchemaVersion": "2.1.3",
+    "CreationDate": "2026-11-16",
+    "Creator": "PRISM Studio"
+  },
+  "I18n": {
+    "Languages": [
+      "de"
+    ]
+  },
+  "Study": {
+    "TaskName": "fam",
+    "ShortName": "FAM",
+    "OriginalName": "Fragebogen zur aktuellen Motivation",
+    "Category": "Personality & Individual Differences",
+    "Authors": [
+      "Rheinberg, Falko",
+      "Vollmeyer, Regina",
+      "Burns, Bruce"
+    ],
+    "Year": 2019,
+    "Citation": "Rheinberg, F., Vollmeyer, R. & Burns, B. D. (2019). FAM. Ein Fragebogen zur Erfassung aktueller Motivation in Lern- und Leistungssituationen [Verfahrensdokumentation und Fragebogen]. In Leibniz-Institut für Psychologie (ZPID) (Hrsg.), Open Test Archive. Trier: ZPID. https://doi.org/10.23668/psycharchives.4486",
+    "DOI": "10.23668/psycharchives.4486",
+    "Source": "https://doi.org/10.23668/psycharchives.4486",
+    "License": "\"Copyright Autor(-Innen); CC-BY-SA 4.0\" \"Es wird vom Testarchiv online und kostenlos zur Verfügung gestellt und ist urheberrechtlich geschützt, d. h. das Urheberrecht liegt weiterhin bei den AutorInnen.\" \"Mit der Nutzung des Verfahrens verpflichte ich mich, die Bedingungen der Creative Commons Lizenz CC BY-SA 4.0 zu beachten.\" \"Sie wurden uns durch die Rechteinhaber/-innen zur weiteren Nachnutzung zur Verfügung gestellt. (Open Test Archive, Nutzungsbedingungen, https://www.testarchiv.eu/de/nutzungsbedingungen)\" \"It is made available online and free of charge by the test archive and is protected by copyright, i.e. the copyright remains with the author(s).\" \"By using this test, I agree to abide by the terms of the Creative Commons License CC BY-SA 4.0.\"",
+    "LicenseID": "CC-BY-SA-4.0",
+    "LicenseURL": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "CopyrightHolder": "Rheinberg, Falko; Vollmeyer, Regina; Burns, Bruce",
+    "LicenseChecked": "2026-11-14",
+    "LicenseLanguages": [
+      "de"
+    ],
+    "LicenseTerms": [
+      "This template is released under CC BY-SA 4.0 (ShareAlike): derived versions must carry the same licence.",
+      "Converted from the PDF questionnaire to JSON; item wording taken over unchanged.",
+      "The authors of this version, as given by the Open Test Archive page, hold the rights in the template version published there. Rights in an original instrument (which the original authors, a journal or a publisher may hold separately) are not covered by this licence statement.",
+      "The authors ask users to send the feedback form after using the test (a request of the Open Test Archive, not a condition added by PRISM): https://www.testarchiv.eu/de/test/9004322",
+      "Reliability, validity and norming data come from the Open Test Archive page and apply to the published version only."
+    ],
+    "References": [
+      {
+        "Type": "primary",
+        "Citation": "Rheinberg, F., Vollmeyer, R. & Burns, B. D. (2001). FAM: Ein Fragebogen zur Erfassung aktueller Motivation in Lern- und Leistungssituationen. Diagnostica, 47 (2), 57-66.",
+        "Year": 2001
+      },
+      {
+        "Type": "other",
+        "Citation": "Bachmann, G. (2009). Zielorientierungen und aktuelle Motivation: eine Integration im Kontext des selbstregulierten Lernens. Digitale Dissertation, Johann Wolfgang Goethe-Universität Frankfurt am Main, Fachbereich Psychologie und Sportwissenschaften.",
+        "Year": 2009
+      },
+      {
+        "Type": "primary",
+        "Citation": "Rheinberg, F., Vollmeyer, R. & Burns, B. D. (2001). FAM: Ein Fragebogen zur Erfassung aktueller Motivation in Lern-und Leistungssituationen. Diagnostica, 47 (2), 57-66.",
+        "Year": 2001
+      },
+      {
+        "Type": "other",
+        "Citation": "Vellekoop, M. (2008). Een uitgebreide beschrijving van de FAM (Fragebogen zur aktuellen Motivationen) en FKS (Flow-Kurzskala). Veröffentlichte Bachelorarbeit, University of Twente, Enschede, Niederlande.",
+        "Year": 2008
+      },
+      {
+        "Type": "other",
+        "Citation": "Vollmeyer, R. & Rheinberg, F. (1998). Motivationale Einflüsse auf Erwerb und Anwendung von Wissen in einem computersimulierten System. Zeitschrift für Pädagogische Psychologie, 12 (1), 11-23.",
+        "Year": 1998
+      },
+      {
+        "Type": "other",
+        "Citation": "Vollmeyer, R. & Rheinberg, F. (1999). Motivation and metacognition when learning a complex system. European Journal of Psychology of Education, 14 (4), 541-554.",
+        "Year": 1999
+      },
+      {
+        "Type": "other",
+        "Citation": "Winther, E. (2007). Performanz messen - Kompetenz diagnostizieren. In D. Lemmermöhle, M. Rothgangel, S. Bögeholz, M. Hasselhorn & R. Watermann (Hrsg.), Professionell lehren, erfolgreich lernen (S. 303-316). Münster: Waxmann.",
+        "Year": 2007
+      },
+      {
+        "Type": "other",
+        "Citation": "Vellekoop, M. (2008). Een uitgebreide beschrijving van de FAM (Fragebogen zur aktuellen Motivationen) en FKS (Flow-Kurzskala). Bachelorarbeit, University of Twente, Enschede, Niederlande. [Dutch version appended p. 35]",
+        "Year": 2008
+      }
+    ],
+    "Keywords": [
+      "Category: Personality tests / Emotion, motivation and behaviour structures",
+      "Engl. Name: Questionnaire on Current Motivation"
+    ],
+    "Access": "public",
+    "Notes": "Format: Paper-Pencil. Contact data (section Kontaktdaten) and e-mail addresses are not copied (personal data). The English descriptions are machine translations (Claude, Anthropic) of the archive's German text, not verified by the test authors; the German original is on the archive page https://www.testarchiv.eu/de/test/9004322.",
+    "ArchiveMetadata": {
+      "fields": {
+        "Sprachversionen": "German",
+        "Format": "Paper-pencil",
+        "Konstrukt": "Current learning motivation",
+        "Itemzahl": "18 items",
+        "Subskalen": "(1) Fear of failure, (2) Probability of success, (3) Interest, (4) Challenge",
+        "Durchführungszeit": "A few minutes.",
+        "Auswertungsdauer": "A few minutes.",
+        "Reliabilität": "Internal consistency: Cronbach's alpha = .66-.90.",
+        "Validität": "Findings on factorial and predictive validity; associations with later learning behaviour and learning performance; mean and correlation differences for different task types and learner types; high scale intercorrelations of the four factors.",
+        "Normierung": "None. Reference values: means and standard deviations.",
+        "Anwendungsbereich": "Research",
+        "Altersbereich": "No restriction.",
+        "Ältere Versionen": "Version 1: https://doi.org/10.23668/psycharchives.2666"
+      },
+      "sections": {
+        "Kurzabstract": "The FAM assesses current learning motivation and is used to measure learning and performance situations. It consists of four scales (fear of failure, interest, probability of success, challenge) with a total of 18 items. The starting point for the test construction was a study of the learning situation at the computer. Reliability: Internal consistencies according to Cronbach were between alpha = .66 and alpha = .90. Validity: Factorial validity was examined and yielded a four-factor structure with 58.4 % explained variance. Rheinberg and colleagues (2001) report that current motivation correlates with later learning behaviour and learning performance. Mean and correlation differences could be established for different task types and learner types. In addition, the test authors were able to demonstrate that the factors challenge and interest can predict performance, but these depend on the learning task and the number of learning trials. Calculations of the scale intercorrelations yielded high correlations, contrary to the assumption of independence of the four factors.",
+        "Diagnostische Zielsetzung": "The FAM assesses current learning motivation and is therefore used in studies for measuring learning and performance situations.",
+        "Aufbau": "The FAM consists of 18 items with a seven-point response format (\"1 = trifft nicht zu\" to \"7 = trifft zu\"), which are assigned to the four scales (1) fear of failure, (2) interest, (3) probability of success and (4) challenge.",
+        "Grundlagen und Konstruktion": "The instrument was conceived on the basis of classical test theory. The starting point was a study of the learning situation at the computer. Before working on the so-called \"biology lab task\", the FAM with 18 items was completed by 321 participants (students and upper-secondary school pupils; n = 184 female; mean age: 19 years). Its psychometric quality was examined (factor analysis, internal consistency, mean comparisons).",
+        "Empirische Prüfung und Gütekriterien": "Reliability: Internal consistencies according to Cronbach were between alpha = .66 and alpha = .90.\nValidity: Factorial validity was examined and yielded a four-factor structure with 58.4 % explained variance. Rheinberg and colleagues (2001) report that current motivation correlates with later learning behaviour and learning performance. Mean and correlation differences could be established for different task types and learner types. In addition, the test authors were able to demonstrate that the factors challenge and interest can predict performance, but these depend on the learning task and the number of learning trials.\nNorms: The instrument is not normed. However, means and standard deviations from various samples are available.",
+        "Testkonzept/Theoretischer Hintergrund": "The Fragebogen zur Erfassung der aktuellen Motivation (FAM) by Rheinberg, Vollmeyer and Burns (2001) was designed specifically for learning and performance situations. Current motivation arises from a motive (person factor) and an incentive (situation factor). An interaction and fit between person and situation factors yields the current motivation in the performance of behaviour (S. 57).\nThe aim of the instrument is to demonstrate effects of current motivation on learning and performance situations (Rheinberg et al., 2001. S. 58).",
+        "Testkonzept/Testaufbau": "The FAM consists of 18 items with a seven-point response format (\"1 = trifft nicht zu\" to \"7 = trifft zu\"), which comprise the following four scales (Rheinberg et al., 2001, S. 58, S. 59):\n(1) Fear of failure (items 5, 9, 12, 16, 18);\n(2) Challenge (items 6, 8, 10, 15);\n(3) Probability of success (items 2, 3, 13, 14; items 3 and 14 are reversed);\n(4) Interest (items 1, 4, 7, 11).\nThe scale fear of failure describes the negative incentive of failure. It is assumed that a person cannot work optimally because of the pressure. The scale probability of success indicates how confident someone is of mastering a task. This can lie in the person (own ability) or in the task (too easy). The scale interest refers to the appreciation of the task content. The scale challenge assesses the task with regard to its achievement-related relevance. With the exception of the scale interest, the scales have an achievement-related character (Rheinberg et al., 2001, S. 59).",
+        "Testkonzept/Auswertungsmodus": "Four scale means are calculated. A total score is not determined.",
+        "Testkonzept/Auswertungshilfen": "Mean values are available that can be used as reference values (see under \"Norming\").",
+        "Testkonzept/Auswertungszeit": "Only a few minutes are needed to calculate the four scale means. The FAM is used in performance situations that can last one to two hours (e.g. Vollmeyer et al., 2001).",
+        "Durchführung/Testformen": "Besides the German version, there is an American version, the Questionnaire of Current Motivation (QCM), with the factors Anxiety, Probability of Success, Interest and Challenge (Rheinberg et al., 2001, S. 59), as well as a Dutch version by Vellekoop (2008). The versions are to be administered in paper-pencil form. An adaptation by Winther (2007) consists of 16 items.",
+        "Durchführung/Altersbereiche": "A restriction of the age range is explicitly not made. So far, the FAM has been used with upper-secondary school pupils and students with a mean age of 19-21 years (Rheinberg et al., 2001, S. 58, S. 61, S. 62).",
+        "Durchführung/Durchführungszeit": "Completing the questionnaire with 18 items should take a few minutes.",
+        "Durchführung/Material": "The questionnaire is available as a paper-pencil version, for the completion of which a writing instrument is needed.",
+        "Durchführung/Instruktion": "The instruction is standardized and printed on the questionnaire.",
+        "Durchführung/Durchführungsvoraussetzungen": "The FAM is used only in connection with learning tasks in order to be able to draw conclusions about later performance from the motivational state assessed beforehand.",
+        "Testkonstruktion": "The instrument was conceived on the basis of classical test theory. The starting point was a study of a learning situation at the computer (Vollmeyer & Rheinberg, 1998). For this purpose, the questionnaire with 18 items was developed. 321 participants (students and upper-secondary school pupils; n = 184 female; mean age: 19 years) received the task instruction, completed the questionnaire and could then work on the so-called \"biology lab task\" (Rheinberg et al., 2001, S. 58, Vollmeyer & Rheinberg, 1998, 1999). Bachmann (2009) carried out an item analysis (discrimination & item difficulty) for two studies each and arrived at the following results: Discrimination varied strongly in the first study (pilot study) (rit = .08 to rit = .89), whereas the values in the main study varied comparatively less and were higher overall (rit = .34 to rit = .85). Item difficulty was, with a few exceptions, rather in the middle range (p = .31-.68).",
+        "Gütekriterien/Objektivität": "With regard to administration objectivity, it can be assumed that this is aimed at by the standardized instruction. Scoring objectivity should be ensured by the simple calculation of the scale means.",
+        "Gütekriterien/Reliabilität": "The German and American versions of the FAM were examined in different samples and task types. Internal consistencies according to Cronbach were between alpha = .66 and alpha = .90 for the German version and between alpha = .66 and alpha = .78 for the American version, whereby these turned out comparatively lower (Rheinberg et al., 2001, S. 60). Bachmann (2009, S. 99) reports values above alpha = .86 for the scales probability of success, fear of failure and interest, while alpha for challenge was alpha = .40. In a further study, the values were between alpha = .74 (challenge) and alpha = .91 (interest; S. 133).",
+        "Gütekriterien/Validität": "Factorial validity was examined. A principal component analysis with varimax rotation yielded a four-factor structure with 58.4 % explained variance (Rheinberg et al., S. 59). Rheinberg and colleagues (2001) report that current motivation correlates with later learning behaviour and learning performance.\nOn the basis of seven samples, the following tasks were tested: \"biology lab\", inductive reasoning, analogy tasks, tangram, Tower of Hanoi and fleet manoeuvre. Mean differences could be demonstrated. For example, it was found that the probability of success was significantly lower for the Tower of Hanoi than for the fleet manoeuvre. The means of the scales challenge and probability of failure in the Tower of Hanoi task, in contrast, were significantly higher (Rheinberg et al., 2001, S. 60).\nIn two experiments (n = 45; n = 61), Rheinberg and colleagues (2001, S. 61 f.) were able to demonstrate that the factors challenge and interest can predict performance, but these depend on the learning task and the number of learning trials.\nA comparison between fast and slow learners with regard to the correlation of the previously assessed FAM factors with final performance showed that the correlations of the slow learners in the factors interest and challenge differ significantly from those of the fast learners (Rheinberg et al., 2001, S. 63 f., see also Table 4, S. 64).\nBachmann (2009, S. 99) examined the scale intercorrelation of the four FAM scales in two studies. In the first study, probability of success correlated positively with interest and challenge at r = .78 and r = .61, respectively, while fear of failure correlated negatively with interest and probability of success at r = -.39 and r = -.43. Bachmann (2009, S. 100) points out that the values do not correspond to expectations: According to the cognitive-motivational process model, the factors should be independent of one another and should not correlate with one another. In the second study, the associations were similar but less pronounced (S. 134).",
+        "Gütekriterien/Normierung": "The instrument is not normed. However, means and standard deviations from various samples are available (Rheinberg et al., 2001, Table 2, S. 60). They can be read off in Tables 1 and 2.\nTable 1\nMeans (M) and standard deviations (SD) of the German and American versions of the FAM for different task situations (modified from Rheinberg, Vollmeyer & Burns, 2001, S. 60, Table 2)\nFAM scales | Sample size and task type\nn = 321 1 | n = 85 2 | n*= 288 1 | n* = 110 3 | n = 60 4 | n = 80 5 | n = 80 6\nScale 1 | M | 3.47 | 2.68 | 2.88 | 2.49 | 2.68 | 2.52 | 1.99\nSD | 1.50 | 1.20 | 1.15 | 1.05 | 1.18 | 1.14 | 1.07\nScale 2 | M | 4.31 | 5.08 | 4.66 | 4.91 | 4.76 | 5.21 | 5.98\nSD | 1.19 | 1.41 | 1.01 | 0.67 | 1.14 | 1.23 | 0.95\nScale 3 | M | 4.27 | 4.03 | 3.80 | 4.54 | 4.40 | 4.51 | 4.50\nSD | 1.22 | 1.31 | 1.08 | 0.97 | 1.44 | 1.54 | 1.57\nScale 4 | M | 5.28 | 4.16 | 5.00 | 4.82 | 4.50 | 4.48 | 3.92\nSD | 1.15 | 1.28 | 0.93 | 0.98 | 1.34 | 1.44 | 1.20\nNotes. n* = American version; 1 = biology lab, 2 = inductive reasoning, 3 = analogy tasks, 4 = tangram, 5 = Tower of Hanoi, 6 = fleet manoeuvre. Scale 1 = fear of failure, Scale 2 = probability of success, Scale 3 = interest, Scale 4 = challenge.\nTable 2\nMeans and standard deviations of the FAM scales in n = 40 students (after Bachmann, 2009, S. 101, Table 13)\nM\nSD\nProbability of success\n3.64\n0.73\nFear of failure\n2.94\n1.50\nInterest\n3.84\n1.73\nChallenge\n4.66\n0.95",
+        "Anwendungsmöglichkeiten": "The FAM is suitable for use in studies with learning conditions for clarifying motivational research questions. It can serve for the statistical control of motivational effects (Rheinberg et al., 2001, S. 57).",
+        "Bewertung": "The FAM was developed to assess current learning motivation and has been psychometrically examined. The findings show that, depending on task type and learner type, motivational states can differ, i.e. the FAM is sensitive with regard to the learning tasks and also varies depending on learner type (slow vs. fast learner). In particular the factors challenge and interest yielded predictively valid data with regard to learning performance. Internal consistency was examined. The assumed independence of the factors was refuted by the high scale intercorrelations.\nThe instrument allows conclusions about a person's motivational state from learning performance and, because of its economical application, is to be evaluated as very useful.",
+        "Orginalfassung/Anderssprachlige Fassungen": "Vellekoop, M. (2008). Een uitgebreide beschrijving van de FAM (Fragebogen zur aktuellen Motivationen) en FKS (Flow-Kurzskala). Bachelorarbeit, University of Twente, Enschede, Niederlande. [Dutch version appended p. 35]",
+        "Testpaket (Paper-Pencil)/Rückmeldung an die Autor/-innen": "Please inform the authors about the use of the test instrument! You can find the contact details under \"Kontaktinformationen\"! If authors in the Open Test Archive have already died or no contact details (e-mail or postal address) are available for them, users are no longer obliged to provide feedback."
+      }
+    },
+    "Construct": "Current learning motivation",
+    "Description": "The FAM assesses current learning motivation and is used to measure learning and performance situations. It consists of four scales (fear of failure, interest, probability of success, challenge) with a total of 18 items. The starting point for the test construction was a study of the learning situation at the computer. Reliability: Internal consistencies according to Cronbach were between alpha = .66 and alpha = .90. Validity: Factorial validity was examined and yielded a four-factor structure with 58.4 % explained variance. Rheinberg and colleagues (2001) report that current motivation correlates with later learning behaviour and learning performance. Mean and correlation differences could be established for different task types and learner types. In addition, the test authors were able to demonstrate that the factors challenge and interest can predict performance, but these depend on the learning task and the number of learning trials. Calculations of the scale intercorrelations yielded high correlations, contrary to the assumption of independence of the four factors.",
+    "Reliability": "The German and American versions of the FAM were examined in different samples and task types. Internal consistencies according to Cronbach were between alpha = .66 and alpha = .90 for the German version and between alpha = .66 and alpha = .78 for the American version, whereby these turned out comparatively lower (Rheinberg et al., 2001, S. 60). Bachmann (2009, S. 99) reports values above alpha = .86 for the scales probability of success, fear of failure and interest, while alpha for challenge was alpha = .40. In a further study, the values were between alpha = .74 (challenge) and alpha = .91 (interest; S. 133).",
+    "Validity": "Factorial validity was examined. A principal component analysis with varimax rotation yielded a four-factor structure with 58.4 % explained variance (Rheinberg et al., S. 59). Rheinberg and colleagues (2001) report that current motivation correlates with later learning behaviour and learning performance.\nOn the basis of seven samples, the following tasks were tested: \"biology lab\", inductive reasoning, analogy tasks, tangram, Tower of Hanoi and fleet manoeuvre. Mean differences could be demonstrated. For example, it was found that the probability of success was significantly lower for the Tower of Hanoi than for the fleet manoeuvre. The means of the scales challenge and probability of failure in the Tower of Hanoi task, in contrast, were significantly higher (Rheinberg et al., 2001, S. 60).\nIn two experiments (n = 45; n = 61), Rheinberg and colleagues (2001, S. 61 f.) were able to demonstrate that the factors challenge and interest can predict performance, but these depend on the learning task and the number of learning trials.\nA comparison between fast and slow learners with regard to the correlation of the previously assessed FAM factors with final performance showed that the correlations of the slow learners in the factors interest and challenge differ significantly from those of the fast learners (Rheinberg et al., 2001, S. 63 f., see also Table 4, S. 64).\nBachmann (2009, S. 99) examined the scale intercorrelation of the four FAM scales in two studies. In the first study, probability of success correlated positively with interest and challenge at r = .78 and r = .61, respectively, while fear of failure correlated negatively with interest and probability of success at r = -.39 and r = -.43. Bachmann (2009, S. 100) points out that the values do not correspond to expectations: According to the cognitive-motivational process model, the factors should be independent of one another and should not correlate with one another. In the second study, the associations were similar but less pronounced (S. 134).",
+    "Norming": "The instrument is not normed. However, means and standard deviations from various samples are available (Rheinberg et al., 2001, Table 2, S. 60). They can be read off in Tables 1 and 2.\nTable 1\nMeans (M) and standard deviations (SD) of the German and American versions of the FAM for different task situations (modified from Rheinberg, Vollmeyer & Burns, 2001, S. 60, Table 2)\nFAM scales | Sample size and task type\nn = 321 1 | n = 85 2 | n*= 288 1 | n* = 110 3 | n = 60 4 | n = 80 5 | n = 80 6\nScale 1 | M | 3.47 | 2.68 | 2.88 | 2.49 | 2.68 | 2.52 | 1.99\nSD | 1.50 | 1.20 | 1.15 | 1.05 | 1.18 | 1.14 | 1.07\nScale 2 | M | 4.31 | 5.08 | 4.66 | 4.91 | 4.76 | 5.21 | 5.98\nSD | 1.19 | 1.41 | 1.01 | 0.67 | 1.14 | 1.23 | 0.95\nScale 3 | M | 4.27 | 4.03 | 3.80 | 4.54 | 4.40 | 4.51 | 4.50\nSD | 1.22 | 1.31 | 1.08 | 0.97 | 1.44 | 1.54 | 1.57\nScale 4 | M | 5.28 | 4.16 | 5.00 | 4.82 | 4.50 | 4.48 | 3.92\nSD | 1.15 | 1.28 | 0.93 | 0.98 | 1.34 | 1.44 | 1.20\nNotes. n* = American version; 1 = biology lab, 2 = inductive reasoning, 3 = analogy tasks, 4 = tangram, 5 = Tower of Hanoi, 6 = fleet manoeuvre. Scale 1 = fear of failure, Scale 2 = probability of success, Scale 3 = interest, Scale 4 = challenge.\nTable 2\nMeans and standard deviations of the FAM scales in n = 40 students (after Bachmann, 2009, S. 101, Table 13)\nM\nSD\nProbability of success\n3.64\n0.73\nFear of failure\n2.94\n1.50\nInterest\n3.84\n1.73\nChallenge\n4.66\n0.95",
+    "AdministrationTime": "A few minutes.",
+    "ScoringTime": "A few minutes.",
+    "AgeRange": "No restriction.",
+    "Instructions": "Nun wollen wir wissen, wie deine momentane Einstellung zu der beschriebenen Aufgabe ist. Dazu findest du auf dieser Seite Aussagen. Kreuze bitte jene Zahl an, die auf dich am Besten passt."
+  },
+  "FAM01": {
+    "Description": "Ich mag solche Rätsel und Knobeleien.",
+    "Levels": {
+      "1": "trifft nicht zu",
+      "7": "trifft zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "FAM02": {
+    "Description": "Ich glaube, der Schwierigkeit dieser Aufgabe gewachsen zu sein.",
+    "Levels": {
+      "1": "trifft nicht zu",
+      "7": "trifft zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "FAM03": {
+    "Description": "Wahrscheinlich werde ich die Aufgabe nicht schaffen.",
+    "Levels": {
+      "1": "trifft nicht zu",
+      "7": "trifft zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "FAM04": {
+    "Description": "Bei der Aufgabe mag ich die Rolle des Wissenschaftlers, der Zusammenhänge entdeckt.",
+    "Levels": {
+      "1": "trifft nicht zu",
+      "7": "trifft zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "FAM05": {
+    "Description": "Ich fühle mich unter Druck, bei der Aufgabe gut abschneiden zu müssen.",
+    "Levels": {
+      "1": "trifft nicht zu",
+      "7": "trifft zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "FAM06": {
+    "Description": "Die Aufgabe ist eine richtige Herausforderung für mich.",
+    "Levels": {
+      "1": "trifft nicht zu",
+      "7": "trifft zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "FAM07": {
+    "Description": "Nach dem Lesen der Instruktion erscheint mir die Aufgabe sehr interessant.",
+    "Levels": {
+      "1": "trifft nicht zu",
+      "7": "trifft zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "FAM08": {
+    "Description": "Ich bin sehr gespannt darauf, wie gut ich hier abschneiden werde.",
+    "Levels": {
+      "1": "trifft nicht zu",
+      "7": "trifft zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "FAM09": {
+    "Description": "Ich fürchte mich ein wenig davor, dass ich mich hier blamieren könnte.",
+    "Levels": {
+      "1": "trifft nicht zu",
+      "7": "trifft zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "FAM10": {
+    "Description": "Ich bin fest entschlossen, mich bei dieser Aufgabe voll anzustrengen.",
+    "Levels": {
+      "1": "trifft nicht zu",
+      "7": "trifft zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "FAM11": {
+    "Description": "Bei Aufgaben wie dieser brauche ich keine Belohnung, sie machen mir auch so viel Spaß.",
+    "Levels": {
+      "1": "trifft nicht zu",
+      "7": "trifft zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "FAM12": {
+    "Description": "Es ist mir etwas peinlich, hier zu versagen.",
+    "Levels": {
+      "1": "trifft nicht zu",
+      "7": "trifft zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "FAM13": {
+    "Description": "Ich glaube, dass kann jeder schaffen.",
+    "Levels": {
+      "1": "trifft nicht zu",
+      "7": "trifft zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "FAM14": {
+    "Description": "Ich glaube, ich schaffe diese Aufgabe nicht.",
+    "Levels": {
+      "1": "trifft nicht zu",
+      "7": "trifft zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "FAM15": {
+    "Description": "Wenn ich die Aufgabe schaffe, werde ich schon ein wenig stolz auf meine Tüchtigkeit sein.",
+    "Levels": {
+      "1": "trifft nicht zu",
+      "7": "trifft zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "FAM16": {
+    "Description": "Wenn ich an die Aufgabe denke, bin ich etwas beunruhigt.",
+    "Levels": {
+      "1": "trifft nicht zu",
+      "7": "trifft zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "FAM17": {
+    "Description": "Eine solche Aufgabe würde ich auch in meiner Freizeit bearbeiten.",
+    "Levels": {
+      "1": "trifft nicht zu",
+      "7": "trifft zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "FAM18": {
+    "Description": "Die konkreten Leistungsanforderungen hier lähmen mich.",
+    "Levels": {
+      "1": "trifft nicht zu",
+      "7": "trifft zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  }
+}

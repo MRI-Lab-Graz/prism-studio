@@ -1,0 +1,240 @@
+{
+  "RecipeVersion": "1.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "CSIP",
+    "Reference": "survey-csip.json",
+    "TaskName": "csip"
+  },
+  "Scores": [
+    {
+      "Name": "PA",
+      "Description": "Scale PA (too autocratic/dominant): mean of its 8 items",
+      "Items": [
+        "CSIP01",
+        "CSIP09",
+        "CSIP17",
+        "CSIP25",
+        "CSIP33",
+        "CSIP41",
+        "CSIP49",
+        "CSIP57"
+      ],
+      "Method": "mean",
+      "Range": {
+        "min": 0,
+        "max": 3
+      },
+      "Note": "The archive documentation names no reverse-coded items, so none are applied here."
+    },
+    {
+      "Name": "BC",
+      "Description": "Scale BC (too quarrelsome/competitive): mean of its 8 items",
+      "Items": [
+        "CSIP02",
+        "CSIP10",
+        "CSIP18",
+        "CSIP26",
+        "CSIP34",
+        "CSIP42",
+        "CSIP50",
+        "CSIP58"
+      ],
+      "Method": "mean",
+      "Range": {
+        "min": 0,
+        "max": 3
+      }
+    },
+    {
+      "Name": "DE",
+      "Description": "Scale DE (too dismissive/cold): mean of its 8 items",
+      "Items": [
+        "CSIP03",
+        "CSIP11",
+        "CSIP19",
+        "CSIP27",
+        "CSIP35",
+        "CSIP43",
+        "CSIP51",
+        "CSIP59"
+      ],
+      "Method": "mean",
+      "Range": {
+        "min": 0,
+        "max": 3
+      }
+    },
+    {
+      "Name": "FG",
+      "Description": "Scale FG (too introverted/socially avoidant): mean of its 8 items",
+      "Items": [
+        "CSIP04",
+        "CSIP12",
+        "CSIP20",
+        "CSIP28",
+        "CSIP36",
+        "CSIP44",
+        "CSIP52",
+        "CSIP60"
+      ],
+      "Method": "mean",
+      "Range": {
+        "min": 0,
+        "max": 3
+      }
+    },
+    {
+      "Name": "HI",
+      "Description": "Scale HI (too insecure/submissive): mean of its 8 items",
+      "Items": [
+        "CSIP05",
+        "CSIP13",
+        "CSIP21",
+        "CSIP29",
+        "CSIP37",
+        "CSIP45",
+        "CSIP53",
+        "CSIP61"
+      ],
+      "Method": "mean",
+      "Range": {
+        "min": 0,
+        "max": 3
+      }
+    },
+    {
+      "Name": "JK",
+      "Description": "Scale JK (too exploitable/submissive): mean of its 8 items",
+      "Items": [
+        "CSIP06",
+        "CSIP14",
+        "CSIP22",
+        "CSIP30",
+        "CSIP38",
+        "CSIP46",
+        "CSIP54",
+        "CSIP62"
+      ],
+      "Method": "mean",
+      "Range": {
+        "min": 0,
+        "max": 3
+      }
+    },
+    {
+      "Name": "LM",
+      "Description": "Scale LM (too caring/friendly): mean of its 8 items",
+      "Items": [
+        "CSIP07",
+        "CSIP15",
+        "CSIP23",
+        "CSIP31",
+        "CSIP39",
+        "CSIP47",
+        "CSIP55",
+        "CSIP63"
+      ],
+      "Method": "mean",
+      "Range": {
+        "min": 0,
+        "max": 3
+      }
+    },
+    {
+      "Name": "NO",
+      "Description": "Scale NO (too expressive/intrusive): mean of its 8 items",
+      "Items": [
+        "CSIP08",
+        "CSIP16",
+        "CSIP24",
+        "CSIP32",
+        "CSIP40",
+        "CSIP48",
+        "CSIP56",
+        "CSIP64"
+      ],
+      "Method": "mean",
+      "Range": {
+        "min": 0,
+        "max": 3
+      }
+    },
+    {
+      "Name": "Total",
+      "Description": "Mean of all 64 items, read as general interpersonal distress",
+      "Items": [
+        "CSIP01",
+        "CSIP02",
+        "CSIP03",
+        "CSIP04",
+        "CSIP05",
+        "CSIP06",
+        "CSIP07",
+        "CSIP08",
+        "CSIP09",
+        "CSIP10",
+        "CSIP11",
+        "CSIP12",
+        "CSIP13",
+        "CSIP14",
+        "CSIP15",
+        "CSIP16",
+        "CSIP17",
+        "CSIP18",
+        "CSIP19",
+        "CSIP20",
+        "CSIP21",
+        "CSIP22",
+        "CSIP23",
+        "CSIP24",
+        "CSIP25",
+        "CSIP26",
+        "CSIP27",
+        "CSIP28",
+        "CSIP29",
+        "CSIP30",
+        "CSIP31",
+        "CSIP32",
+        "CSIP33",
+        "CSIP34",
+        "CSIP35",
+        "CSIP36",
+        "CSIP37",
+        "CSIP38",
+        "CSIP39",
+        "CSIP40",
+        "CSIP41",
+        "CSIP42",
+        "CSIP43",
+        "CSIP44",
+        "CSIP45",
+        "CSIP46",
+        "CSIP47",
+        "CSIP48",
+        "CSIP49",
+        "CSIP50",
+        "CSIP51",
+        "CSIP52",
+        "CSIP53",
+        "CSIP54",
+        "CSIP55",
+        "CSIP56",
+        "CSIP57",
+        "CSIP58",
+        "CSIP59",
+        "CSIP60",
+        "CSIP61",
+        "CSIP62",
+        "CSIP63",
+        "CSIP64"
+      ],
+      "Method": "mean",
+      "Range": {
+        "min": 0,
+        "max": 3
+      },
+      "HigherMeans": "higher general interpersonal distress"
+    }
+  ]
+}

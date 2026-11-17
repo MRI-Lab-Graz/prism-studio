@@ -1,0 +1,57 @@
+{
+  "RecipeVersion": "1.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "EBI-AM",
+    "Reference": "survey-ebi-am.json",
+    "TaskName": "ebi-am"
+  },
+  "Scores": [
+    {
+      "Name": "Absolutism",
+      "Description": "Absolutism: mean of its 12 items",
+      "Items": [
+        "EBIAM01",
+        "EBIAM03",
+        "EBIAM04",
+        "EBIAM05",
+        "EBIAM07",
+        "EBIAM08",
+        "EBIAM11",
+        "EBIAM15",
+        "EBIAM19",
+        "EBIAM20",
+        "EBIAM21",
+        "EBIAM22"
+      ],
+      "Method": "mean",
+      "Range": {
+        "min": 1,
+        "max": 5
+      },
+      "Note": "The archive documentation names no reverse-coded items, so none are applied here."
+    },
+    {
+      "Name": "Multiplism",
+      "Description": "Multiplism: mean of its 11 items",
+      "Items": [
+        "EBIAM02",
+        "EBIAM06",
+        "EBIAM09",
+        "EBIAM10",
+        "EBIAM12",
+        "EBIAM13",
+        "EBIAM14",
+        "EBIAM16",
+        "EBIAM17",
+        "EBIAM18",
+        "EBIAM23"
+      ],
+      "Method": "mean",
+      "Range": {
+        "min": 1,
+        "max": 5
+      }
+    }
+  ]
+}
