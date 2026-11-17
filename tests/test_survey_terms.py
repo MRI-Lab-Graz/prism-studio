@@ -382,3 +382,12 @@ def test_an_item_without_description_matches_on_scale_alone():
     column = {"Description": "Now described", "Levels": {"1": "a"}, "MinValue": 1, "MaxValue": 1}
     assert item_matches(entry, column, "en") == ""
     assert item_matches(entry, {**column, "MaxValue": 2}, "en") == "changed scale"
+
+
+def test_a_local_fingerprint_cannot_verify_a_changed_library_wording(tmp_path):
+    de = {**TIPI["TIPI02"], "Description": {"de": "Kritisch"}}
+    root = _project(tmp_path, {"Study": {"TaskName": "tipi"}, "Technical": {"Language": "de"}, "TIPI02": de})
+    column = {**de, "Description": {"de": "Kritisch", "en": "Edited English"}}
+    sidecar = {**_sidecar(TIPI02=column), "Technical": {"Language": "de"}}
+    out = resolve_survey_sidecar(sidecar, *_lib(tmp_path, {"tipi": TIPI})[:1], project_root=root)
+    assert _one(out) == {"column": "TIPI02", "term": None, "reason": "changed wording", "source": ""}

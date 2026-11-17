@@ -264,16 +264,12 @@ def resolve_survey_sidecar(sidecar: dict, library_dir: Path | None = None, recip
         else:
             library_language = (template.get("Technical") or {}).get("Language") or "en"
             entry = local_items.get(key)
-            if entry and isinstance(column, dict) and language not in _texts(item.get("Description"), str(library_language)):
-                reason = item_matches(entry, column, language)
-                if reason == "language not registered":  # the project has not registered this language: library result stands
-                    reason = _item_reason(column, item, language, str(library_language))
-                    source = "" if reason else "library"
-                else:
-                    source = "" if reason else "local"
-            else:
-                reason = _item_reason(column, item, language, str(library_language))
-                source = "" if reason else "library"
+            reason = _item_reason(column, item, language, str(library_language))  # the library's own check always runs first
+            source = "" if reason else "library"
+            if not reason and entry and language not in _texts(item.get("Description"), str(library_language)):
+                local_reason = item_matches(entry, column, language)  # a language only the project registered
+                if local_reason != "language not registered":  # else the clean library result stands
+                    reason, source = local_reason, "" if local_reason else "local"
             term = None if reason else f"prism:{item_local_id(task, key)}"
         columns.append({"column": key, "term": term, "reason": reason, "source": source})
     instrument = f"prism:{task}" if template or local else None
