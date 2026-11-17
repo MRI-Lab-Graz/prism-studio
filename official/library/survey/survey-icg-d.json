@@ -1,0 +1,469 @@
+{
+  "Technical": {
+    "StimulusType": "Questionnaire",
+    "FileFormat": "tsv",
+    "Language": "de"
+  },
+  "Metadata": {
+    "SchemaVersion": "2.1.3",
+    "CreationDate": "2026-11-16",
+    "Creator": "PRISM Studio"
+  },
+  "I18n": {
+    "Languages": [
+      "de"
+    ]
+  },
+  "Study": {
+    "TaskName": "icg-d",
+    "ShortName": "ICG-D",
+    "OriginalName": "Inventory of Complicated Grief - deutsch",
+    "Category": "Sleep, Health & Physical",
+    "Authors": [
+      "Lumbeck, Gudrun",
+      "Brandstätter, Monika",
+      "Geissner, Edgar"
+    ],
+    "Year": 2022,
+    "Citation": "Lumbeck, G., Brandstätter, M. & Geissner, E. (2022). ICG-D. Inventory of Complicated Grief - deutsch [Verfahrensdokumentation und Fragebogen]. In Leibniz-Institut für Psychologie (ZPID) (Hrsg.), Open Test Archive. Trier: ZPID. https://doi.org/10.23668/psycharchives.15509",
+    "DOI": "10.23668/psycharchives.15509",
+    "Source": "https://doi.org/10.23668/psycharchives.15509",
+    "License": "\"Copyright Autor(-Innen); CC-BY-SA 4.0\" \"Es wird vom Testarchiv online und kostenlos zur Verfügung gestellt und ist urheberrechtlich geschützt, d. h. das Urheberrecht liegt weiterhin bei den AutorInnen.\" \"Mit der Nutzung des Verfahrens verpflichte ich mich, die Bedingungen der Creative Commons Lizenz CC BY-SA 4.0 zu beachten.\" \"Sie wurden uns durch die Rechteinhaber/-innen zur weiteren Nachnutzung zur Verfügung gestellt. (Open Test Archive, Nutzungsbedingungen, https://www.testarchiv.eu/de/nutzungsbedingungen)\" \"It is made available online and free of charge by the test archive and is protected by copyright, i.e. the copyright remains with the author(s).\" \"By using this test, I agree to abide by the terms of the Creative Commons License CC BY-SA 4.0.\"",
+    "LicenseID": "CC-BY-SA-4.0",
+    "LicenseURL": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "CopyrightHolder": "Lumbeck, Gudrun; Brandstätter, Monika; Geissner, Edgar",
+    "LicenseChecked": "2026-11-14",
+    "LicenseLanguages": [
+      "de"
+    ],
+    "LicenseTerms": [
+      "This template is released under CC BY-SA 4.0 (ShareAlike): derived versions must carry the same licence.",
+      "Converted from the PDF questionnaire to JSON; item wording taken over unchanged.",
+      "The authors of this version, as given by the Open Test Archive page, hold the rights in the template version published there. Rights in an original instrument (which the original authors, a journal or a publisher may hold separately) are not covered by this licence statement.",
+      "The authors ask users to send the feedback form after using the test (a request of the Open Test Archive, not a condition added by PRISM): https://www.testarchiv.eu/de/test/9006657",
+      "Reliability, validity and norming data come from the Open Test Archive page and apply to the published version only."
+    ],
+    "References": [
+      {
+        "Type": "primary",
+        "Citation": "Lumbeck, G., Brandstätter, M. & Geissner, E. |x (2012). Erstvalidierung der deutschen Version des \"Inventory of Complicated Grief\" (ICG-D). Zeitschrift für Klinische Psychologie und Psychotherapie, 41 (4), 243-248.",
+        "Year": 2012
+      },
+      {
+        "Type": "other",
+        "Citation": "Boelen, P. A., van de Schoot, R., van den Hout, M. A., Keijser, J. de & van den Bout, J. (2010). Prolonged grief disorder, depression, and posttraumatic stress disorder are distinguishable syndromes. Journal of Affective Disorders, 125 (1-3), 374-378. https://doi.org/10.1016/j.jad.2010.01.076",
+        "DOI": "10.1016/j.jad.2010.01.076",
+        "Year": 2010
+      },
+      {
+        "Type": "other",
+        "Citation": "Boelen, P. A. & van den Bout, J. (2005). Complicated grief, depression, and anxiety as distinct postloss syndromes: A confirmatory factor analysis study. The American Journal of Psychiatry, 162 (11), 2175-2177. https://doi.org/10.1176/appi.ajp.162.11.2175",
+        "DOI": "10.1176/appi.ajp.162.11.2175",
+        "Year": 2005
+      },
+      {
+        "Type": "other",
+        "Citation": "Brandstätter, M., Lumbeck, G., & Geissner, E. (2015). Erfassung der Trauersymptomatik mit der deutschen Version des Inventory of Complicated Grief. In R. Rosner, G. Pfoh, R. Rojas, M. Brandstätter, R. Rossi, G. Lumbeck, M. Kotoucová, M. Hagl & E. Geissner (Hrsg.), Anhaltende Trauerstörung – Manuale für die Einzel-und Gruppentherapie (S. 30-31). Göttingen: Hogrefe.",
+        "Year": 2015
+      },
+      {
+        "Type": "other",
+        "Citation": "Carmassi, C., Shear, M. K., Massimetti, G., Wall, M., Mauro, C., Gemignani, S., ... & Dell’Osso, L. (2014). Validation of the Italian version Inventory of Complicated Grief (ICG): A study comparing CG patients versus bipolar disorder, PTSD and healthy controls. Comprehensive Psychiatry, 55 (5), 1322-1329.",
+        "Year": 2014
+      },
+      {
+        "Type": "other",
+        "Citation": "Franke, G. H. (2002). SCL-90-R, Symptom-Checkliste von L. R. Derogatis. Deutsche Version (2. Auflage). Göttingen: Beltz Test.",
+        "Year": 2002
+      },
+      {
+        "Type": "other",
+        "Citation": "Hautzinger, M., Bailer, M., Worall, H. & Keller, F. (1992). Das Beck Depressionsinventar BDI. Bern: Huber.",
+        "Year": 1992
+      },
+      {
+        "Type": "other",
+        "Citation": "Lumbeck, G., Brandstätter, M., & Geissner, E. (2012). Erstvalidierung der deutschen Version des „Inventory of Complicated Grief” (ICG-D). Zeitschrift für Klinische Psychologie und Psychotherapie, 41(4), 243-248. https://doi.org/10.1026/1616-3443/a000172",
+        "DOI": "10.1026/1616-3443/a000172",
+        "Year": 2012
+      },
+      {
+        "Type": "other",
+        "Citation": "Prigerson, H. G., Maciejewski, P. K., Reynolds, C. F., Bierhals, A. J., Newsom, J. T., Fasiczka, A. et al. (1995). Inventory of Complicated Grief: a scale to measure maladaptive symptoms of loss. Psychiatry Research, 59 (1-2), 65-79. https://doi.org/10.1016/0165-1781(95)02757-2",
+        "DOI": "10.1016/0165-1781(95)02757-2",
+        "Year": 1995
+      },
+      {
+        "Type": "other",
+        "Citation": "Wagner, B. (2016). Wann ist Trauer eine psychische Erkrankung? – Trauer als diagnostisches Kriterium in der ICD-11 und im DSM-5. Psychotherapeutenjournal, 250-255.",
+        "Year": 2016
+      },
+      {
+        "Type": "other",
+        "Citation": "Boelen, P.A., van den Bout, J. & de Keijser, J. (2003). Traumatic grief as a disorder distinct from bereavement-related depression and anxiety: A replication study with bereaved mental health care patients. American Journal of Psychiatry, 160, 1339-1341. Boelen, P. A., van de Schoot, R., van den Hout, M. A., Keijser, J. de & van den Bout, J. (2010). Prolonged grief disorder, depression, and posttraumatic stress disorder are distinguishable syndromes. Journal of Affective Disorders, 125 (1-3), 374-378. https://doi.org/10.1016/j.jad.2010.01.076",
+        "DOI": "10.1016/j.jad.2010.01.076",
+        "Year": 2003
+      },
+      {
+        "Type": "other",
+        "Citation": "Boelen, P. A., van de Schoot, R., van den Hout, M. A., Keijser, J. de & van den Bout, J. (2010). Prolonged grief disorder, depression, and posttraumatic stress disorder are distinguishable syndromes. Journal of Affective Disorders, 125 (1-3), 374-378. https://doi.org/10.1016/j.jad.2010.01.076",
+        "DOI": "10.1016/j.jad.2010.01.076",
+        "Year": 2010
+      },
+      {
+        "Type": "other",
+        "Citation": "Brandstätter, M., Lumbeck, G., & Geissner, E. (2015). Erfassung der Trauersymptomatik mit der deutschen Version des Inventory of Complicated Grief. In R. Rosner, G. Pfoh, R. Rojas, M. Brandstätter, R. Rossi, G. Lumbeck, M. Kotoucová, M. Hagl & E. Geissner (Hrsg.), Anhaltende Trauerstörung – Manuale für die Einzel-und Gruppentherapie (S. 30-31). Göttingen: Hogrefe.",
+        "Year": 2015
+      },
+      {
+        "Type": "other",
+        "Citation": "Prigerson, H.G., Bierhals, A.J., Kasl, S.V., Reynolds III., C.F., Shear, M.K., Newsom, J.T. & Jacobs, S. (1996). Complicated grief as a disorder distinct from bereavement-related depression and anxiety: A replication study. American Journal of Psychiatry, 153, 1484-1486.",
+        "Year": 1996
+      },
+      {
+        "Type": "other",
+        "Citation": "Carmassi, C., Shear, M. K., Massimetti, G., Wall, M., Mauro, C., Gemignani, S., ... & Dell’Osso, L. (2014). Validation of the Italian version Inventory of Complicated Grief (ICG): A study comparing CG patients versus bipolar disorder, PTSD and healthy controls. Comprehensive psychiatryPsychiatry, 55 (5), 1322-1329.",
+        "Year": 2014
+      },
+      {
+        "Type": "other",
+        "Citation": "Prigerson, H. G., Maciejewski, P. K., Reynolds III., C. F., Bierhals, A. J., Newsom, J. T., Fasiczka, A., Frank, E., Doman, J. & Miller, M. (1995). The Inventory of Complicated Grief: A scale to measure maladaptive symptoms of loss. Psychiatry Research, 59 (1-2), 65-79. [English version appended p. 79] https://doi.org/10.1016/0165-1781(95)02757-2",
+        "DOI": "10.1016/0165-1781(95)02757-2",
+        "Year": 1995
+      }
+    ],
+    "Keywords": [
+      "Category: Clinical procedures / Psychosomatic complaints",
+      "Category: Clinical procedures / Other clinical procedures",
+      "Engl. Name: Inventory of Complicated Grief - German version"
+    ],
+    "Access": "public",
+    "Notes": "Format: Paper-Pencil. Contact data (section Kontaktdaten) and e-mail addresses are not copied (personal data). The English descriptions are machine translations (Claude, Anthropic) of the archive's German text, not verified by the test authors; the German original is on the archive page https://www.testarchiv.eu/de/test/9006657.",
+    "ArchiveMetadata": {
+      "fields": {
+        "Sprachversionen": "German",
+        "Format": "Paper-pencil",
+        "Konstrukt": "Grief",
+        "Itemzahl": "19 items",
+        "Subskalen": "None.",
+        "Durchführungszeit": "approx. 5 minutes",
+        "Auswertungsdauer": "approx. 5-10 minutes",
+        "Reliabilität": "Internal consistency: Cronbach's α = .87\nTest-retest reliability: rtt = .69 (4-week interval)",
+        "Validität": "Evidence of construct validity (convergent and factorial validity) and sensitivity to change.",
+        "Normierung": "No norming. Cut-off values, means and standard deviations.",
+        "Anwendungsbereich": "Research, practice (professional qualification required)",
+        "Altersbereich": "from 17 years",
+        "Ältere Versionen": "Version 1: https://doi.org/10.23668/psycharchives.5251"
+      },
+      "sections": {
+        "Kurzabstract": "The ICG-D was developed, based on the English-language original version (Prigerson et al., 1995), to assess complicated grief. It consists of a total of 19 items. Reliability: The internal consistency of the items was α = .87. The test-retest reliability after 4 weeks was rtt = .69. Validity: To examine validity, the ICG-D was compared with the BDI and subscales of the SCL-90-R. The correlation with the BDI is r = .38, with the Depression subscale of the SCL-90-R r = .32, with the Somatisation subscale r = .25 and with the Anxiety subscale r = .25. The correlation of the SCL-90-R total score with the ICG-D was r = .37.",
+        "Diagnostische Zielsetzung": "The ICG-D makes it possible to assess complicated grief, which is a relevant construct in persistent grief symptomatology. Complicated grief is regarded as a distinct construct alongside depression or anxiety disorders, which is why a separate diagnostic assessment, as with the ICG-D, is necessary.",
+        "Aufbau": "The self-report instrument consists of a total of 19 items that are answered on a five-point Likert scale (0 = \"nie\" to 4 = \"immer\").",
+        "Grundlagen und Konstruktion": "The German adaptation of the ICG is based on the English-language original version (Prigerson et al., 1995). The translation was first carried out by the second author and the third author and was subsequently checked by a native speaker. The number of items was retained.",
+        "Empirische Prüfung und Gütekriterien": "Reliability: The internal consistency of the items was α = .87. The test-retest reliability after 4 weeks was rtt = .69.\nValidity: To examine validity, the ICG was compared with the BDI and subscales of the SCL-90-R. The correlation with the BDI is r = .38, with the Depression subscale of the SCL-90-R r = .32, with the Somatisation subscale r = .25 and with the Anxiety subscale r = .25. The correlation of the SCL-90-R total score with the ICG-D was r = .37.\nNorms: No norming is available so far.",
+        "Testkonzept/Theoretischer Hintergrund": "The Inventory of Complicated Grief – deutsch (ICG-D; Lumbeck, Brandstätter & Geissner, 2012) serves to assess and diagnose complicated grief. Two distinct concepts are distinguished: on the one hand, simple grief, which almost every person goes through, and on the other hand, complicated grief, in which the course entails a negative and persistent burden (Boelen & van den Bout, 2005). Furthermore, a differentiation can be made between complicated grief and other disorders such as depression or anxiety disorders (Boelen, van de Schoot, van den Hout, de Keijser & van den Bout, 2010; Lumbeck et al., 2012, p. 243). Thus, complicated grief shows unique features that justify classification and diagnosis. The new edition of the ICD, ICD-11, has now included \"prolonged grief disorder\" as a separate clinical entity, as Wagner (2016) had already reported.\nEspecially for the German-speaking area, the ICG-D offers a first instrument for diagnosing complicated grief. The ICG-D is based on the ICG, which is originally in English (Prigerson et al., 1995). It is also among the most frequently used instruments in this field and has been examined empirically (Boelen et al., 2007; Brandstätter, Lumbeck & Geissner, 2015, p. 30; Lumbeck et al., 2012, p. 244).",
+        "Testkonzept/Testaufbau": "The instrument consists of a total of 19 items on grief-related problems, which are answered on a five-point Likert scale. The response options are as follows:\n0 = never\n1 = rarely\n2 = sometimes\n3 = often\n4 = always",
+        "Testkonzept/Auswertungsmodus": "Scoring is done by summing the values of all items into a total score. A cut-off value of 25 points is proposed in order to identify persons with complicated grief (Lumbeck et al., 2012, p. 246).",
+        "Testkonzept/Auswertungshilfen": "No aids are needed to calculate the total score. A cut-off value of 25 points is set for the diagnosis of complicated grief.",
+        "Testkonzept/Auswertungszeit": "Scoring should take approx. 5-10 minutes.",
+        "Durchführung/Testformen": "The ICG-D is available in the English-language original version (Prigerson et al., 1995). In addition, an Italian version was developed and validated by Carmassi and colleagues (2014).",
+        "Durchführung/Altersbereiche": "The instrument is suitable for adults with grief-related problems. It was also validated in 17-year-olds, so that this age group can be included.",
+        "Durchführung/Durchführungszeit": "No information on administration time is available. Answering the 19 questions should be possible in about 5 minutes.",
+        "Durchführung/Material": "The ICG-D can be used in paper-pencil form.",
+        "Durchführung/Instruktion": "The instruction below is given in writing and is read by the participants themselves:\n„Kreuzen Sie bitte bei jeder Feststellung die Zahl an, die das Ausmaß Ihres derzeitigen Zustands am besten beschreibt. Bitte lassen Sie keine Zeile aus.\n\"0\" bedeutet \"nie\"\n\"1\" bedeutet \"selten\"\n\"2\" bedeutet \"manchmal\"\n\"3\" bedeutet \"häufig\" und\n\"4\" bedeutet \"immer\"\nBitte die zutreffende Zahl ankreuzen.“",
+        "Durchführung/Durchführungsvoraussetzungen": "The test administrators should be familiar with the basics of the construct of complicated grief. As a self-report instrument with clear, standardised instructions, the instrument could also be administered without test personnel. Otherwise there are no specific requirements.",
+        "Testkonstruktion": "The ICG-D is based on the English-language original version by Prigerson et al. (1995). The translation into German was carried out by the second author and the third author. Subsequently, the linguistic correspondence was checked by a native speaker. For the ICG-D, the order and the response options were retained. The ICG-D was administered to inpatients (N = 117) who reported in the initial diagnostics a severe loss that dated back at least 12 months and was experienced as very burdensome. 82 % of the sample were female, and age ranged from 17 to 79 years (M = 34, SD = 14) (p. 244). An item analysis yielded item-total correlations of rit = .25 to rit = .71 (Brandstätter et al., 2015, p. 31; Lumbeck et al., 2012, p. 245).",
+        "Gütekriterien/Objektivität": "The ICG-D is available in written form and contains an easily understandable instruction. Objectivity with regard to scoring and interpretation is assumed to be given owing to the simple calculation and the existence of a cut-off value.",
+        "Gütekriterien/Reliabilität": "The internal consistency of all items according to Cronbach was α = .87, whereas that of the English original was α = .94. Test-retest reliability was examined in 22 participants of the control group after 4 weeks and was rtt = .69. The English-language ICG achieved a stability of rtt = .80 after a 6-month interval with a sample size of N = 28 (cited from Brandstätter et al., 2015, p. 30; Lumbeck et al., 2012, p. 246).",
+        "Gütekriterien/Validität": "To examine construct validity, the association of the ICG-D with constructs such as depression, anxiety and somatisation was assessed. All constructs were assessed by means of subscales or total scores of the Symptom-Checkliste (SCL-90-R; Franke, 2002). Depression was assessed both with the SCL-90-R and with the Beck Depressionsinventar (BDI; Hautzinger, Bailer, Worall & Keller, 1992). These were administered either at the beginning or at the end of a treatment. For depression, the correlation with the ICG-D was r = .38 (BDI) and r = .32 (SCL-90-R). For somatisation, the correlation with the ICG-D was r = .25, for anxiety r = .25 and for the SCL-90-R total score r = .37. Furthermore, a group comparison of those who scored above 25 and below 25, respectively on the ICG-D showed a significant association with the BDI (Lumbeck et al., 2012, p. 246). Thus, with regard to convergent validity, significant correlations of the ICG-D with the other psychological constructs were found. In the original version by Prigerson et al. (1995), a higher correlation with the BDI was found (r = .67). However, the sample of the present validation study showed broadly distributed comorbidities. It can therefore be concluded that the ICG-D captures complicated grief as a distinct construct (Lumbeck et al., 2012, p. 247).\nThe factor analysis according to the criterion eigenvalue > 1 would suggest the extraction of five factors. Since with 19 items this would not lead to a favourable partition, the MAP test was used. Based on this, the extraction of one factor was specified for the principal component analysis. This had an eigenvalue of 6.29 and explained 33.13 % of the variance. The factor loadings varied between 0.28 and 0.78, the communalities from .08 to .61 (Lumbeck et al., 2012, p. 245).\nIn the study by Lumbeck, Rosner and Geissner (2015), it could be shown that therapy success can be detected with the ICG-D. Thus, a sample of 50 clinical patients with grief symptomatology showed lower ICG-D sum scores after a repeated measurement towards the end of the therapy treatment (interval: 4,5 weeks) (measurement point 1: M = 38.8 (SD = 11.5); measurement point 2: M = 25.4 (SD = 10.7)).",
+        "Gütekriterien/Normierung": "No classical norming is available. However, a validation study was carried out with 117 inpatients. Thus, means and standard deviations are available as a reference (see Table 1). A cut-off value of the ICG-D was also defined, which is 25.\nTable 1\nMeans (M) and standard deviations (SD) of the ICG-D (Brandstätter, Lumbeck & Geissner, 2015, p. 30; Lumbeck, Brandstätter & Geissner, 2012, p. 245)\nItem number\nM\nSD\n1\n1.79\n1.02\n2\n3.11\n0.86\n3\n2.64\n1.29\n4\n3.13\n0.96\n5\n2.05\n1.28\n6\n1.30\n1.32\n7\n2.41\n1.33\n8\n2.12\n1.24\n9\n1.64\n1.40\n10\n1.50\n1.34\n11\n0.85\n1.29\n12\n1.52\n1.38\n13\n1.70\n1.25\n14\n1.13\n1.20\n15\n2.37\n1.07\n16\n1.33\n1.47\n17\n1.99\n1.45\n18\n1.12\n1.40\n19\n2.58\n1.09\nICG-D total (N = 117)\n36.27\n13.18\nWomen (n = 96)\n37.30\n13.42\nMen (n =21)\n31.27\n11.36\nNotes: Following the original, the response scale ranged from 0-4. n = sample.",
+        "Anwendungsmöglichkeiten": "The ICG-D can be used in a therapeutic setting and serves in particular for diagnosis in persistent grief symptomatology. The instrument can thus also support therapy, and the therapy can take the findings of the ICG-D into account.",
+        "Bewertung": "The ICG-D is an instrument for assessing complicated grief symptomatology that shows reliability and validity similar to the English-language original instrument: Reliability, with values such as α = .78 and rtt = .69 (4-week interval), is in the satisfactory to good range. In carrying out the validation study, a distinction from constructs such as depression was again found, which confirms complicated grief as an independent construct. So far, however, no norming is available, which is why the instrument could benefit from further studies. This is necessary in particular to clarify the agreement between the assessment of complicated grief by means of clinical interviews and the ICG-D.",
+        "Wichtige neuere Publikationen": "Boelen, P.A., van den Bout, J. & de Keijser, J. (2003). Traumatic grief as a disorder distinct from bereavement-related depression and anxiety: A replication study with bereaved mental health care patients. American Journal of Psychiatry, 160, 1339-1341.\nBoelen, P. A., van de Schoot, R., van den Hout, M. A., Keijser, J. de & van den Bout, J. (2010). Prolonged grief disorder, depression, and posttraumatic stress disorder are distinguishable syndromes. Journal of Affective Disorders, 125 (1-3), 374-378. https://doi.org/10.1016/j.jad.2010.01.076\nBoelen, P. A., van de Schoot, R., van den Hout, M. A., Keijser, J. de & van den Bout, J. (2010). Prolonged grief disorder, depression, and posttraumatic stress disorder are distinguishable syndromes. Journal of Affective Disorders, 125 (1-3), 374-378. https://doi.org/10.1016/j.jad.2010.01.076\nBrandstätter, M., Lumbeck, G., & Geissner, E. (2015). Erfassung der Trauersymptomatik mit der deutschen Version des Inventory of Complicated Grief. In R. Rosner, G. Pfoh, R. Rojas, M. Brandstätter, R. Rossi, G. Lumbeck, M. Kotoucová, M. Hagl & E. Geissner (Hrsg.), Anhaltende Trauerstörung – Manuale für die Einzel-und Gruppentherapie (S. 30-31). Göttingen: Hogrefe.\nPrigerson, H.G., Bierhals, A.J., Kasl, S.V., Reynolds III., C.F., Shear, M.K., Newsom, J.T. & Jacobs, S. (1996). Complicated grief as a disorder distinct from bereavement-related depression and anxiety: A replication study. American Journal of Psychiatry, 153, 1484-1486.",
+        "Orginalfassung/Anderssprachlige Fassungen": "Carmassi, C., Shear, M. K., Massimetti, G., Wall, M., Mauro, C., Gemignani, S., ... & Dell’Osso, L. (2014). Validation of the Italian version Inventory of Complicated Grief (ICG): A study comparing CG patients versus bipolar disorder, PTSD and healthy controls. Comprehensive psychiatryPsychiatry, 55 (5), 1322-1329.\nPrigerson, H. G., Maciejewski, P. K., Reynolds III., C. F., Bierhals, A. J., Newsom, J. T., Fasiczka, A., Frank, E., Doman, J. & Miller, M. (1995). The Inventory of Complicated Grief: A scale to measure maladaptive symptoms of loss. Psychiatry Research, 59 (1-2), 65-79. [English version appended p. 79] https://doi.org/10.1016/0165-1781(95)02757-2",
+        "Testpaket (Paper-Pencil)/Rückmeldung an die Autor/-innen": "Please inform the authors about the use of the test instrument! The contact details can be found under \"Kontaktinformationen\"! If authors in the Open Test Archive have already died or no contact details (e-mail or postal address) are available for them, the obligation to give feedback does not apply to users."
+      }
+    },
+    "Construct": "Grief",
+    "Description": "The ICG-D was developed, based on the English-language original version (Prigerson et al., 1995), to assess complicated grief. It consists of a total of 19 items. Reliability: The internal consistency of the items was α = .87. The test-retest reliability after 4 weeks was rtt = .69. Validity: To examine validity, the ICG-D was compared with the BDI and subscales of the SCL-90-R. The correlation with the BDI is r = .38, with the Depression subscale of the SCL-90-R r = .32, with the Somatisation subscale r = .25 and with the Anxiety subscale r = .25. The correlation of the SCL-90-R total score with the ICG-D was r = .37.",
+    "Reliability": "The internal consistency of all items according to Cronbach was α = .87, whereas that of the English original was α = .94. Test-retest reliability was examined in 22 participants of the control group after 4 weeks and was rtt = .69. The English-language ICG achieved a stability of rtt = .80 after a 6-month interval with a sample size of N = 28 (cited from Brandstätter et al., 2015, p. 30; Lumbeck et al., 2012, p. 246).",
+    "Validity": "To examine construct validity, the association of the ICG-D with constructs such as depression, anxiety and somatisation was assessed. All constructs were assessed by means of subscales or total scores of the Symptom-Checkliste (SCL-90-R; Franke, 2002). Depression was assessed both with the SCL-90-R and with the Beck Depressionsinventar (BDI; Hautzinger, Bailer, Worall & Keller, 1992). These were administered either at the beginning or at the end of a treatment. For depression, the correlation with the ICG-D was r = .38 (BDI) and r = .32 (SCL-90-R). For somatisation, the correlation with the ICG-D was r = .25, for anxiety r = .25 and for the SCL-90-R total score r = .37. Furthermore, a group comparison of those who scored above 25 and below 25, respectively on the ICG-D showed a significant association with the BDI (Lumbeck et al., 2012, p. 246). Thus, with regard to convergent validity, significant correlations of the ICG-D with the other psychological constructs were found. In the original version by Prigerson et al. (1995), a higher correlation with the BDI was found (r = .67). However, the sample of the present validation study showed broadly distributed comorbidities. It can therefore be concluded that the ICG-D captures complicated grief as a distinct construct (Lumbeck et al., 2012, p. 247).\nThe factor analysis according to the criterion eigenvalue > 1 would suggest the extraction of five factors. Since with 19 items this would not lead to a favourable partition, the MAP test was used. Based on this, the extraction of one factor was specified for the principal component analysis. This had an eigenvalue of 6.29 and explained 33.13 % of the variance. The factor loadings varied between 0.28 and 0.78, the communalities from .08 to .61 (Lumbeck et al., 2012, p. 245).\nIn the study by Lumbeck, Rosner and Geissner (2015), it could be shown that therapy success can be detected with the ICG-D. Thus, a sample of 50 clinical patients with grief symptomatology showed lower ICG-D sum scores after a repeated measurement towards the end of the therapy treatment (interval: 4,5 weeks) (measurement point 1: M = 38.8 (SD = 11.5); measurement point 2: M = 25.4 (SD = 10.7)).",
+    "Norming": "No classical norming is available. However, a validation study was carried out with 117 inpatients. Thus, means and standard deviations are available as a reference (see Table 1). A cut-off value of the ICG-D was also defined, which is 25.\nTable 1\nMeans (M) and standard deviations (SD) of the ICG-D (Brandstätter, Lumbeck & Geissner, 2015, p. 30; Lumbeck, Brandstätter & Geissner, 2012, p. 245)\nItem number\nM\nSD\n1\n1.79\n1.02\n2\n3.11\n0.86\n3\n2.64\n1.29\n4\n3.13\n0.96\n5\n2.05\n1.28\n6\n1.30\n1.32\n7\n2.41\n1.33\n8\n2.12\n1.24\n9\n1.64\n1.40\n10\n1.50\n1.34\n11\n0.85\n1.29\n12\n1.52\n1.38\n13\n1.70\n1.25\n14\n1.13\n1.20\n15\n2.37\n1.07\n16\n1.33\n1.47\n17\n1.99\n1.45\n18\n1.12\n1.40\n19\n2.58\n1.09\nICG-D total (N = 117)\n36.27\n13.18\nWomen (n = 96)\n37.30\n13.42\nMen (n =21)\n31.27\n11.36\nNotes: Following the original, the response scale ranged from 0-4. n = sample.",
+    "AdministrationTime": {
+      "min": 5,
+      "max": 5
+    },
+    "ScoringTime": {
+      "min": 5,
+      "max": 10
+    },
+    "AgeRange": "from 17 years",
+    "Instructions": "Kreuzen Sie bitte bei jeder Feststellung die Zahl an, die Ihre jetzige Lage am besten beschreibt. Bitte lassen Sie keine Zeile aus."
+  },
+  "ICGD01": {
+    "Description": "Ich bin so in Gedanken bei der verstorbenen Person, dass es mir schwerfällt, Dinge zu tun, die ich normalerweise tue.",
+    "Levels": {
+      "0": "nie",
+      "1": "selten",
+      "2": "manchmal",
+      "3": "häufig",
+      "4": "immer"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ICGD02": {
+    "Description": "Erinnerungen an die verstorbene Person wühlen mich auf.",
+    "Levels": {
+      "0": "nie",
+      "1": "selten",
+      "2": "manchmal",
+      "3": "häufig",
+      "4": "immer"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ICGD03": {
+    "Description": "Ich habe das Gefühl, dass ich seinen/ihren Tod nicht annehmen kann.",
+    "Levels": {
+      "0": "nie",
+      "1": "selten",
+      "2": "manchmal",
+      "3": "häufig",
+      "4": "immer"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ICGD04": {
+    "Description": "Ich sehne mich nach der verstorbenen Person.",
+    "Levels": {
+      "0": "nie",
+      "1": "selten",
+      "2": "manchmal",
+      "3": "häufig",
+      "4": "immer"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ICGD05": {
+    "Description": "Ich fühle mich von Plätzen und Dingen angezogen, die mit der verstorbenen Person in Verbindung stehen.",
+    "Levels": {
+      "0": "nie",
+      "1": "selten",
+      "2": "manchmal",
+      "3": "häufig",
+      "4": "immer"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ICGD06": {
+    "Description": "Ich kann nicht anders, als wütend zu sein über seinen/ihren Tod.",
+    "Levels": {
+      "0": "nie",
+      "1": "selten",
+      "2": "manchmal",
+      "3": "häufig",
+      "4": "immer"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ICGD07": {
+    "Description": "Ich will noch immer nicht wahrhaben, was passiert ist.",
+    "Levels": {
+      "0": "nie",
+      "1": "selten",
+      "2": "manchmal",
+      "3": "häufig",
+      "4": "immer"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ICGD08": {
+    "Description": "Ich fühle mich wie betäubt wegen dem, was passiert ist.",
+    "Levels": {
+      "0": "nie",
+      "1": "selten",
+      "2": "manchmal",
+      "3": "häufig",
+      "4": "immer"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ICGD09": {
+    "Description": "Seitdem er/sie gestorben ist, fällt es mir schwer, Menschen zu vertrauen.",
+    "Levels": {
+      "0": "nie",
+      "1": "selten",
+      "2": "manchmal",
+      "3": "häufig",
+      "4": "immer"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ICGD10": {
+    "Description": "Seitdem er/sie gestorben ist, fühle ich mich von Menschen, die mir etwas bedeuten, entfremdet.",
+    "Levels": {
+      "0": "nie",
+      "1": "selten",
+      "2": "manchmal",
+      "3": "häufig",
+      "4": "immer"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ICGD11": {
+    "Description": "Ich habe Schmerzen oder Beschwerden an den gleichen Körperstellen wie die verstorbene Person.",
+    "Levels": {
+      "0": "nie",
+      "1": "selten",
+      "2": "manchmal",
+      "3": "häufig",
+      "4": "immer"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ICGD12": {
+    "Description": "Ich bemühe mich sehr, Erinnerung an die verstorbene Person zu vermeiden.",
+    "Levels": {
+      "0": "nie",
+      "1": "selten",
+      "2": "manchmal",
+      "3": "häufig",
+      "4": "immer"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ICGD13": {
+    "Description": "Ich habe das Gefühl, dass das Leben ohne die verstorbene Person bedeutungslos ist.",
+    "Levels": {
+      "0": "nie",
+      "1": "selten",
+      "2": "manchmal",
+      "3": "häufig",
+      "4": "immer"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ICGD14": {
+    "Description": "Ich höre seine/ihre Stimme zu mir sprechen.",
+    "Levels": {
+      "0": "nie",
+      "1": "selten",
+      "2": "manchmal",
+      "3": "häufig",
+      "4": "immer"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ICGD15": {
+    "Description": "Ich sehe die verstorbene Person bildlich vor mir.",
+    "Levels": {
+      "0": "nie",
+      "1": "selten",
+      "2": "manchmal",
+      "3": "häufig",
+      "4": "immer"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ICGD16": {
+    "Description": "Ich habe das Gefühl, dass es ungerecht ist, dass ich lebe, aber er/sie gestorben ist.",
+    "Levels": {
+      "0": "nie",
+      "1": "selten",
+      "2": "manchmal",
+      "3": "häufig",
+      "4": "immer"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ICGD17": {
+    "Description": "Ich bin verbittert über seinen/ihren Tod.",
+    "Levels": {
+      "0": "nie",
+      "1": "selten",
+      "2": "manchmal",
+      "3": "häufig",
+      "4": "immer"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ICGD18": {
+    "Description": "Ich bin neidisch auf andere, die keine nahestehende Person verloren haben.",
+    "Levels": {
+      "0": "nie",
+      "1": "selten",
+      "2": "manchmal",
+      "3": "häufig",
+      "4": "immer"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ICGD19": {
+    "Description": "Ich fühle mich einsam, seitdem er/sie gestorben ist.",
+    "Levels": {
+      "0": "nie",
+      "1": "selten",
+      "2": "manchmal",
+      "3": "häufig",
+      "4": "immer"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  }
+}

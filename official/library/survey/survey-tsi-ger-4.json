@@ -1,0 +1,1044 @@
+{
+  "Technical": {
+    "StimulusType": "Questionnaire",
+    "FileFormat": "tsv",
+    "Language": "de"
+  },
+  "Metadata": {
+    "SchemaVersion": "2.1.3",
+    "CreationDate": "2026-11-16",
+    "Creator": "PRISM Studio"
+  },
+  "I18n": {
+    "Languages": [
+      "de"
+    ]
+  },
+  "Study": {
+    "TaskName": "tsi-ger-4",
+    "ShortName": "TSI-GER (4)",
+    "OriginalName": "Thinking Styles Inventory for German Speaking Samples",
+    "Category": "Educational & Occupational",
+    "Authors": [
+      "Berding, Florian",
+      "Masemann, Maike",
+      "Rebmann, Karin",
+      "Paechter, Manuela"
+    ],
+    "Year": 2019,
+    "Citation": "Berding, F., Masemann, M., Rebmann, K. & Paechter, M. (2019). TSI-GER. Thinking Styles Inventory for German Speaking Samples [Verfahrensdokumentation und Fragebogen TSI-GER-4 und TSI-GER-13]. In Leibniz-Institut für Psychologie (ZPID) (Hrsg.), Open Test Archive. Trier: ZPID. https://doi.org/10.23668/psycharchives.4573",
+    "DOI": "10.23668/psycharchives.4573",
+    "Source": "https://doi.org/10.23668/psycharchives.4573",
+    "License": "\"Copyright Autor(-Innen); CC-BY-SA 4.0\" \"Es wird vom Testarchiv online und kostenlos zur Verfügung gestellt und ist urheberrechtlich geschützt, d. h. das Urheberrecht liegt weiterhin bei den AutorInnen.\" \"Mit der Nutzung des Verfahrens verpflichte ich mich, die Bedingungen der Creative Commons Lizenz CC BY-SA 4.0 zu beachten.\" \"Sie wurden uns durch die Rechteinhaber/-innen zur weiteren Nachnutzung zur Verfügung gestellt. (Open Test Archive, Nutzungsbedingungen, https://www.testarchiv.eu/de/nutzungsbedingungen)\" \"Es wird vom Testarchiv online und kostenlos zur Verfügung gestellt und ist urheberrechtlich geschützt, d. h. das Urheberrecht liegt weiterhin bei dem/den Autor/en.\" \"It is made available online and free of charge by the test archive and is protected by copyright, i.e. the copyright remains with the author(s).\" \"By using this test, I agree to abide by the terms of the Creative Commons License CC BY-SA 4.0.\"",
+    "LicenseID": "CC-BY-SA-4.0",
+    "LicenseURL": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "CopyrightHolder": "Berding, Florian; Masemann, Maike; Rebmann, Karin; Paechter, Manuela",
+    "LicenseChecked": "2026-11-14",
+    "LicenseLanguages": [
+      "de"
+    ],
+    "LicenseTerms": [
+      "This template is released under CC BY-SA 4.0 (ShareAlike): derived versions must carry the same licence.",
+      "Converted from the PDF questionnaire to JSON; item wording taken over unchanged.",
+      "The authors of this version, as given by the Open Test Archive page, hold the rights in the template version published there. Rights in an original instrument (which the original authors, a journal or a publisher may hold separately) are not covered by this licence statement.",
+      "The authors ask users to send the feedback form after using the test (a request of the Open Test Archive, not a condition added by PRISM): https://www.testarchiv.eu/de/test/9007788",
+      "Reliability, validity and norming data come from the Open Test Archive page and apply to the published version only."
+    ],
+    "References": [
+      {
+        "Type": "primary",
+        "Citation": "Berding, F., Masemann, M., Rebmann, K. & Paechter, M. (2016). Perspectives on the validity of the Thinking Styles Inventories. World Journal of Education, 6 (6), 69-82.",
+        "Year": 2016
+      },
+      {
+        "Type": "other",
+        "Citation": "Adams, K. A. & Lawrence, E. K. (2015). Research methods, statistics, and applications. Thousand Oaks: Sage.",
+        "Year": 2015
+      },
+      {
+        "Type": "other",
+        "Citation": "Bagozzi, R. P. & Yi, Y. (1988). On the evaluation of structural equation models. Journal of the Academy of Marketing Science, 16 (1), 74-94.",
+        "Year": 1988
+      },
+      {
+        "Type": "other",
+        "Citation": "Berding, F., Irmscher, M., Vossmann, M. & Gores, A. (2018). Eine Frage des Stils? Individuelle Sicht- und Vorgehensweisen von kaufmännischen Auszubildenden bei der Konstruktion von Wissen im Kontext der Digitalisierung. Zeitschrift für Berufs- und Wirtschaftspädagogik, 114 (2), 213-246.",
+        "Year": 2018
+      },
+      {
+        "Type": "other",
+        "Citation": "Berding, F., Masemann, M., Rebmann, K. & Paechter, M. (2015). Validation of a German version of the Thinking Styles Inventory. In L. Vigentini & C. Evans (Eds.), The relevance of styles to educational and workplace contexts. Proceedings of the XX International Conference of the Education, Learning, Styles, Individual differences Network. Celebrating 20 years of contributions to educational research and practice. July, 1-3 2015, University of Exeter (pp. 38-52). Brno: Librix. [TSI-GER-13 English items included pp. 45-47]",
+        "Year": 2015
+      },
+      {
+        "Type": "primary",
+        "Citation": "Berding, F., Masemann, M., Rebmann, K. & Paechter, M. (2016). Perspectives on the validity of the Thinking Styles Inventories. World Journal of Education, 6 (6), 69-82. https://doi.org/10.5430/wje.v6n6p69",
+        "DOI": "10.5430/wje.v6n6p69",
+        "Year": 2016
+      },
+      {
+        "Type": "other",
+        "Citation": "Bernardo, A. B. I., Zhang, L. F. & Callueng, C. M. (2002). Thinking styles and academic achievement among Filipino students. Journal of Genetic Psychology, 163 (2), 149-164. https://doi.org/10.1080/00221320209598674",
+        "DOI": "10.1080/00221320209598674",
+        "Year": 2002
+      },
+      {
+        "Type": "other",
+        "Citation": "Cano-Garcia, F. & Hewitt Hughes, E. (2000). Learning and thinking styles: An analysis of their interrelationship and influence on academic achievement. Educational Psychology, 20 (4), 413-430. https://doi.org/10.1080/713663755",
+        "DOI": "10.1080/713663755",
+        "Year": 2000
+      },
+      {
+        "Type": "other",
+        "Citation": "Domenech-Betoret, F. & Gomez-Artiga, A. (2014). The relationship among students' and teachers' thinking styles, psychological needs and motivation. Learning and Individual Differences, 29, 89-97.",
+        "Year": 2014
+      },
+      {
+        "Type": "other",
+        "Citation": "Fan, W. & Zhang, L. F. (2009). Are achievement motivation and thinking styles related? A visit among Chinese university students. Learning and Individual Differences, 19 (2), 299-303.",
+        "Year": 2009
+      },
+      {
+        "Type": "other",
+        "Citation": "Fornell, C. & Larcker, D. F. (1981). Evaluating structural equation models with unobservable variables and measurement errors. Journal of Marketing Research, 18 (1), 39-50.",
+        "Year": 1981
+      },
+      {
+        "Type": "other",
+        "Citation": "Grigorenko, E. L. & Sternberg, R. J. (1997). Styles of thinking, abilities, and academic performance. Exceptional Children, 63 (3), 295-312. https://doi.org/10.1177/001440299706300301",
+        "DOI": "10.1177/001440299706300301",
+        "Year": 1997
+      },
+      {
+        "Type": "other",
+        "Citation": "Irmscher, M. (2019). The interface function of thinking styles between personality and intelligence. World Journal of Education, 9 (1), 79-91. https://doi.org/10.5430/wje.v9n1p79",
+        "DOI": "10.5430/wje.v9n1p79",
+        "Year": 2019
+      },
+      {
+        "Type": "other",
+        "Citation": "Masemann, M. (2015). Zur Bedeutung von Lern- und Denkstilen für die berufliche Lehr-Lern-Forschung. bwp@, 28, 1-27.",
+        "Year": 2015
+      },
+      {
+        "Type": "other",
+        "Citation": "Murphy, A. & Janeke, H. C. (2009). The relationship between thinking styles and emotional intelligence: An exploratory study. South African Journal of Psychology, 39 (3), 357-375.",
+        "Year": 2009
+      },
+      {
+        "Type": "other",
+        "Citation": "Richmond, A. S. & Conrad, L. (2012). Do thinking styles predict academic performance of online learning? International Journal of Technology in Teaching and Learning, 8 (2), 108-117.",
+        "Year": 2012
+      },
+      {
+        "Type": "other",
+        "Citation": "Sternberg, R. J. (1997). Thinking Styles. New York, NY: Cambridge University Press.",
+        "Year": 1997
+      },
+      {
+        "Type": "other",
+        "Citation": "Sternberg, R. J. & Wagner, R. K. (1992). Thinking Styles Inventory. Unpublished test. New Haven, CT: Yale University.",
+        "Year": 1992
+      },
+      {
+        "Type": "other",
+        "Citation": "Sternberg, R. J., Wagner, R. K. & Zhang, L. F. (2007). Thinking Styles Inventory - Revised II. Unpublished test. Medford, MA: Tufts University.",
+        "Year": 2007
+      },
+      {
+        "Type": "other",
+        "Citation": "Weiber, R. & Mühlhaus, D. (2014). Strukturgleichungsmodellierung. Eine anwendungsorientierte Einführung in die Kausalanalyse mit Hilfe von AMOS, SmartPLS und SPSS (2. Auflage). Berlin: Springer.",
+        "Year": 2014
+      },
+      {
+        "Type": "other",
+        "Citation": "Zhang, L. F. (2000). Are thinking styles and personality types related? Educational Psychology, 20 (3), 271-283.",
+        "Year": 2000
+      },
+      {
+        "Type": "other",
+        "Citation": "Zhang, L. F. (2001a). Do thinking styles contribute to academic achievement beyond self-rated abilities? The Journal of Psychology, 135 (6), 621-637.",
+        "Year": 2001
+      },
+      {
+        "Type": "other",
+        "Citation": "Zhang, L. F. (2001b). Do styles of thinking matter among Hong Kong secondary school students? Personality and Individual Differences, 31 (3), 289-301.",
+        "Year": 2001
+      },
+      {
+        "Type": "other",
+        "Citation": "Zhang, L. F. (2002a). Thinking styles and the Big Five personality traits. Educational Psychology, 22 (1), 17-31. https://doi.org/10.1080/01443410120101224",
+        "DOI": "10.1080/01443410120101224",
+        "Year": 2002
+      },
+      {
+        "Type": "other",
+        "Citation": "Zhang, L. F. (2002b). Thinking styles: Their relationship with modes of thinking and academic performance. Educational Psychology, 22 (3), 331-348.",
+        "Year": 2002
+      },
+      {
+        "Type": "other",
+        "Citation": "Zhang, L. F. (2004). Revisiting the predictive power of thinking styles for academic performance. Journal of Psychology: Interdisciplinary and Applied, 138 (4), 351-370.",
+        "Year": 2004
+      },
+      {
+        "Type": "other",
+        "Citation": "Zhang, L. F. (2006). Thinking styles and the Big Five personality traits revisited. Personality and Individual Differences, 40 (6), 1177-1187. https://doi.org/10.1016/j.paid.2005.10.011",
+        "DOI": "10.1016/j.paid.2005.10.011",
+        "Year": 2006
+      },
+      {
+        "Type": "other",
+        "Citation": "Zhang, L. F. (2007). Intellectual styles and academic achievement among senior secondary school students in Rural China. Educational Psychology, 27 (5), 675-692.",
+        "Year": 2007
+      },
+      {
+        "Type": "other",
+        "Citation": "Zhang, L. F. (2009). Anxiety and thinking styles. Personality and Individual Differences, 47 (4), 347-351.",
+        "Year": 2009
+      },
+      {
+        "Type": "other",
+        "Citation": "Zhang, L. F. (2013). The malleability of intellectual styles. New York, NY: Cambridge University Press.",
+        "Year": 2013
+      },
+      {
+        "Type": "other",
+        "Citation": "Zhang, L. F. & Postiglione, G. A. (2001). Thinking styles, self-esteem, and socioeconomic status. Personality and Individual Differences, 31 (8), 1333-1346.",
+        "Year": 2001
+      },
+      {
+        "Type": "other",
+        "Citation": "Zhang, L. F. & Sternberg, R. J. (2000). Are learning approaches and thinking styles related? A study in two Chinese populations. The Journal of Psychology, 134 (5), 469-489.",
+        "Year": 2000
+      },
+      {
+        "Type": "other",
+        "Citation": "Zhang, L. F. & Wong, Y. H. (2011). Hardiness and thinking styles: Implications for higher education. Journal of Cognitive Education and Psychology, 10 (3), 294-307.",
+        "Year": 2011
+      },
+      {
+        "Type": "other",
+        "Citation": "Zhu, C. & Zhang, L. F. (2011). Thinking styles and conceptions of creativity among university students. Educational Psychology, 31 (3), 361-375.",
+        "Year": 2011
+      },
+      {
+        "Type": "other",
+        "Citation": "Sternberg, R. J. & Wagner, R. K. (1992). Thinking Styles Inventory. Unpublished test. New Haven, CT: Yale University.",
+        "Year": 1992
+      },
+      {
+        "Type": "other",
+        "Citation": "Sternberg, R. J., Wagner, R. K. & Zhang, L. F. (2003). Thinking Styles Inventory - Revised. Unpublished test. New Haven, CT: Yale University.",
+        "Year": 2003
+      },
+      {
+        "Type": "other",
+        "Citation": "Sternberg, R. J., Wagner, R. K. & Zhang, L. F. (2007). Thinking Styles Inventory - Revised II. Unpublished test. Medford, MA: Tufts University.",
+        "Year": 2007
+      }
+    ],
+    "Keywords": [
+      "Category: Attitude tests / Attitudes toward study, university and science",
+      "Category: Personality tests / Attribution and locus of control",
+      "Engl. Name: Thinking Styles Inventory - German version"
+    ],
+    "Access": "public",
+    "Notes": "Format: Paper-Pencil. Contact data (section Kontaktdaten) and e-mail addresses are not copied (personal data). The English descriptions are machine translations (Claude, Anthropic) of the archive's German text, not verified by the test authors; the German original is on the archive page https://www.testarchiv.eu/de/test/9007788.",
+    "ArchiveMetadata": {
+      "fields": {
+        "Sprachversionen": "German",
+        "Format": "Paper-pencil",
+        "Konstrukt": "Thinking styles",
+        "Itemzahl": "61 items (TSI-GER-13); 46 items (TSI-GER-4)",
+        "Subskalen": "13 thinking styles (executive, legislative, judicial, hierarchic, monarchic, oligarchic, anarchic, internal, external, global, local, liberal and conservative)",
+        "Durchführungszeit": "10-15 min.",
+        "Auswertungsdauer": "10-15 min.",
+        "Reliabilität": "Internal consistency: Cronbach's alpha = .59-.90 (TSI-GER-13), alpha = .66-.95 (TSI-GER-4)",
+        "Validität": "Information on factorial and discriminant validity; associations with grades.",
+        "Normierung": "None. Reference values: means and standard deviations.",
+        "Anwendungsbereich": "Research, teaching",
+        "Altersbereich": "from 15 years",
+        "Ältere Versionen": "Version 1: https://doi.org/10.23668/psycharchives.2461"
+      },
+      "sections": {
+        "Kurzabstract": "The TSI-GER measures individual preferences in the construction of knowledge and in dealing with tasks. Based on the style model \"Theory of Mental Self-Government\" according to Sternberg (1997), the TSI-GER-13 comprises 61 items that assess the 13 thinking styles (executive, legislative, judicial, hierarchic, monarchic, oligarchic, anarchic, internal, external, global, local, liberal and conservative). The TSI-GER-4 is based on the style model according to Berding et al. (2018), which distinguishes four style types (intrapreneur style, traditionalist style, conformist style and team player style), and comprises 46 items. Reliability: Depending on the study and the scale, reliability varies between Cronbach's alpha = .59 and alpha = .90 for the TSI-GER-13 and between alpha = .66 and alpha = .95 for the TSI-GER-4, respectively. Validity: The factor structure of both versions could in principle be confirmed in several studies by means of confirmatory factor analyses. The Fornell-Larcker criterion as well as Wald tests demonstrate the discriminant validity of the scales for the TSI-GER-13. For both versions, evidence of associations with grades is available.",
+        "Diagnostische Zielsetzung": "The Thinking Styles Inventory for German Speaking Samples (TSI-GER; Berding, Masemann, Rebmann & Pächter, 2016) is a standardised questionnaire for assessing individual preferences in the construction of knowledge and in dealing with tasks.",
+        "Aufbau": "The questionnaire TSI-GER-13, based on the style model according to Sternberg (1997), comprises 61 empirically tested items that assess the 13 thinking styles (executive, legislative, judicial, hierarchic, monarchic, oligarchic, anarchic, internal, external, global, local, liberal and conservative). The questionnaire TSI-GER-4, based on the style model according to Berding et al. (2018), comprises 46 empirically tested items that make it possible to assess the four style types (intrapreneur style, traditionalist style, conformist style and team player style).",
+        "Grundlagen und Konstruktion": "The questionnaire TSI-GER-13 is based on classical test theory and builds in terms of content on the \"Theory of Mental Self-Government\" according to Sternberg (1997) as well as on assessment instruments based on it. A further development of these foundations into a new style model is available with the TSI-GER-4 according to Berding et al. (2018).",
+        "Empirische Prüfung und Gütekriterien": "Reliability: Depending on the study and the scale, reliability varies between Cronbach's alpha = .59 and alpha = .90 for the TSI-GER-13 and between alpha = .66 and alpha = .95 for the TSI-GER-4, respectively.\nValidity: The factor structure of both versions could in principle be confirmed in several studies by means of confirmatory factor analyses. The Fornell-Larcker criterion as well as Wald tests demonstrate the discriminant validity of the scales for the TSI-GER-13. For both versions, evidence of minor associations with grades is available.\nNorms: No norms are available. Means and standard deviations are available as reference values for both TSI-GER versions (see under \"Norming\").",
+        "Testkonzept/Theoretischer Hintergrund": "The Thinking Styles Inventory for German Speaking Samples (TSI-GER; Berding, Masemann, Rebmann & Pächter, 2016) is a standardised questionnaire for assessing the learning and thinking styles of academic as well as vocational learners, based on the style conception of the \"Thinking Styles\" according to Sternberg (1997) as well as on the concept of style according to Masemann (2015). Learning and thinking styles according to this style conception describe the preferred ways of organising one's own thought processes. They are regarded as changeable in socialisation processes, teachable and measurable, and as situation-specifically effective (Sternberg, 1997, p. 79 ff.; Zhang, 2013, p. 43 f.).\nA large number of empirical studies demonstrate an association of the styles with various personality-psychological constructs. For example, associations with personality traits, emotional intelligence, anxiety, achievement motivation, intrinsic motivation, self-esteem, creativity or also perseverance have been empirically demonstrated (e.g. Domenech-Betoret & Gomez-Artiga, 2014; Fan & Zhang, 2009; Murphy & Janeke, 2009; Zhang, 2002a, 2006, 2009; Zhang & Postiglione, 2001; Zhang & Wong, 2011; Zhu & Zhang, 2011). In addition, numerous studies demonstrate associations between the styles and academic performance (e.g. Bernardo, Zhang & Callueng, 2002; Cano-Garcia & Hewitt Hughes, 2000; Grigorenko & Sternberg, 1997; Richmond & Conrad, 2012; Zhang, 2000, 2001a, 2001b, 2002b, 2004, 2007; Zhang & Sternberg, 2000).\nThe TSI-GER is an assessment instrument based on the \"Thinking Styles Inventories\" (TSI) already existing for the English-speaking area, which are currently available in the second revised version (Sternberg & Wagner, 1992; Sternberg, Wagner & Zhang, 2007). The questionnaire offers the assessment of the styles both along the dimensioning according to Sternberg (1997) and according to Berding, Irmscher, Vossmann and Gores (2018).\nThe TSI-GER-13, based on the dimensioning of the styles according to Sternberg (1997), offers a style concept with a total of 13 thinking styles, which can be characterised as follows:\n(1) Executive style: Individuals with a high preference for this style prefer norms, fixed rules, clear work instructions and given structures when working on tasks.\n(2) Legislative style: A high preference for this style is characterised by preferences for a high degree of freedom and creative, innovative solution strategies when working on tasks.\n(3) Judicial style: High levels of this style go along with preferences for making evaluations of one's own as well as others' views, solutions and rules.\n(4) Hierarchic style: Preferences for self-set goal hierarchies when working on multiple tasks as well as working along an individually attributed relevance of a task characterise this style.\n(5) Monarchic style: Individuals with a high level of this style like to work on tasks single-mindedly one after the other and turn to the next task only when the previous one has been solved completely.\n(6) Oligarchic style: Individuals who prefer this style like to work on tasks according to an externally directed prioritisation and prefer to orient themselves to the views of friends, colleagues, etc.\n(7) Anarchic style: A high preference for this style is characterised by a preference for working on tasks according to the random principle.\n(8) Global style: Individuals with a high level of this style like to focus on \"the big picture\" when working on tasks and prefer to concentrate on the overall picture of a task rather than on details.\n(9) Local style: This style is formed by preferences for detailed, pragmatic and concrete tasks. Individuals who show a high level of this style like to focus on the details when working on tasks.\n(10) Internal style: Individuals who show this style prefer working on tasks independently and autonomously.\n(11) External style: This style is characterised by preferences for working on tasks cooperatively.\n(12) Liberal style: Individuals with a preference for this style like to work on tasks that are novel and ambiguous.\n(13) Conservative style: This style is characterised by preferences for traditional and established approaches to tasks.\nOwing to weaknesses both in the theoretical modelling and in the empirical verifiability of this style model, Berding et al. (2018) propose a model that has proved to be both theoretically meaningful and empirically viable across several samples as well as in different studies (Irmscher, 2019). According to this model, the questionnaire TSI-GER-4 assesses four style types or dimensions, which can be described as follows.\n(1) Intrapreneur style: Individuals with a high level on this dimension prefer novel approaches to tasks, trust in their own thoughts and ideas, and a concentration on details.\n(2) Traditionalist style: A high level on this dimension includes preferences for clear structures, norms and sequences, unambiguous problems and well-tried approaches.\n(3) Conformist style: This dimension is characterised by an orientation to the views and assessments of others or to one's own uncertainty in assessing the priority of a task.\n(4) Team player style: Preferences on this dimension aim at working on tasks and problems in teams.",
+        "Testkonzept/Testaufbau": "The TSI-GER is available in two versions, which are based on different modellings of styles. The TSI-GER-13, which maps the style model according to Sternberg (1997) with 13 scales for assessing thinking styles, comprises a total of 61 items in its validated version. For assessing the style model according to Berding et al. (2018), 46 items are sufficient, which make it possible to assess the four style types in the TSI-GER-4 along four scales.\nIn each case, the questionnaire is structured so that first a short instruction in the survey procedure is given to the participants. Afterwards, the respective statements or items to be worked on are presented to the participants. In answering the items or statements, the participants rate their agreement on a scale from \"1 = Gar nicht\" to \"7 = Bestens\".",
+        "Testkonzept/Auswertungsmodus": "The scoring of the participants' answers is designed so that high values on a scale correspond to a high level of the underlying style (see \"Theoretical background\"). Inversion or recoding of items is not necessary.\nFor scoring the individual scales, the answers to all items belonging to the respective scale are averaged. To this end, the ticked values of the items of a scale are summed up and divided by the number of items of this scale. The values of the scales can vary overall between 1 and 7, so that values smaller than 4 indicate (rather) low and values greater than 4 (rather) high preferences for the respective style.\nAssignment of the items to the scales in the TSI-GER-13 (61-item solution):\n(1) Legislative style: 3, 15, 30, 42,\n(2) Executive style: 2, 14, 20, 45,\n(3) Judicial style: 6, 9, 23, 35,\n(4) Hierarchic style: 11, 16, 34, 43, 46, 48,\n(5) Monarchic style: 24, 33, 38,\n(6) Oligarchic style: 31, 37, 52, 56, 58,\n(7) Anarchic style: 7, 21, 28, 53, 59, 60,\n(8) Global style: 5, 19, 29,\n(9) Local style: 10, 25, 54, 61,\n(10) Internal style: 1, 4, 39, 44, 49,\n(11) External style: 17, 22, 27, 51,\n(12) Liberal style: 26, 32, 36, 40, 41, 50, 55, 57,\n(13) Conservative style: 8, 12, 13, 18, 47.\nAssignment of the items to the scales in the TSI-GER-4 (46-item solution):\n(1) Intrapreneur style: 2, 3, 4, 5, 6, 7, 11, 18, 19, 21, 23, 25, 26, 28, 29, 30, 31, 32, 33, 35, 36, 39, 40, 42, 45, 46,\n(2) Traditionalist style: 1, 8, 9, 10, 12, 14, 15, 17, 24, 34,\n(3) Conformist style: 22, 27, 38, 41, 43, 44,\n(4) Team player style: 13, 16, 20, 37.",
+        "Testkonzept/Auswertungshilfen": "No templates, scoring programs or interpretation aids such as norms, confidence limits or critical differences are available. Templates can, however, easily be made oneself. In addition, the seven-point response scale allows a comprehensible classification into low, medium and high preferences.",
+        "Testkonzept/Auswertungszeit": "If the questionnaire is scored by hand, approx. 10 to 15 minutes per case should be expected. It is recommended to score the data with software support.",
+        "Durchführung/Testformen": "Both questionnaires (TSI-GER-13 and TSI-GER-4) can be administered in paper-pencil form as group or individual testing.",
+        "Durchführung/Altersbereiche": "The questionnaires can be used with learners from an age of approx. 15 years.",
+        "Durchführung/Durchführungszeit": "The time for completing the questionnaire is approx. 10 to 15 minutes. The test participants are given no time limit for working on it.",
+        "Durchführung/Material": "The questionnaire is presented as a paper-pencil test. Beyond this, only a pen is needed to answer the questions.",
+        "Durchführung/Instruktion": "The instructions are standardised and printed on the questionnaire. They do not have to be read aloud.",
+        "Durchführung/Durchführungsvoraussetzungen": "No special qualifications are required to administer the instrument.",
+        "Testkonstruktion": "The TSI-GER was developed according to the principles of rational test construction on the basis of the style construction according to Sternberg (1997), the versions of the \"Thinking Styles Inventories\" based on it, and the model of Berding et al. (2018). The first draft of the questionnaire comprised a total of 111 statements or items. To examine and further optimise the draft, a total of three studies were carried out (cf. Berding et al., 2018; Irmscher, 2019).\nThe first study by Berding, Masemann, Rebmann and Paechter (2015) served to identify items with the most advantageous possible psychometric properties from the pool of the total of 111 derived statements. For this purpose, the first draft was presented for completion to a group of industrial-technical as well as commercial-administrative apprentices (n = 287). The 111 items came from existing TSI versions that were translated from English into German and back-translated for control purposes. In the course of a confirmatory factor analysis, items with low item reliability were successively removed, so that at the end of the first study a 60-item solution remained, which, however, could represent the underlying measurement model only with limitations. For this reason, in a further study the questionnaire was supplemented with 24 newly formulated items and presented to a group of bachelor's and master's students in Germany and Austria (n = 389; Berding et al., 2016). In a confirmatory factor analysis with 61 items of the TSI-GER-13, satisfactory values with regard to reliability and validity were obtained.\nOverall, however, critical aspects emerge in the use of the TSI versions that are based on the measurement model according to Sternberg (1997) (for more detail see Berding et al., 2016). For this reason, Berding et al. (2018), by means of exploratory factor analysis in a group of apprentices in retail (n = 295), determined the factor structure underlying the questionnaire, which could be replicated by confirmatory factor analysis in a second group of apprentices in wholesale and foreign trade (n = 236). The result of this examination and optimisation is the model of the four style types according to Berding et al. (2018) with a 46-item solution of the questionnaire TSI-GER-4. The study by Irmscher (2019) was also able to confirm this factor structure.",
+        "Gütekriterien/Objektivität": "Owing to the standardised instruction, its prescribed scoring rule and the natural scale mean of 4 as an interpretation aid, the questionnaire TSI-GER can be classified as objective with regard to its administration, scoring and interpretation for both versions.",
+        "Gütekriterien/Reliabilität": "Reliability coefficients of the TSI-GER are reported in Tables 1 to 4. Reliability measured with Cronbach's alpha does not consistently meet, for all scales, the threshold of at least alpha = .70 proposed by Adams and Lawrence (2015) in the studies based on the TSI-GER-13; the studies carried out on the basis of the TSI-GER-4 show satisfactory values for almost all scales. Factor reliability (FR) should take values of at least FR = .60 and the average variance extracted (AVE) values of at least AVE = .50 (Bagozzi & Yi, 1988; Weiber & Mühlhaus, 2014). These values were not reported for the TSI-GER-4. While in the studies based on the TSI-GER-13 the threshold for factor reliability is met consistently with one exception, only isolated scales in individual studies show an average variance extracted that meets the threshold. Overall, the TSI-GER shows a high reliability for the area of learning and thinking styles.\nTable 1\nInformation on internal consistency (Cronbach's alpha), factor reliability (FR) and average variance extracted (AVE) of the first optimised draft (TSI-GER-13) in study 1 with n = 287 apprentices (Berding, Masemann, Rebmann & Paechter, 2015)\nScale | Alpha | FR | AVE\nLegislative style | .70 | .71 | .38\nExecutive style | .70 | .71 | .39\nJudicial style | .70 | .70 | .37\nMonarchic style | .70 | .71 | .46\nHierarchic style | .70 | .71 | .29\nOligarchic style | .78 | .78 | .41\nAnarchic style | .65 | .65 | .24\nGlobal style | .57 | .59 | .32\nLocal style | .63 | .64 | .37\nInternal style | .67 | .67 | .29\nExternal style | .71 | .74 | .42\nLiberal style | .89 | .89 | .50\nConservative style | .81 | .80 | .45\nTable 2\nInformation on internal consistency (Cronbach's alpha), factor reliability (FR) and average variance extracted (AVE) of the final version (TSI-GER-13) in study 2 with n = 389 students (Berding, Masemann, Rebmann & Pächter, 2016)\nScale | Alpha | FR | AVE\nLegislative style | .74 | .74 | .42\nExecutive style | .79 | .79 | .50\nJudicial style | .70 | .70 | .38\nMonarchic style | .69 | .72 | .48\nHierarchic style | .72 | .72 | .31\nOligarchic style | .80 | .81 | .47\nAnarchic style | .59 | .61 | .21\nGlobal style | .64 | .65 | .37\nLocal style | .80 | .81 | .51\nInternal style | .73 | .73 | .35\nExternal style | .85 | .86 | .60\nLiberal style | .90 | .90 | .53\nConservative style | .82 | .82 | .48\nTable 3\nInformation on internal consistency (Cronbach's alpha) of the final version in study 3 with n = 295 apprentices in the area (1) \"retail\" and with n = 236 apprentices in the area (2) \"wholesale and foreign trade\" for the TSI-GER-4 (Berding, Irmscher, Vossmann & Gores, 2018)\nScale | Alpha (1) | Alpha (2)\nIntrapreneur style | .95 | .89\nTraditionalist style | .85 | .76\nConformist style | .81 | .66\nTeam player style | .75 | .74\nTable 4\nInformation on internal consistency (Cronbach's alpha) of the final version in study 4 with n = 266 students of vocational and business education and of psychology for the TSI-GER-4 (Irmscher, 2019)\nScale | Alpha\nIntrapreneur style | .92\nTraditionalist style | .86\nConformist style | .77\nTeam player style | .88",
+        "Gütekriterien/Validität": "Structure of the questionnaire\nThe structure of the TSI-GER-4 was confirmed in various substudies. The confirmatory factor analyses used achieved the following results:\nStudy by Berding et al. (2018): n = 236 apprentices in wholesale and foreign trade; chi-square (1319) = 2398.163, p < .01; RMSEA = .059; RMSEA-CI90: [.055; .063]; SRMR = .077; CFI = .656.\nStudy by Irmscher (2019): n = 266 students of vocational and business education or psychology; chi-square (983) = 2474.831, p < .01; RMSEA = .079; RMSEA-CI90 = [.075; .083]; SRMR = .106; CFI = .717.\nWith regard to the TSI-GER-13, although global model fit was achieved in the studies on test construction, validity remained critical, in particular because the discriminatory power between the various style scales was not consistently given; numerous high to very high inter-scale correlations were present.\nDiscriminant validity\nTable 5.1\nCorrelations, average variance extracted and squared correlations of the final version of the TSI-GER-13 in study 2 with n = 389 students (Berding, Masemann, Rebmann & Paechter, 2016)\nLeg | Exe | Jud | Glo | Lok | Lib\nLeg | .42 | .04 | .35 | .11 | .09 | .46\nExe | -.20** | .50 | .02 | .03 | .00 | .28\nJud | .60** | -.12 | .38 | .11 | .13 | .43\nGlo | .32** | .18** | .33** | .37 | .33 | .02\nLok | .30** | -.02 | .36** | -.57** | .51 | .12\nLib | .68** | -.53** | .66** | .13 | .35** | .53\nKon | -.26** | .95** | -.31** | .13 | -.06 | -.66**\nHie | .22** | .55** | .25** | .27** | .06 | -.01\nMon | .18** | .51** | .16* | .23** | .06 | -.05\nOli | -.13* | .04 | -.01 | .10 | .01 | .08\nAna | .35** | -.03 | .39** | -.04 | .55** | .50**\nInt | .84** | .60 | .27** | .19** | .37** | .36**\nExt | .10 | .08 | .43** | .14* | .02 | .27**\nNotes. Leg = Legislative style, Exe = Executive style, Jud = Judicial style, Glo = Global style, Lok = Local style, Lib = Liberal style, Kon = Conservative style, Hie = Hierarchic style, Mon = Monarchic style, Oli = Oligarchic style, Ana = Anarchic style, Int = Internal style, Ext = External style; * p <. 05; ** p < .01. Diagonal: average variance extracted, below the diagonal: correlations, above the diagonal: squared correlations.\nTable 5.2\nCorrelations, average variance extracted and squared correlations of the final version of the TSI-GER-13 in study 2 with n = 389 students (Berding, Masemann, Rebmann & Paechter, 2016)\nKon | Hie | Mon | Oli | Ana | Int | Ext\nLeg | .07 | .05 | .03 | .02 | .12 | .70 | .01\nExe | .90 | .31 | .26 | .00 | .00 | .00 | .01\nJud | .09 | .06 | .03 | .00 | .15 | .07 | .18\nGlo | .02 | .07 | .05 | .01 | .00 | .04 | .02\nLok | .00 | .00 | .00 | .00 | .30 | .14 | .00\nLib | .44 | .00 | .00 | .01 | .25 | .13 | .07\nKon | .48 | .19 | .18 | .01 | .01 | .00 | .00\nHie | .44** | .31 | .55 | .02 | .02 | .07 | .04\nMon | .43** | .74** | .48 | .03 | .02 | .06 | .03\nOli | .10 | -.14* | -.17** | .47 | .13 | .02 | .03\nAna | -.07 | -.12 | -.13 | .37** | .21 | .13 | .03\nInt | .05 | .26** | .25** | -.13* | .36** | .35 | .11\nExt | .02 | .21** | .18** | .16** | .17* | -.33** | .60\nNotes. Leg = Legislative style, Exe = Executive style, Jud = Judicial style, Glo = Global style, Lok = Local style, Lib = Liberal style, Kon = Conservative style, Hie = Hierarchic style, Mon = Monarchic style, Oli = Oligarchic style, Ana = Anarchic style, Int = Internal style, Ext = External style; * p <. 05; ** p < .01. Diagonal: average variance extracted, below the diagonal: correlations, above the diagonal: squared correlations.\nTables 5.1 and 5.2 report, for the TSI-GER-13, evidence of discriminant validity with the help of the Fornell-Larcker criterion. It requires that the squared correlation between two constructs be smaller than the average variance extracted of the constructs (Fornell & Larcker, 1981). This is the case for most scale pairs. For the few cases in which the Fornell-Larcker criterion is not met, Wald tests demonstrate that the scale pairs do not correlate perfectly with each other (cf. Berding et al., 2016). Although these statistical indices point to the presence of discriminant validity, in part very high correlations can be found, e.g. between the internal and the legislative style of r = .84, so that the discriminatory power between some scales is questionable.\nFor the TSI-GER-4, no data are available on this as yet.\nAssociations with data on learning processes and learning outcomes\nIn the study by Berding et al. (2016), the learning and thinking styles measured with the TSI-GER-13 explain, on the basis of a multiple linear regression analysis, the variance of grades in different subjects only to a limited extent in part. The 13 styles explain 2.2% of the variance in grades in German, 4.7% of the variance in mathematics, but 11.7% of the variance in business subjects. Learners who prefer independent ways of working accordingly achieve poorer grades in German. Learners who prefer independent and creative approaches to tasks achieve better grades in mathematics. In business subjects, learners who prefer unusual procedures that allow a self-set goal hierarchy achieve better grades.\nIn the study by Berding et al. (2018), the learning and thinking styles measured with the TSI-GER-4 explain, on the basis of a multiple hierarchical regression analysis after controlling for sex, level of education (e.g. intermediate school-leaving certificate, Abitur) and epistemic beliefs, approx. 7% of the variance in grades for accounting. The results show that learners achieve better grades in accounting the more they try out new solution paths and rely on their own views and ideas. Their grades become worse the more they orient themselves to others' opinions and views.\nThe study by Irmscher (2019) also reports for the four-style-type model that none of the four types significantly influences effects between personality traits and cognitive abilities, so that one can speak of an independence of learning and thinking styles as an individual learning prerequisite.",
+        "Gütekriterien/Normierung": "No norms are available so far. Means and standard deviations based on the TSI-GER-4 can be found for apprentices in Berding et al. (2018), and for students in Irmscher (2019; see Table 7). On the basis of the TSI-GER-13, Berding et al. (2015) report means and standard deviations (see Table 6).\nTable 6\nMeans (M) and standard deviations (SD) of the items of the TSI-GER-13 (modified from Berding, Masemann, Rebmann & Paechter, 2015, p. 45, Table 3)\nScale | M | SD\nLegislative style | 4.58-5.03 | 1.27-1.35\nExecutive style | 4.33-5.29 | 1.21-1.53\nJudicial style | 3.92-4.46 | 1.19-1.34\nMonarchic style | 4.48-4.72 | 1.32-1.52\nHierarchic style | 4.03-5.27 | 1.25-1.74\nOligarchic style | 3.65-4.10 | 1.21-1.43\nAnarchic style | 3.86-4.38 | 1.30-1.47\nGlobal style | 4.06-4.30 | 1.11-1.28\nLocal style | 4.22-4.44 | 1.26-1.36\nInternal style | 3.88-5.00 | 1.23-1.55\nExternal style | 4.67-5.18 | 1.24-1.43\nLiberal style | 3.87-4.52 | 1.24-1.43\nConservative style | 4.26-5.51 | 1.17-1.42\nTable 7\nMeans (M) and standard deviations of the four scales of the TSI-GER-4 (Irmscher, 2019, p. 84, Table 2)\nScale | M | SD\nIntrapreneur style | 4.46 | 0.77\nTraditionalist style | 5.27 | 0.83\nConformist style | 3.40 | 0.89\nTeam player style | 5.21 | 1.11",
+        "Anwendungsmöglichkeiten": "The TSI-GER is suitable above all for scientific applications for assessing individual preferences in the construction of knowledge and in dealing with tasks within quantitative research work. Owing to high reliability values, it is also suitable for individual diagnostics. Possible target groups can be employees in companies, apprentices, pupils, students, trainee teachers and teachers.",
+        "Bewertung": "The TSI-GER makes it possible to assess individual learning and thinking styles as preferences in dealing with tasks and in the approach to knowledge construction. It is characterised by satisfactory reliability values and a stable factor structure. Owing to better psychometric properties, the TSI-GER-4 according to Berding et al. (2018) in the 46-item solution is recommended for use in empirical studies.\nOwing to its properties, the questionnaire is suitable both for individual diagnostics and for large-scale research work. Prior knowledge of the target group to be examined is not required; therefore its use is also particularly suitable for short evaluations to diagnose individual preferences in working on tasks. The creation of individual style profiles is possible in the course of scoring.",
+        "Orginalfassung/Anderssprachlige Fassungen": "Sternberg, R. J. & Wagner, R. K. (1992). Thinking Styles Inventory. Unpublished test. New Haven, CT: Yale University.\nSternberg, R. J., Wagner, R. K. & Zhang, L. F. (2003). Thinking Styles Inventory - Revised. Unpublished test. New Haven, CT: Yale University.\nSternberg, R. J., Wagner, R. K. & Zhang, L. F. (2007). Thinking Styles Inventory - Revised II. Unpublished test. Medford, MA: Tufts University.",
+        "Testpaket (Paper-Pencil)/Rückmeldung an die Autor/-innen": "Please inform the authors about the use of the test instrument! The contact details can be found under \"Kontaktinformationen\"! If authors in the Open Test Archive have already died or no contact details (e-mail or postal address) are available for them, the obligation to give feedback does not apply to users."
+      }
+    },
+    "Construct": "Thinking styles",
+    "Description": "The TSI-GER measures individual preferences in the construction of knowledge and in dealing with tasks. Based on the style model \"Theory of Mental Self-Government\" according to Sternberg (1997), the TSI-GER-13 comprises 61 items that assess the 13 thinking styles (executive, legislative, judicial, hierarchic, monarchic, oligarchic, anarchic, internal, external, global, local, liberal and conservative). The TSI-GER-4 is based on the style model according to Berding et al. (2018), which distinguishes four style types (intrapreneur style, traditionalist style, conformist style and team player style), and comprises 46 items. Reliability: Depending on the study and the scale, reliability varies between Cronbach's alpha = .59 and alpha = .90 for the TSI-GER-13 and between alpha = .66 and alpha = .95 for the TSI-GER-4, respectively. Validity: The factor structure of both versions could in principle be confirmed in several studies by means of confirmatory factor analyses. The Fornell-Larcker criterion as well as Wald tests demonstrate the discriminant validity of the scales for the TSI-GER-13. For both versions, evidence of associations with grades is available.",
+    "Reliability": "Reliability coefficients of the TSI-GER are reported in Tables 1 to 4. Reliability measured with Cronbach's alpha does not consistently meet, for all scales, the threshold of at least alpha = .70 proposed by Adams and Lawrence (2015) in the studies based on the TSI-GER-13; the studies carried out on the basis of the TSI-GER-4 show satisfactory values for almost all scales. Factor reliability (FR) should take values of at least FR = .60 and the average variance extracted (AVE) values of at least AVE = .50 (Bagozzi & Yi, 1988; Weiber & Mühlhaus, 2014). These values were not reported for the TSI-GER-4. While in the studies based on the TSI-GER-13 the threshold for factor reliability is met consistently with one exception, only isolated scales in individual studies show an average variance extracted that meets the threshold. Overall, the TSI-GER shows a high reliability for the area of learning and thinking styles.\nTable 1\nInformation on internal consistency (Cronbach's alpha), factor reliability (FR) and average variance extracted (AVE) of the first optimised draft (TSI-GER-13) in study 1 with n = 287 apprentices (Berding, Masemann, Rebmann & Paechter, 2015)\nScale | Alpha | FR | AVE\nLegislative style | .70 | .71 | .38\nExecutive style | .70 | .71 | .39\nJudicial style | .70 | .70 | .37\nMonarchic style | .70 | .71 | .46\nHierarchic style | .70 | .71 | .29\nOligarchic style | .78 | .78 | .41\nAnarchic style | .65 | .65 | .24\nGlobal style | .57 | .59 | .32\nLocal style | .63 | .64 | .37\nInternal style | .67 | .67 | .29\nExternal style | .71 | .74 | .42\nLiberal style | .89 | .89 | .50\nConservative style | .81 | .80 | .45\nTable 2\nInformation on internal consistency (Cronbach's alpha), factor reliability (FR) and average variance extracted (AVE) of the final version (TSI-GER-13) in study 2 with n = 389 students (Berding, Masemann, Rebmann & Pächter, 2016)\nScale | Alpha | FR | AVE\nLegislative style | .74 | .74 | .42\nExecutive style | .79 | .79 | .50\nJudicial style | .70 | .70 | .38\nMonarchic style | .69 | .72 | .48\nHierarchic style | .72 | .72 | .31\nOligarchic style | .80 | .81 | .47\nAnarchic style | .59 | .61 | .21\nGlobal style | .64 | .65 | .37\nLocal style | .80 | .81 | .51\nInternal style | .73 | .73 | .35\nExternal style | .85 | .86 | .60\nLiberal style | .90 | .90 | .53\nConservative style | .82 | .82 | .48\nTable 3\nInformation on internal consistency (Cronbach's alpha) of the final version in study 3 with n = 295 apprentices in the area (1) \"retail\" and with n = 236 apprentices in the area (2) \"wholesale and foreign trade\" for the TSI-GER-4 (Berding, Irmscher, Vossmann & Gores, 2018)\nScale | Alpha (1) | Alpha (2)\nIntrapreneur style | .95 | .89\nTraditionalist style | .85 | .76\nConformist style | .81 | .66\nTeam player style | .75 | .74\nTable 4\nInformation on internal consistency (Cronbach's alpha) of the final version in study 4 with n = 266 students of vocational and business education and of psychology for the TSI-GER-4 (Irmscher, 2019)\nScale | Alpha\nIntrapreneur style | .92\nTraditionalist style | .86\nConformist style | .77\nTeam player style | .88",
+    "Validity": "Structure of the questionnaire\nThe structure of the TSI-GER-4 was confirmed in various substudies. The confirmatory factor analyses used achieved the following results:\nStudy by Berding et al. (2018): n = 236 apprentices in wholesale and foreign trade; chi-square (1319) = 2398.163, p < .01; RMSEA = .059; RMSEA-CI90: [.055; .063]; SRMR = .077; CFI = .656.\nStudy by Irmscher (2019): n = 266 students of vocational and business education or psychology; chi-square (983) = 2474.831, p < .01; RMSEA = .079; RMSEA-CI90 = [.075; .083]; SRMR = .106; CFI = .717.\nWith regard to the TSI-GER-13, although global model fit was achieved in the studies on test construction, validity remained critical, in particular because the discriminatory power between the various style scales was not consistently given; numerous high to very high inter-scale correlations were present.\nDiscriminant validity\nTable 5.1\nCorrelations, average variance extracted and squared correlations of the final version of the TSI-GER-13 in study 2 with n = 389 students (Berding, Masemann, Rebmann & Paechter, 2016)\nLeg | Exe | Jud | Glo | Lok | Lib\nLeg | .42 | .04 | .35 | .11 | .09 | .46\nExe | -.20** | .50 | .02 | .03 | .00 | .28\nJud | .60** | -.12 | .38 | .11 | .13 | .43\nGlo | .32** | .18** | .33** | .37 | .33 | .02\nLok | .30** | -.02 | .36** | -.57** | .51 | .12\nLib | .68** | -.53** | .66** | .13 | .35** | .53\nKon | -.26** | .95** | -.31** | .13 | -.06 | -.66**\nHie | .22** | .55** | .25** | .27** | .06 | -.01\nMon | .18** | .51** | .16* | .23** | .06 | -.05\nOli | -.13* | .04 | -.01 | .10 | .01 | .08\nAna | .35** | -.03 | .39** | -.04 | .55** | .50**\nInt | .84** | .60 | .27** | .19** | .37** | .36**\nExt | .10 | .08 | .43** | .14* | .02 | .27**\nNotes. Leg = Legislative style, Exe = Executive style, Jud = Judicial style, Glo = Global style, Lok = Local style, Lib = Liberal style, Kon = Conservative style, Hie = Hierarchic style, Mon = Monarchic style, Oli = Oligarchic style, Ana = Anarchic style, Int = Internal style, Ext = External style; * p <. 05; ** p < .01. Diagonal: average variance extracted, below the diagonal: correlations, above the diagonal: squared correlations.\nTable 5.2\nCorrelations, average variance extracted and squared correlations of the final version of the TSI-GER-13 in study 2 with n = 389 students (Berding, Masemann, Rebmann & Paechter, 2016)\nKon | Hie | Mon | Oli | Ana | Int | Ext\nLeg | .07 | .05 | .03 | .02 | .12 | .70 | .01\nExe | .90 | .31 | .26 | .00 | .00 | .00 | .01\nJud | .09 | .06 | .03 | .00 | .15 | .07 | .18\nGlo | .02 | .07 | .05 | .01 | .00 | .04 | .02\nLok | .00 | .00 | .00 | .00 | .30 | .14 | .00\nLib | .44 | .00 | .00 | .01 | .25 | .13 | .07\nKon | .48 | .19 | .18 | .01 | .01 | .00 | .00\nHie | .44** | .31 | .55 | .02 | .02 | .07 | .04\nMon | .43** | .74** | .48 | .03 | .02 | .06 | .03\nOli | .10 | -.14* | -.17** | .47 | .13 | .02 | .03\nAna | -.07 | -.12 | -.13 | .37** | .21 | .13 | .03\nInt | .05 | .26** | .25** | -.13* | .36** | .35 | .11\nExt | .02 | .21** | .18** | .16** | .17* | -.33** | .60\nNotes. Leg = Legislative style, Exe = Executive style, Jud = Judicial style, Glo = Global style, Lok = Local style, Lib = Liberal style, Kon = Conservative style, Hie = Hierarchic style, Mon = Monarchic style, Oli = Oligarchic style, Ana = Anarchic style, Int = Internal style, Ext = External style; * p <. 05; ** p < .01. Diagonal: average variance extracted, below the diagonal: correlations, above the diagonal: squared correlations.\nTables 5.1 and 5.2 report, for the TSI-GER-13, evidence of discriminant validity with the help of the Fornell-Larcker criterion. It requires that the squared correlation between two constructs be smaller than the average variance extracted of the constructs (Fornell & Larcker, 1981). This is the case for most scale pairs. For the few cases in which the Fornell-Larcker criterion is not met, Wald tests demonstrate that the scale pairs do not correlate perfectly with each other (cf. Berding et al., 2016). Although these statistical indices point to the presence of discriminant validity, in part very high correlations can be found, e.g. between the internal and the legislative style of r = .84, so that the discriminatory power between some scales is questionable.\nFor the TSI-GER-4, no data are available on this as yet.\nAssociations with data on learning processes and learning outcomes\nIn the study by Berding et al. (2016), the learning and thinking styles measured with the TSI-GER-13 explain, on the basis of a multiple linear regression analysis, the variance of grades in different subjects only to a limited extent in part. The 13 styles explain 2.2% of the variance in grades in German, 4.7% of the variance in mathematics, but 11.7% of the variance in business subjects. Learners who prefer independent ways of working accordingly achieve poorer grades in German. Learners who prefer independent and creative approaches to tasks achieve better grades in mathematics. In business subjects, learners who prefer unusual procedures that allow a self-set goal hierarchy achieve better grades.\nIn the study by Berding et al. (2018), the learning and thinking styles measured with the TSI-GER-4 explain, on the basis of a multiple hierarchical regression analysis after controlling for sex, level of education (e.g. intermediate school-leaving certificate, Abitur) and epistemic beliefs, approx. 7% of the variance in grades for accounting. The results show that learners achieve better grades in accounting the more they try out new solution paths and rely on their own views and ideas. Their grades become worse the more they orient themselves to others' opinions and views.\nThe study by Irmscher (2019) also reports for the four-style-type model that none of the four types significantly influences effects between personality traits and cognitive abilities, so that one can speak of an independence of learning and thinking styles as an individual learning prerequisite.",
+    "Norming": "No norms are available so far. Means and standard deviations based on the TSI-GER-4 can be found for apprentices in Berding et al. (2018), and for students in Irmscher (2019; see Table 7). On the basis of the TSI-GER-13, Berding et al. (2015) report means and standard deviations (see Table 6).\nTable 6\nMeans (M) and standard deviations (SD) of the items of the TSI-GER-13 (modified from Berding, Masemann, Rebmann & Paechter, 2015, p. 45, Table 3)\nScale | M | SD\nLegislative style | 4.58-5.03 | 1.27-1.35\nExecutive style | 4.33-5.29 | 1.21-1.53\nJudicial style | 3.92-4.46 | 1.19-1.34\nMonarchic style | 4.48-4.72 | 1.32-1.52\nHierarchic style | 4.03-5.27 | 1.25-1.74\nOligarchic style | 3.65-4.10 | 1.21-1.43\nAnarchic style | 3.86-4.38 | 1.30-1.47\nGlobal style | 4.06-4.30 | 1.11-1.28\nLocal style | 4.22-4.44 | 1.26-1.36\nInternal style | 3.88-5.00 | 1.23-1.55\nExternal style | 4.67-5.18 | 1.24-1.43\nLiberal style | 3.87-4.52 | 1.24-1.43\nConservative style | 4.26-5.51 | 1.17-1.42\nTable 7\nMeans (M) and standard deviations of the four scales of the TSI-GER-4 (Irmscher, 2019, p. 84, Table 2)\nScale | M | SD\nIntrapreneur style | 4.46 | 0.77\nTraditionalist style | 5.27 | 0.83\nConformist style | 3.40 | 0.89\nTeam player style | 5.21 | 1.11",
+    "AdministrationTime": {
+      "min": 10,
+      "max": 15
+    },
+    "ScoringTime": {
+      "min": 10,
+      "max": 15
+    },
+    "AgeRange": "from 15 years",
+    "Instructions": "Im Folgenden werden Ihnen Aussagen vorgestellt, die sich auf präferierte Vorgehensweisen im Umgang mit beruflichen Aufgaben beziehen. Bitte bewerten Sie hier unter Verwendung der folgenden Skala, wie gut diese Aussage Sie beschreibt."
+  },
+  "TSIGER401": {
+    "Description": "Ich mag es, an Dingen zu arbeiten, für die die Vorgehensweise klar vorgegeben ist.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER402": {
+    "Description": "Ich mag Probleme, bei denen ich meine eigenen Lösungswege ausprobieren kann.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER403": {
+    "Description": "Wenn ich eine Entscheidung treffe, verlasse ich mich gerne auf mein eigenes Urteil.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER404": {
+    "Description": "Ich mag Situationen, in denen ich verschiedene Arten, die Dinge anzugehen, vergleichen und bewerten kann.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER405": {
+    "Description": "Ich mag es, gegensätzliche Meinungen oder sich widersprechende Ideen gegeneinander abzuwägen und zu beurteilen.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER406": {
+    "Description": "Ich mag es, an Projekten zu arbeiten, die es mir erlauben, viele detaillierte Fakten einzufügen.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER407": {
+    "Description": "Wenn ich auf Schwierigkeiten stoße, bewerte ich gern die Wichtigkeit jedes einzelnen Umstands und in welcher Reihenfolge ich sie angehen soll.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER408": {
+    "Description": "Ich mag Situationen, die mir wohl bekannt sind.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER409": {
+    "Description": "Ich mag Aufgaben und Probleme, die feste Regeln haben, denen man folgen muss, um sie zu lösen.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER410": {
+    "Description": "Ich mag Projekte, die eine klare Struktur, einen festen Plan und ein Ziel haben.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER411": {
+    "Description": "Wenn ich an einer Aufgabe arbeite, nehme ich als Ausgangspunkt am liebsten meine eigenen Ideen.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER412": {
+    "Description": "Wenn viel zu tun ist, habe ich gerne eine klare Vorstellung davon, in welcher Reihenfolge die Dinge erledigt werden sollen.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER413": {
+    "Description": "Ich nehme gerne an Aktivitäten teil, bei denen ich mit anderen als Mitglied eines Teams interagieren kann.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER414": {
+    "Description": "Wenn ich einem Problem gegenüberstehe, dann mag ich es, dieses auf herkömmliche Art und Weise zu lösen.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER415": {
+    "Description": "Ich folge gerne eindeutigen Regeln und Anweisungen, wenn ich ein Problem löse oder eine Aufgabe erledige.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER416": {
+    "Description": "Wenn ich an einem Projekt arbeite, mag ich es, mit anderen Ideen auszutauschen und Input von anderen zu bekommen.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER417": {
+    "Description": "Ich neige dazu, Aufgaben zu erledigen, indem ich jeweils einer Aufgabe nach der anderen meine volle Aufmerksamkeit gebe.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER418": {
+    "Description": "Ich mag Probleme, bei denen ich auf Details achten muss.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER419": {
+    "Description": "Ich mag es, alte Ideen oder Vorgehensweisen zu hinterfragen und nach besseren zu suchen.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER420": {
+    "Description": "Ich mag Situationen, in denen ich mit anderen interagieren kann.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER421": {
+    "Description": "Ich mag Situationen, in denen ich meine eigenen Ideen und Vorgehensweisen, Dinge zu tun, anwenden kann.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER422": {
+    "Description": "Wenn es mehrere wichtige Dinge zu tun gibt, wähle ich diejenigen aus, die meinen Freunden und Kollegen am wichtigsten sind.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER423": {
+    "Description": "Wenn ich vor einem Problem stehe, ziehe ich es vor, neue Strategien und Methoden auszuprobieren, um es zu lösen.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER424": {
+    "Description": "Ich mag es, eine Aufgabe nach der anderen zu erledigen und mich jeweils auf die eine Aufgabe zu konzentrieren.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER425": {
+    "Description": "Ich mag Arbeiten, die eine Analyse, eine Bewertung oder einen Vergleich erfordern.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER426": {
+    "Description": "Ich gehe die Dinge gern auf neue Arten an, die noch von keinem zuvor verwendet worden sind.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER427": {
+    "Description": "Wenn ich eine Aufgabe oder ein Projekt beginne, konzentriere ich mich auf die Teile, die für meine Kollegen am wichtigsten sind.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER428": {
+    "Description": "Ich bevorzuge Situationen, bei denen ich meine eigenen Ideen umsetzen kann, ohne auf die Unterstützung anderer angewiesen zu sein.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER429": {
+    "Description": "Ich mag es, Routinen zu ändern, um die Art und Weise zu verbessern, in denen Aufgaben erledigt werden.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER430": {
+    "Description": "Ich mag es, neue Methoden für die Lösung bekannter Probleme zu finden.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER431": {
+    "Description": "Wenn ich Entscheidungen treffe, dann neige ich dazu, mich dabei auf meine eigenen Ideen und Vorgehensweisen zu verlassen.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER432": {
+    "Description": "Wenn ich vor einem Problem stehe, will ich es am liebsten selbst lösen.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER433": {
+    "Description": "Wenn ich Ideen diskutiere oder über sie schreibe, dann hebe ich gerne hervor, wie alles zusammen passt.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER434": {
+    "Description": "Bevor ich mit einem Projekt beginne, weiß ich gerne, was ich zu tun habe und in welcher Reihenfolge.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER435": {
+    "Description": "Wenn ich über Ideen spreche oder schreibe, verwende ich am liebsten nur meine eigenen Ideen.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER436": {
+    "Description": "Ich arbeite gerne an Projekten, die mir die Möglichkeit geben, neue Arten auszuprobieren, die Dinge anzugehen.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER437": {
+    "Description": "Ich mag Projekte, bei denen ich mit anderen zusammenarbeiten kann.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER438": {
+    "Description": "Wenn ich einem Problem gegenüberstehe, stelle ich sicher, dass meine Art, dieses anzugehen, von meinen Kollegen gebilligt wird.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER439": {
+    "Description": "Ich sammle gern detaillierte oder spezifische Informationen zu den Projekten, an denen ich arbeite.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER440": {
+    "Description": "Ich mag Projekte, die mir die Möglichkeit geben, eine Situation aus einer neuen Perspektive zu betrachten.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER441": {
+    "Description": "Wenn ich eine Entscheidung treffe, neige ich dazu, meine Entscheidung nur auf Grundlage von Belangen zu fällen, die für meine Kollegen wichtig sind.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER442": {
+    "Description": "Ich mag Situationen, bei denen ich neue Arten ausprobieren kann, die Dinge anzugehen.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER443": {
+    "Description": "Ich mag es, an verschiedenen Aufgaben zu arbeiten, die meinen Kollegen wichtig sind.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER444": {
+    "Description": "Ein Problem zu lösen, führt in der Regel zu vielen anderen Problemen, die ebenso wichtig sind.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER445": {
+    "Description": "Wenn ich eine Aufgabe beginne, dann berücksichtige ich gerne alle möglichen Vorgehensweisen, selbst die ausgefallensten.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "TSIGER446": {
+    "Description": "Ich mag Aufgaben, die eine detaillierte Bearbeitung erfordern.",
+    "Levels": {
+      "1": "gar nicht",
+      "2": "eher nicht",
+      "3": "wenig",
+      "4": "ziemlich",
+      "5": "gut",
+      "6": "sehr gut",
+      "7": "bestens"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  }
+}

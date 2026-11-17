@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://prism.org/schemas/survey/v2.1.3",
-  "version": "2.1.3",
+  "$id": "https://prism.org/schemas/survey/v2.1.4",
+  "version": "2.1.4",
   "x-prism": {
     "projectOnlyRequired": {
       "Technical": ["Respondent", "AdministrationMethod", "SoftwarePlatform"]
@@ -184,6 +184,28 @@
             "Proprietary",
             "Other"
           ]
+        },
+        "LicenseByLanguage": {
+          "type": "object",
+          "description": "Optional licence data that applies to one language version only, keyed by language code (lowercase, as in Study.LicenseLanguages). An entry overrides the template-level licence fields for that language; languages without an entry keep the template-level values.",
+          "propertyNames": {"pattern": "^[a-z]{2,3}$"},
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "License": {
+                "type": ["string", "object"],
+                "required": ["en"],
+                "properties": {"en": {"type": "string", "minLength": 1}},
+                "description": "License statement for this language version"
+              },
+              "LicenseID": {"$ref": "#/properties/Study/properties/LicenseID"},
+              "LicenseURL": {"type": "string", "format": "uri"},
+              "CopyrightHolder": {"type": "string"},
+              "Source": {"type": "string", "format": "uri"},
+              "LicenseChecked": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"},
+              "LicenseTerms": {"type": "array", "items": {"type": "string", "minLength": 1}}
+            }
+          }
         },
         "Category": {
           "type": "string",

@@ -1,0 +1,1399 @@
+{
+  "Technical": {
+    "StimulusType": "Questionnaire",
+    "FileFormat": "tsv",
+    "Language": "de"
+  },
+  "Metadata": {
+    "SchemaVersion": "2.1.3",
+    "CreationDate": "2026-11-16",
+    "Creator": "PRISM Studio"
+  },
+  "I18n": {
+    "Languages": [
+      "de"
+    ]
+  },
+  "Study": {
+    "TaskName": "bfas-g",
+    "ShortName": "BFAS-G",
+    "OriginalName": "Big Five Aspect Scales - German",
+    "Category": "Personality & Individual Differences",
+    "Authors": [
+      "Mussel, Patrick",
+      "Paelecke, Marko"
+    ],
+    "Year": 2018,
+    "Citation": "Mussel, P. & Paelecke, M. (2018). BFAS-G. Big Five Aspect Scales - German [Verfahrensdokumentation, Fragebogen und SPSS-Syntax]. In Leibniz-Institut für Psychologie (ZPID) (Hrsg.), Open Test Archive. Trier: ZPID. https://doi.org/10.23668/psycharchives.4535",
+    "DOI": "10.23668/psycharchives.4535",
+    "Source": "https://doi.org/10.23668/psycharchives.4535",
+    "License": "\"Copyright Autor(-Innen); CC-BY-SA 4.0\" \"Es wird vom Testarchiv online und kostenlos zur Verfügung gestellt und ist urheberrechtlich geschützt, d. h. das Urheberrecht liegt weiterhin bei den AutorInnen.\" \"Mit der Nutzung des Verfahrens verpflichte ich mich, die Bedingungen der Creative Commons Lizenz CC BY-SA 4.0 zu beachten.\" \"Sie wurden uns durch die Rechteinhaber/-innen zur weiteren Nachnutzung zur Verfügung gestellt. (Open Test Archive, Nutzungsbedingungen, https://www.testarchiv.eu/de/nutzungsbedingungen)\" \"Es wird vom Testarchiv online und kostenlos zur Verfügung gestellt und ist urheberrechtlich geschützt, d. h. das Urheberrecht liegt weiterhin bei dem/den Autor/en.\" \"It is made available online and free of charge by the test archive and is protected by copyright, i.e. the copyright remains with the author(s).\" \"By using this test, I agree to abide by the terms of the Creative Commons License CC BY-SA 4.0.\"",
+    "LicenseID": "CC-BY-SA-4.0",
+    "LicenseURL": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "CopyrightHolder": "Mussel, Patrick; Paelecke, Marko",
+    "LicenseChecked": "2026-11-14",
+    "LicenseLanguages": [
+      "de"
+    ],
+    "LicenseTerms": [
+      "This template is released under CC BY-SA 4.0 (ShareAlike): derived versions must carry the same licence.",
+      "Converted from the PDF questionnaire to JSON; item wording taken over unchanged.",
+      "The authors of this version, as given by the Open Test Archive page, hold the rights in the template version published there. Rights in an original instrument (which the original authors, a journal or a publisher may hold separately) are not covered by this licence statement.",
+      "The authors ask users to send the feedback form after using the test (a request of the Open Test Archive, not a condition added by PRISM): https://www.testarchiv.eu/de/test/9007737",
+      "Reliability, validity and norming data come from the Open Test Archive page and apply to the published version only."
+    ],
+    "References": [
+      {
+        "Type": "primary",
+        "Citation": "Mussel, P. & Paelecke, M. (2018). BFAS-G. Big Five Aspect Scales - German. In Leibniz-Zentrum für Psychologische Information und Dokumentation (ZPID) (Hrsg.), Elektronisches Testarchiv. Trier: ZPID. https://doi.org/10.23668/psycharchives.2341",
+        "DOI": "10.23668/psycharchives.2341",
+        "Year": 2018
+      },
+      {
+        "Type": "other",
+        "Citation": "Block, J. (1995). A contrarian view of the five-factor approach to personality description. Psychological Bulletin, 117 (2), 187.",
+        "Year": 1995
+      },
+      {
+        "Type": "other",
+        "Citation": "Borgatta, E. F. (1964). The structure of personality characteristics. Behavioral Science, 9 (1), 8-17. https://doi.org/10.1002/bs.3830090103",
+        "DOI": "10.1002/bs.3830090103",
+        "Year": 1964
+      },
+      {
+        "Type": "other",
+        "Citation": "Borkenau, P. & Ostendorf, F. (1990). Comparing exploratory and confirmatory factor analysis: A Study on the 5-Factor Model of Personality. Personality and Individual Differences, 11 (5), 515-524.",
+        "Year": 1990
+      },
+      {
+        "Type": "other",
+        "Citation": "Borkenau, P. & Ostendorf, F. (2008). NEO-FFI. NEO-Fünf-Faktoren-Inventar nach Costa und McCrae (2., vollständig überarbeitete Auflage). Göttingen: Hogrefe.",
+        "Year": 2008
+      },
+      {
+        "Type": "other",
+        "Citation": "Costa, P. T. & McCrae, R. R. (1992). Revised NEO Personality Inventory (NEO-PI-R) and NEO Five-Faktor Inventory (NEO-FFI) professional inventory. Odessa, FL: Psychological Assessment Resources.",
+        "Year": 1992
+      },
+      {
+        "Type": "other",
+        "Citation": "DeYoung, C. G. (2011). Intelligence and personality. In R. J. Sternberg & S. B. Kaufman (Eds.), The Cambridge handbook of intelligence (pp. 711-737). New York: Cambridge University Press.",
+        "Year": 2011
+      },
+      {
+        "Type": "other",
+        "Citation": "DeYoung, C. G., Quilty, L. C. & Peterson, J. B. (2007). Between facets and domains: 10 aspects of the Big Five. Journal of Personality and Social Psychology, 93 (5), 880-896. [English items included pp. 887-888] https://doi.org/10.1037/0022-3514.93.5.880",
+        "DOI": "10.1037/0022-3514.93.5.880",
+        "Year": 2007
+      },
+      {
+        "Type": "other",
+        "Citation": "Goldberg, L. R. (1990). An alternative \"description of personality\": The big-five factor structure. Journal of Personality and Social Psychology, 59, 1216-1229.",
+        "Year": 1990
+      },
+      {
+        "Type": "other",
+        "Citation": "Goldberg, L. R. (1999). A broad-bandwidth, public domain, personality inventory measuring the lower-level facets of several five-factor models. In I. Mervielde, I. Deary, F. De Fruyt & F. Ostendorf (Eds.), Personality psychology in Europe (vol. 7, pp. 7-28). Tilburg, The Netherlands: Tilburg University Press.",
+        "Year": 1999
+      },
+      {
+        "Type": "other",
+        "Citation": "Jang, K. L., Livesley, W. J., Angleitner, A., Riemann, R. & Vernon, P. A. (2002). Genetic and environmental influences on the covariance of facets defining the domains of the five-factor model of personality. Personality and Individual Differences, 33 (1), 83-101.",
+        "Year": 2002
+      },
+      {
+        "Type": "other",
+        "Citation": "Lee, K. & Ashton, M. C. (2004). Psychometric properties of the HEXACO Personality Inventory. Multivariate Behavioral Research, 39, 329-358.",
+        "Year": 2004
+      },
+      {
+        "Type": "other",
+        "Citation": "Norman, W. T. (1963). Toward an adequate taxonomy of personality attributes: replicated factor structure in peer nomination personality rating. Journal of Abnormal and Social Psychology, 66 (6), 574-583.",
+        "Year": 1963
+      },
+      {
+        "Type": "other",
+        "Citation": "Ostendorf, F. & Angleitner, A. (2004). NEO-PI-R. NEO Persönlichkeitsinventar nach Costa und McCrae. Revidierte Fassung. Göttingen: Hogrefe.",
+        "Year": 2004
+      },
+      {
+        "Type": "other",
+        "Citation": "Streib, H. & Wiedmaier, M. (2001). IPIP Five Factors (100 Item Version). Bielefeld: Universität Bielefeld, Forschungsstelle Biographische Religionsforschung.",
+        "Year": 2001
+      },
+      {
+        "Type": "other",
+        "Citation": "Tupes, E. C. & Christal, R. E. (1961). Recurrent personality factors based on trait ratings (USAF ASD technical report no. 61-97). Washington, DC: U.S. Government Printing Office.",
+        "Year": 1961
+      },
+      {
+        "Type": "other",
+        "Citation": "DeYoung, C. G., Quilty, L. C. & Peterson, J. B. (2007). Between facets and domains: 10 aspects of the Big Five. Journal of Personality and Social Psychology, 93 (5), 880-896. [English items included pp. 887-888] https://doi.org/10.1037/0022-3514.93.5.880",
+        "DOI": "10.1037/0022-3514.93.5.880",
+        "Year": 2007
+      }
+    ],
+    "Keywords": [
+      "Category: Personality tests / Multidimensional personality (Big Five model)",
+      "Engl. Name: Big Five Aspect Scales - German"
+    ],
+    "Access": "public",
+    "Notes": "Format: Paper-Pencil. Contact data (section Kontaktdaten) and e-mail addresses are not copied (personal data). The English descriptions are machine translations (Claude, Anthropic) of the archive's German text, not verified by the test authors; the German original is on the archive page https://www.testarchiv.eu/de/test/9007737.",
+    "ArchiveMetadata": {
+      "fields": {
+        "Sprachversionen": "German",
+        "Format": "Paper-pencil",
+        "Konstrukt": "Big Five (Goldberg, 1990)",
+        "Itemzahl": "100 items",
+        "Subskalen": "(1) Extraversion, (2) Neuroticism, (3) Agreeableness, (4) Conscientiousness, (5) Intellect/Openness",
+        "Durchführungszeit": "approx. 20 min.",
+        "Auswertungsdauer": "short (automatic scoring)",
+        "Reliabilität": "Internal consistency: Cronbach's alpha = .71-.91.",
+        "Validität": "Findings on convergent validity.",
+        "Normierung": "None. Reference values: means and standard deviations.",
+        "Anwendungsbereich": "Research, in practice as a screening instrument (professional qualification required)",
+        "Altersbereich": "Adults (possibly also adolescents)",
+        "Ältere Versionen": "Version 1: https://doi.org/10.23668/psycharchives.2341"
+      },
+      "sections": {
+        "Kurzabstract": "The BFAS-G is the German translation of the Big Five Aspect Scale developed by DeYoung and colleagues (2007). The adapted BFAS-G is a self-assessment inventory with 100 items for assessing the Big Five as well as ten underlying aspects (aspects in brackets): (1) Extraversion (assertiveness & enthusiasm), (2) Neuroticism (volatility & withdrawal), (3) Agreeableness (compassion & politeness), (4) Conscientiousness (orderliness & industriousness), (5) Intellect/Openness (intellect & openness). Reliability: Cronbach's alpha is .71 to .91. Validity: The convergent validity with the NEO-FFI is between r = .66 and r = .85, on average r = .78. Norms: Reference values (M and SD) were obtained in a sample of N = 662 (81% female; age: M = 23, SD = 5.1; range: 18-69 years; non-representative).",
+        "Diagnostische Zielsetzung": "The BFAS-G is a self-assessment inventory for assessing the Big Five as well as ten underlying aspects and can be used for research and practice.",
+        "Aufbau": "The BFAS-G comprises 100 items with an administration time of approximately 20 minutes. The following factors and aspects are assessed (aspects in brackets): (1) Extraversion (assertiveness and enthusiasm), (2) Neuroticism (volatility and withdrawal), (3) Agreeableness (compassion and politeness), (4) Conscientiousness (orderliness and industriousness), (5) Intellect/Openness (intellect and openness). An example item reads: \"Ich lerne schnell neue Leute kennen.\"",
+        "Grundlagen und Konstruktion": "The BFAS-G is the German translation of the Big Five Aspect Scale developed by DeYoung and colleagues (2007). It was examined psychometrically.",
+        "Empirische Prüfung und Gütekriterien": "Reliability: Cronbach's alpha is alpha = .71 to alpha = .91.\nValidity: The convergent validity with the NEO-FFI is between r = .66 and r = .85, on average r = .78.\nNorms: Reference values (means and standard deviations) were obtained in a sample of N = 612 (81% female; age: M = 23, SD = 5.1; range: 18-69 years; non-representative).",
+        "Testkonzept/Theoretischer Hintergrund": "The questionnaire Big Five Aspect Scales - German (BFAS-G) is a self-assessment test for assessing the five factors of personality, the so-called Big Five (Goldberg, 1990), as well as ten hierarchically underlying aspects, two per factor. It consists of 100 items.\nIn a large number of factor-analytic studies in different countries, it has been shown that self- as well as observer assessments of personality can be reduced to five broad factors (e.g. Borgatta, 1964; Borkenau & Ostendorf, 1990; Norman, 1963; Tupes & Christal, 1961). These are the factors extraversion, neuroticism, agreeableness, conscientiousness and openness to experience (Costa & McCrae, 1992).\nThe structure of personality can best be described by hierarchical models. These postulate one or more broad factors at the top of the model, each with several narrower facets at lower levels. The best-known hierarchical personality model is represented by the NEO Persönlichkeitsinventar nach Costa und McCrae - Revidierte Fassung (NEO-PI-R; Ostendorf & Angleitner, 2004; Costa & McCrae, 1992), which postulates six associated facets for each Big Five factor (for an alternative hierarchical model see also Lee & Ashton, 2004).\nDeYoung, Quilty and Peterson (2007) proposed a hierarchical model that postulates two subdimensions, called aspects, for each Big Five factor. These aspects are located at a middle hierarchical level between the five broad factors and the 30 facets of the NEO model. The authors found these aspects in factor-analytic reanalyses of a total of 75 personality facets (15 per Big Five factor) that are assessed in the NEO-PI-R and the AB5C-IPIP (Goldberg, 1999), a freely available questionnaire for assessing the Big Five. The results confirmed that the facets within each factor can be assigned to one of two aspects. This view is in line with the findings of Jang, Livesley, Angleitner, Riemann and Vernon (2002), who found two genetic subfactors within each Big Five factor.\nIn the next step, DeYoung, Quilty and Peterson (2007) developed an instrument for assessing the ten Big Five aspects. To this end, they selected, on an empirical basis, 100 items from the pool of over 2 000 freely available IPIP items (Goldberg, 1999) that capture these aspects as well as possible and in a discriminating way. These items were translated into German for the BFAS-G.",
+        "Testkonzept/Testaufbau": "The BFAS-G consists of 100 items and measures the Big Five with two subscales each. These ten aspects in total are (example items in brackets):\n(1) Extraversion\n(a) Assertiveness (\"Ich übernehme Verantwortung.\")\n(b) Enthusiasm (\"Ich lerne schnell neue Leute kennen.\")\n(2) Neuroticism\n(c) Volatility (\"Ich gerate leicht aus der Fassung.\")\n(d) Withdrawal (\"Ich lasse mich schnell entmutigen.\")\n(3) Agreeableness\n(e) Compassion (\"Ich habe ein Gespür für die Gefühle anderer.\")\n(f) Politeness (\"Ich setze andere nur selten unter Druck.\")\n(4) Conscientiousness\n(g) Orderliness (\"Ich räume meine Sachen stets auf.\")\n(h) Industriousness (\"Ich halte mich an Zeitpläne.\")\n(5) Intellect/Openness\n(i) Intellect (\"Es bereitet mir Freude, komplexe Probleme zu lösen.\")\n(j) Openness (\"Kunst ist sehr wichtig für mich.\")\nEach aspect is assessed with ten items. Accordingly, the Big Five factors are determined via the 20 items of the two associated aspects each. The items are phrased as brief statements. The task of the participant is to indicate to what extent they agree with the respective statement. A seven-point scale is available for this, anchored verbally at three points (from 1 = \"trifft überhaupt nicht zu\" through 4 = \"teils/teils\" to 7 = \"trifft vollständig zu\").",
+        "Testkonzept/Auswertungsmodus": "Negatively keyed items are first reverse-coded (x = 8-i). Subsequently, the items of an aspect or a factor are summed. For the raw test scores, means and standard deviations are given as reference values under \"Norming\".",
+        "Testkonzept/Auswertungshilfen": "Scoring involves recoding negatively keyed items, calculating sum scores and, if applicable, calculating norm values. Everything can take place script-based. An exemplary SPSS script can be found in the Electronic Test Archive.",
+        "Testkonzept/Auswertungszeit": "As a rule, scoring will be done via Excel or a script and will therefore proceed quickly.",
+        "Durchführung/Testformen": "The BFAS-G is the German adaptation of the English original of the same name, the BFAS by DeYoung et al. (2007). Testing can be carried out on paper or online - as an individual or group test.",
+        "Durchführung/Altersbereiche": "The items are suitable for adult persons of any age. Use with adolescents also seems possible, but should be examined first if necessary.",
+        "Durchführung/Durchführungszeit": "There is no time limit for the test. After 20 minutes most people will be finished.",
+        "Durchführung/Material": "The test materials available are the questionnaire with the 100 items as well as a syntax file as a scoring aid.",
+        "Durchführung/Instruktion": "The instruction is standardised. It is on the questionnaire so that it can be read by the participants.",
+        "Durchführung/Durchführungsvoraussetzungen": "No special qualification is required for administration. The test can also be instructed purely in writing (e.g. online).",
+        "Testkonstruktion": "For the original development of the instrument we refer to DeYoung et al. (2007).\nWe translated the items into German separately. For some of the items, translations by Streib and Wiedmaier (2001) were available, which were also consulted. On this basis, the German items were discussed, selected and, if necessary, modified once more.\nThe psychometric examination of the BFAS-G was carried out in a sample of 612 persons (81% female; age: M = 23, SD = 5.1; age range: 18-69 years). This is not a population-representative sample.\nThe item-total correlations at the domain level ranged between rit = .09 and rit = .71 with a median of rit = .47. At the level of the aspects, the item-total correlation coefficients were between rit = .17 and rit = .75 with a median of rit = .55. Reliabilities and scale intercorrelations can be found in the following table (Table 2).\nTable 2\nReliabilities (Cronbach's alpha) and scale intercorrelations (r) of the BFAS-G\nF | CA | 1 | a | b | 2 | c | d | 3 | e | f | 4 | g | h | 5 | i\n1 | .91\na | .90 | .93\nb | .82 | .90 | .69\n2 | .88 | -.38 | -.49 | -.18\nc | .85 | -.32 | -.42 | -.13 | .85\nd | .86 | -.32 | -.40 | -.17 | .84 | .43\n3 | .84 | -.09 | -.11 | -.05 | .35 | .19 | .40\nE | .82 | .09 | .06 | .12 | .19 | .13 | .19 | .85\nf | .81 | -.26 | -.26 | -.22 | .40 | .19 | .49 | .78 | .33\n4 | .82 | .00 | .03 | -.05 | .10 | .31 | -.15 | .06 | .08 | .01\ng | .71 | -.03 | .05 | -.12 | -.23\n.02 | -.41 | -.18 | -.12 | -.18 | .81\nh | .86 | .02 | .00 | .04 | .37 | .47\n.15 | .27 | .25 | .18 | .83 | .34\n5 | .87 | -.28 | -.30 | -.22 | .25\n.16 | .26 | -.08 | -.27 | .18 | .09 | .13 | .02\ni | .79 | .01 | .02 | -.01 | .04 | -.01 | .08 | -.14 | -.22 | .01 | .05 | .14 | -.04 | .85\nj | .85 | -.48 | -.52 | -.36 | .37 | .27 | .36 | .00 | -.24 | .28 | .10 | .09 | .07 | .86 | .47\nNotes. F = factors and aspects of the Big Five, CA = Cronbach's alpha, 1 = Extraversion, a = Assertiveness, b = Enthusiasm, 2 = Neuroticism, c = Volatility, d = Withdrawal, 3 = Agreeableness, e = Compassion, f = Politeness, 4 = Conscientiousness, g = Orderliness, h = Industriousness, 5 = Intellect/Openness, i = Intellect, j = Openness.",
+        "Gütekriterien/Objektivität": "Objectivity of administration and scoring can be assumed to be given.",
+        "Gütekriterien/Reliabilität": "To estimate reliability, the authors calculated Cronbach's alpha for the five domains and the ten aspects, respectively. The values lie between alpha = .71 and alpha = .91 (see Table 2 under \"Test construction\").",
+        "Gütekriterien/Validität": "In a sample (N = 612, see under \"Test construction\"), the authors carried out a concurrent validation with the German version of the NEO-FFI (Borkenau & Ostendorf, 2008). The convergent validities at the domain level lie between r = .66 for agreeableness and r = .85 for neuroticism, on average r = .78. Divergent validities, in contrast, are at r = -.06. The aspects of the BFAS also show high associations with the associated domain in the NEO, on average r = .66. The correlation coefficients can be read from Table 3.\nTable 3\nCorrelation calculations between the BFAS-G and NEO-FFI\nBFAS-G scales | NEO-N | NEO-E | NEO-O | NEO-A | NEO-C\nNeuroticism | .85 | -.42 | .01 | -.21 | -.21\nNeuroticism NW | .89 | -.51 | .01 | -.18 | -.22\nNeuroticism NV | .65 | -.24 | .01 | -.21 | -.16\nExtraversion | -.46 | .74 | .23 | .13 | .23\nExtraversion EE | -.38 | .76 | .14 | .38 | .14\nExtraversion EA | -.41 | .49 | .25 | -.16 | .26\nOpenness | -.09 | .17 | .79 | .04 | -.04\nOpenness OO | .08 | .08 | .76 | .09 | -.21\nOpenness OI | -.26 | .21 | .50 | -.04 | .18\nAgreeableness | .02 | .16 | .01 | .66 | .15\nAgreeableness AP | .03 | -.09 | -.22 | .58 | .16\nAgreeableness AC | -.01 | .34 | .22 | .51 | .09\nConscientiousness | -.29 | .11 | -.26 | .06 | .83\nConscientiousness CO | .02 | -.09 | -.25 | -.01 | .69\nConscientiousness CI | -.50 | .27 | -.19 | .11 | .74\nNotes. NW = Neuroticism-Withdrawal (withdrawal), AC = Agreeableness-Compassion (compassion), CI = Conscientiousness-Industriousness (industriousness), EE = Extraversion-Enthusiasm (enthusiasm), OI = Openness/Intellect-Intellect (intellect), NV = Neuroticism-Volatility (volatility), AP = Agressableness-Politeness (politeness), CO = Conscientiousness-Orderliness (orderliness), EA = Extraversion-Assertiveness (assertiveness), OO = Openness/Intellect-Openness (openness). NEO-FFI (Borkenau & Ostendorf, 2008): NEO-N = Neuroticism, NEO-E = Extraversion, NEO-O = Openness; NEO-A = Agreeableness, NEO-C = Conscientiousness.",
+        "Gütekriterien/Normierung": "Norms were obtained on the basis of a sample of N = 612 persons (see under \"Test construction\") and can be found in the following table (Table 4).\nTable 4\nReference values of the BFAS-G\nBFAS-G scales\nN\nMin\nMax\nM\nSD\nNeuroticism\n612\n1.25\n6.55\n3.86\n0.96\nNeuroticism NW\n612\n1.10\n6.90\n3.95\n1.15\nNeuroticism NV\n612\n1.10\n6.60\n3.78\n0.95\nExtraversion\n612\n1.80\n6.55\n4.75\n0.79\nExtraversion EE\n612\n1.90\n6.90\n4.89\n0.95\nExtraversion EA\n612\n1.70\n6.80\n4.62\n0.92\nOpenness\n612\n2.90\n6.95\n5.06\n0.72\nOpenness OO\n612\n1.20\n7.00\n5.09\n0.96\nOpenness OI\n612\n2.70\n7.00\n5.04\n0.81\nAgreeableness\n612\n2.25\n6.85\n5.42\n0.63\nAgreeableness AP\n612\n2.30\n6.90\n5.02\n0.74\nAgreeableness AC\n612\n2.00\n7.00\n5.81\n0.79\nConscientiousness\n612\n1.80\n6.90\n4.40\n0.79\nConscientiousness CO\n612\n1.40\n7.00\n4.65\n0.91\nConscientiousness CI\n612\n1.60\n6.80\n4.15\n0.94\nNotes. N = sample size; Min = minimum, Max = maximum, M = mean, SD = standard deviation. NW = Neuroticism-Withdrawal (withdrawal), NV = Neuroticism-Volatility (volatility), EE = Extraversion-Enthusiasm (enthusiasm), EA = Extraversion-Assertiveness (assertiveness), OO = Openness/Intellect-Openness (openness), OI = Openness/Intellect-Intellect (intellect), AP = Agressableness-Politeness (politeness), AC = Agreeableness-Compassion (compassion), CO = Conscientiousness-Orderliness (orderliness), CI = Conscientiousness-Industriousness (industriousness).",
+        "Anwendungsmöglichkeiten": "The BFAS-G is a self-assessment inventory for assessing the Big Five as well as ten underlying aspects and can be used freely for all research and application purposes, including commercial use.",
+        "Bewertung": "The English version of the BFAS-G is a frequently used instrument for assessing the Big Five. One reason for this is probably that the instrument can be used free of licence. In addition, the level of the aspects is of interest for a number of research questions in which, on the one hand, the Big Five are too broad and, on the other hand, existing instruments with facets (such as the NEO-PI-R) are too extensive.\nThe selection of the items by DeYoung et al. (2007) had the aim of capturing the aspects in the most discriminating way possible. Therefore, items were excluded that loaded equally highly on the two aspects of a factor; such items would, however, possibly be good indicators of the superordinate factor. This has to be taken into account in interpreting the factors, in particular in comparison with other Big Five measurement instruments.\nWith the designation openness/intellect, the authors proposed a new designation for the fifth Big Five factor, which, for example, Costa and McCrae (1992) called openness to experience, or openness for short. DeYoung et al. (2007) use the same term openness considerably more narrowly, namely for the subordinate aspect that refers to perceptual components such as openness to aesthetics and feelings as well as creativity, and thus exclude the epistemic component (curiosity, enjoyment of thinking, self-assessed intelligence) - a jingle fallacy according to Block (1995).\nThe aspect intellect has a peculiarity, since seven of the ten items refer to self-assessed abilities (e.g. \"Ich habe eine gute Auffassungsgabe.\"). In contrast, for example, the facet openness to ideas of the NEO-PI-R contains exclusively items on cognitive motivation (e.g. \"Ich habe oft Spaß daran, mit Theorien oder abstrakten Ideen zu spielen.\"). To what extent self-assessed intelligence or even psychometric intelligence is part of the Big Five is discussed controversially (DeYoung, 2011).",
+        "Orginalfassung/Anderssprachlige Fassungen": "DeYoung, C. G., Quilty, L. C. & Peterson, J. B. (2007). Between facets and domains: 10 aspects of the Big Five. Journal of Personality and Social Psychology, 93 (5), 880-896. [English items included pp. 887-888] https://doi.org/10.1037/0022-3514.93.5.880",
+        "Testpaket (Paper-Pencil)/Rückmeldung an die Autor/-innen": "Please inform the authors about the use of the test instrument! The contact details can be found under \"Kontaktinformationen\"! If authors in the Open Test Archive have already died or no contact details (e-mail or postal address) are available for them, the obligation to give feedback does not apply to users."
+      }
+    },
+    "Construct": "Big Five (Goldberg, 1990)",
+    "Description": "The BFAS-G is the German translation of the Big Five Aspect Scale developed by DeYoung and colleagues (2007). The adapted BFAS-G is a self-assessment inventory with 100 items for assessing the Big Five as well as ten underlying aspects (aspects in brackets): (1) Extraversion (assertiveness & enthusiasm), (2) Neuroticism (volatility & withdrawal), (3) Agreeableness (compassion & politeness), (4) Conscientiousness (orderliness & industriousness), (5) Intellect/Openness (intellect & openness). Reliability: Cronbach's alpha is .71 to .91. Validity: The convergent validity with the NEO-FFI is between r = .66 and r = .85, on average r = .78. Norms: Reference values (M and SD) were obtained in a sample of N = 662 (81% female; age: M = 23, SD = 5.1; range: 18-69 years; non-representative).",
+    "Reliability": "To estimate reliability, the authors calculated Cronbach's alpha for the five domains and the ten aspects, respectively. The values lie between alpha = .71 and alpha = .91 (see Table 2 under \"Test construction\").",
+    "Validity": "In a sample (N = 612, see under \"Test construction\"), the authors carried out a concurrent validation with the German version of the NEO-FFI (Borkenau & Ostendorf, 2008). The convergent validities at the domain level lie between r = .66 for agreeableness and r = .85 for neuroticism, on average r = .78. Divergent validities, in contrast, are at r = -.06. The aspects of the BFAS also show high associations with the associated domain in the NEO, on average r = .66. The correlation coefficients can be read from Table 3.\nTable 3\nCorrelation calculations between the BFAS-G and NEO-FFI\nBFAS-G scales | NEO-N | NEO-E | NEO-O | NEO-A | NEO-C\nNeuroticism | .85 | -.42 | .01 | -.21 | -.21\nNeuroticism NW | .89 | -.51 | .01 | -.18 | -.22\nNeuroticism NV | .65 | -.24 | .01 | -.21 | -.16\nExtraversion | -.46 | .74 | .23 | .13 | .23\nExtraversion EE | -.38 | .76 | .14 | .38 | .14\nExtraversion EA | -.41 | .49 | .25 | -.16 | .26\nOpenness | -.09 | .17 | .79 | .04 | -.04\nOpenness OO | .08 | .08 | .76 | .09 | -.21\nOpenness OI | -.26 | .21 | .50 | -.04 | .18\nAgreeableness | .02 | .16 | .01 | .66 | .15\nAgreeableness AP | .03 | -.09 | -.22 | .58 | .16\nAgreeableness AC | -.01 | .34 | .22 | .51 | .09\nConscientiousness | -.29 | .11 | -.26 | .06 | .83\nConscientiousness CO | .02 | -.09 | -.25 | -.01 | .69\nConscientiousness CI | -.50 | .27 | -.19 | .11 | .74\nNotes. NW = Neuroticism-Withdrawal (withdrawal), AC = Agreeableness-Compassion (compassion), CI = Conscientiousness-Industriousness (industriousness), EE = Extraversion-Enthusiasm (enthusiasm), OI = Openness/Intellect-Intellect (intellect), NV = Neuroticism-Volatility (volatility), AP = Agressableness-Politeness (politeness), CO = Conscientiousness-Orderliness (orderliness), EA = Extraversion-Assertiveness (assertiveness), OO = Openness/Intellect-Openness (openness). NEO-FFI (Borkenau & Ostendorf, 2008): NEO-N = Neuroticism, NEO-E = Extraversion, NEO-O = Openness; NEO-A = Agreeableness, NEO-C = Conscientiousness.",
+    "Norming": "Norms were obtained on the basis of a sample of N = 612 persons (see under \"Test construction\") and can be found in the following table (Table 4).\nTable 4\nReference values of the BFAS-G\nBFAS-G scales\nN\nMin\nMax\nM\nSD\nNeuroticism\n612\n1.25\n6.55\n3.86\n0.96\nNeuroticism NW\n612\n1.10\n6.90\n3.95\n1.15\nNeuroticism NV\n612\n1.10\n6.60\n3.78\n0.95\nExtraversion\n612\n1.80\n6.55\n4.75\n0.79\nExtraversion EE\n612\n1.90\n6.90\n4.89\n0.95\nExtraversion EA\n612\n1.70\n6.80\n4.62\n0.92\nOpenness\n612\n2.90\n6.95\n5.06\n0.72\nOpenness OO\n612\n1.20\n7.00\n5.09\n0.96\nOpenness OI\n612\n2.70\n7.00\n5.04\n0.81\nAgreeableness\n612\n2.25\n6.85\n5.42\n0.63\nAgreeableness AP\n612\n2.30\n6.90\n5.02\n0.74\nAgreeableness AC\n612\n2.00\n7.00\n5.81\n0.79\nConscientiousness\n612\n1.80\n6.90\n4.40\n0.79\nConscientiousness CO\n612\n1.40\n7.00\n4.65\n0.91\nConscientiousness CI\n612\n1.60\n6.80\n4.15\n0.94\nNotes. N = sample size; Min = minimum, Max = maximum, M = mean, SD = standard deviation. NW = Neuroticism-Withdrawal (withdrawal), NV = Neuroticism-Volatility (volatility), EE = Extraversion-Enthusiasm (enthusiasm), EA = Extraversion-Assertiveness (assertiveness), OO = Openness/Intellect-Openness (openness), OI = Openness/Intellect-Intellect (intellect), AP = Agressableness-Politeness (politeness), AC = Agreeableness-Compassion (compassion), CO = Conscientiousness-Orderliness (orderliness), CI = Conscientiousness-Industriousness (industriousness).",
+    "AdministrationTime": {
+      "min": 20,
+      "max": 20
+    },
+    "ScoringTime": "short (automatic scoring)",
+    "AgeRange": "Adults (possibly also adolescents)",
+    "Instructions": "Im Folgenden findest du eine Reihe von Aussagen zu Einstellungen und Verhaltensweisen. Gib jeweils an, inwieweit die Aussage auf dich zutrifft, indem du die entsprechende Zahl ankreuzt. Dafür steht dir eine siebenstufige Skala zur Verfügung:"
+  },
+  "BFASG001": {
+    "Description": "Ich bin selten deprimiert.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG002": {
+    "Description": "Ich interessiere mich nicht für die Probleme anderer.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG003": {
+    "Description": "Ich führe meine Vorhaben durch.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG004": {
+    "Description": "Es fällt mir leicht, neue Freundschaften zu schließen.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG005": {
+    "Description": "Ich habe eine gute Auffassungsgabe.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG006": {
+    "Description": "Ich werde schnell ärgerlich.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG007": {
+    "Description": "Ich respektiere Autoritäten.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG008": {
+    "Description": "Ich lasse meine Sachen herumliegen.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG009": {
+    "Description": "Ich übernehme Verantwortung.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG010": {
+    "Description": "Es bereitet mir Freude, die Schönheit der Natur zu genießen.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG011": {
+    "Description": "Ich bin häufig beunruhigt.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG012": {
+    "Description": "Ich habe ein Gespür für die Gefühle anderer.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG013": {
+    "Description": "Ich verschwende meine Zeit.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG014": {
+    "Description": "Mich näher kennenzulernen fällt schwer.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG015": {
+    "Description": "Ich habe Schwierigkeiten, abstrakte Ideen zu verstehen.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG016": {
+    "Description": "Ich bin selten irritiert.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG017": {
+    "Description": "Ich fühle mich anderen überlegen.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG018": {
+    "Description": "Ich mag Ordnung.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG019": {
+    "Description": "Ich habe eine starke Persönlichkeit.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG020": {
+    "Description": "Kunst ist sehr wichtig für mich.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG021": {
+    "Description": "Ich bin mit mir zufrieden.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG022": {
+    "Description": "Ich erkundige mich nach dem Wohlbefinden anderer.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG023": {
+    "Description": "Es fällt mir schwer, mich an die Arbeit zu machen.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG024": {
+    "Description": "Ich halte andere auf Distanz.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG025": {
+    "Description": "Ich kann mit einer großen Menge an Informationen umgehen.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG026": {
+    "Description": "Ich gerate leicht aus der Fassung.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG027": {
+    "Description": "Es ist mir unangenehm, aufdringlich zu erscheinen.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG028": {
+    "Description": "Ich räume meine Sachen stets auf.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG029": {
+    "Description": "Ich bin nicht gut darin, andere zu beeinflussen.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG030": {
+    "Description": "Es bereitet mir Freude, über die Dinge nachzudenken.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG031": {
+    "Description": "Ich fühle mich schnell bedroht.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG032": {
+    "Description": "Die Belange anderer Menschen interessieren mich nicht.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG033": {
+    "Description": "Manche Dinge vermassele ich einfach.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG034": {
+    "Description": "Ich gebe wenig über mich preis.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG035": {
+    "Description": "Es bereitet mir Freude, komplexe Probleme zu lösen.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG036": {
+    "Description": "Ich kann meine Gefühle gut kontrollieren.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG037": {
+    "Description": "Ich nutze andere aus.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG038": {
+    "Description": "Ich halte mich an Zeitpläne.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG039": {
+    "Description": "Ich kann andere faszinieren.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG040": {
+    "Description": "Ich gehe manchmal völlig in einer Musik auf, die ich höre.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG041": {
+    "Description": "Es kommt selten vor, dass ich mich niedergeschlagen fühle.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG042": {
+    "Description": "Ich kann die Gefühle anderer nachempfinden.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG043": {
+    "Description": "Was ich beginne, bringe ich auch zu Ende.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG044": {
+    "Description": "Ich lerne schnell neue Leute kennen.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG045": {
+    "Description": "Ich vermeide philosophische Diskussionen.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG046": {
+    "Description": "Meine Stimmung ändert sich häufig.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG047": {
+    "Description": "Ich vermeide es, anderen meinen Willen aufzuzwingen.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG048": {
+    "Description": "Es stört mich nicht, wenn andere Menschen unordentlich sind.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG049": {
+    "Description": "Ich überlasse es anderen, den Weg zu weisen.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG050": {
+    "Description": "Poesie beeindruckt mich wenig oder gar nicht.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG051": {
+    "Description": "Ich mache mir häufig Sorgen.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG052": {
+    "Description": "Ich stehe den Gefühlen anderer gleichgültig gegenüber.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG053": {
+    "Description": "Manchmal bin ich mit meinen Gedanken nicht bei der Sache.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG054": {
+    "Description": "Ich lasse mich nicht durch den Trubel der Ereignisse mitreißen.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG055": {
+    "Description": "Ich vermeide schwierigen Lesestoff.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG056": {
+    "Description": "Es kommt selten vor, dass ich die Fassung verliere.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG057": {
+    "Description": "Ich setze andere nur selten unter Druck.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG058": {
+    "Description": "Ich wünsche mir, dass alles perfekt ist.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG059": {
+    "Description": "Ich bin gut darin, Führung zu übernehmen.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG060": {
+    "Description": "Gemälde oder Fotografien berühren mich nicht.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG061": {
+    "Description": "Ich lasse mich schnell entmutigen.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG062": {
+    "Description": "Ich nehme mir keine Zeit für andere.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG063": {
+    "Description": "Ich erledige meine Aufgaben rasch.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG064": {
+    "Description": "Ich bin keine besonders enthusiastische Person.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG065": {
+    "Description": "Ich habe einen reichen Wortschatz.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG066": {
+    "Description": "Meine Stimmung verändert sich leicht.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG067": {
+    "Description": "Manchmal beleidige ich andere Leute.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG068": {
+    "Description": "Unordnung stört mich nicht.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG069": {
+    "Description": "Ich kann andere dazu bringen, Dinge zu tun, die ich will.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG070": {
+    "Description": "Ich muss mich kreativ betätigen.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG071": {
+    "Description": "Mir ist selten etwas peinlich.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG072": {
+    "Description": "Ich interessiere mich für das Leben anderer.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG073": {
+    "Description": "Ich weiß immer, was ich tue.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG074": {
+    "Description": "Wenn ich glücklich bin, dann zeige ich das auch.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG075": {
+    "Description": "Ich habe eine schnelle Auffassungsgabe.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG076": {
+    "Description": "Ich bin nicht schnell verärgert.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG077": {
+    "Description": "Ich suche Streit.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG078": {
+    "Description": "Routine mag ich nicht.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG079": {
+    "Description": "Ich halte mich mit meiner Meinung eher zurück.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG080": {
+    "Description": "Es passiert selten, dass ich meinen Gedanken nachhänge.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG081": {
+    "Description": "Manchmal ist mir alles zu viel.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG082": {
+    "Description": "Mir fehlt eine weiche Seite.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG083": {
+    "Description": "Ich schiebe Entscheidungen auf.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG084": {
+    "Description": "Ich habe viel Spaß.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG085": {
+    "Description": "Ich brauche manchmal länger, um etwas Neues zu lernen.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG086": {
+    "Description": "Ich bin schnell aufgewühlt.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG087": {
+    "Description": "Ich mag Diskussionen und Auseinandersetzungen.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG088": {
+    "Description": "Ich achte darauf, dass Regeln eingehalten werden.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG089": {
+    "Description": "Ich übernehme häufig die Initiative.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG090": {
+    "Description": "Es kommt selten vor, dass ich Tagträumen nachgehe.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG091": {
+    "Description": "Ich sorge mich über viele Dinge.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG092": {
+    "Description": "Es bereitet mir Freude, etwas für andere zu tun.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG093": {
+    "Description": "Ich lasse mich leicht ablenken.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG094": {
+    "Description": "Ich lache viel.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG095": {
+    "Description": "Ich kann meine Gedanken klar formulieren.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG096": {
+    "Description": "Ich bin schnell gerührt.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG097": {
+    "Description": "Ich schaue auf meinen persönlichen Vorteil.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG098": {
+    "Description": "Ich lege großen Wert auf Details.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG099": {
+    "Description": "Ich bin nicht durchsetzungsfähig.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  },
+  "BFASG100": {
+    "Description": "In manchen Dingen sehe ich etwas Schönes, das anderen verborgen bleibt.",
+    "Levels": {
+      "1": "trifft überhaupt nicht zu",
+      "4": "teils/teils",
+      "7": "trifft vollständig zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 7,
+    "ScaleType": "likert"
+  }
+}

@@ -1,0 +1,693 @@
+{
+  "Technical": {
+    "StimulusType": "Questionnaire",
+    "FileFormat": "tsv",
+    "Language": "de"
+  },
+  "Metadata": {
+    "SchemaVersion": "2.1.3",
+    "CreationDate": "2026-11-16",
+    "Creator": "PRISM Studio"
+  },
+  "I18n": {
+    "Languages": [
+      "de"
+    ]
+  },
+  "Study": {
+    "TaskName": "pmerq",
+    "ShortName": "PMERQ",
+    "OriginalName": "German Version of the Process Model of Emotion Regulation Questionnaire",
+    "Category": "Beliefs, Values & Worldview",
+    "Authors": [
+      "Heekerens, Johannes"
+    ],
+    "Year": 2025,
+    "Citation": "Heekerens, J. B. (2025). PMERQ. German Version of the Process Model of Emotion Regulation Questionnaire [Verfahrensdokumentation, Fragebogen]. In Leibniz-Institut für Psychologie (ZPID) (Hrsg.), Open Test Archive. Trier: ZPID. https://doi.org/10.23668/psycharchives.21234",
+    "DOI": "10.23668/psycharchives.21234",
+    "Source": "https://doi.org/10.23668/psycharchives.21234",
+    "License": "\"Copyright Autor(-Innen); CC-BY-SA 4.0\" \"Es wird vom Testarchiv online und kostenlos zur Verfügung gestellt und ist urheberrechtlich geschützt, d. h. das Urheberrecht liegt weiterhin bei den AutorInnen.\" \"Mit der Nutzung des Verfahrens verpflichte ich mich, die Bedingungen der Creative Commons Lizenz CC BY-SA 4.0 zu beachten.\" \"Sie wurden uns durch die Rechteinhaber/-innen zur weiteren Nachnutzung zur Verfügung gestellt. (Open Test Archive, Nutzungsbedingungen, https://www.testarchiv.eu/de/nutzungsbedingungen)\" \"It is made available online and free of charge by the test archive and is protected by copyright, i.e. the copyright remains with the author(s).\" \"By using this test, I agree to abide by the terms of the Creative Commons License CC BY-SA 4.0.\"",
+    "LicenseID": "CC-BY-SA-4.0",
+    "LicenseURL": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "CopyrightHolder": "Heekerens, Johannes",
+    "LicenseChecked": "2026-11-14",
+    "LicenseLanguages": [
+      "de"
+    ],
+    "LicenseTerms": [
+      "This template is released under CC BY-SA 4.0 (ShareAlike): derived versions must carry the same licence.",
+      "Converted from the PDF questionnaire to JSON; item wording taken over unchanged.",
+      "The authors of this version, as given by the Open Test Archive page, hold the rights in the template version published there. Rights in an original instrument (which the original authors, a journal or a publisher may hold separately) are not covered by this licence statement.",
+      "The authors ask users to send the feedback form after using the test (a request of the Open Test Archive, not a condition added by PRISM): https://www.testarchiv.eu/de/test/9009026",
+      "Reliability, validity and norming data come from the Open Test Archive page and apply to the published version only."
+    ],
+    "References": [
+      {
+        "Type": "primary",
+        "Citation": "Heekerens, J. B., Olderbak, S., Gross, J. J., Wingenfeld, K., & Roepke, S. (2024). The Process Model of Emotion Regulation Scale (PMERQ): Psychometric properties and validity of a German version. European Journal of Psychological Assessment. Advance online publication. https://doi.org/10.1027/1015-5759/a000863",
+        "DOI": "10.1027/1015-5759/a000863",
+        "Year": 2024
+      },
+      {
+        "Type": "other",
+        "Citation": "Abler, B. & Kessler, H. (2011). ERQ. Emotion Regulation Questionnaire - deutsche Fassung [Verfahrensdokumentation und Fragebogen]. In Leibniz-Institut für Psychologie (ZPID) (Hrsg.), Open Test Archive. Trier: ZPID. https://doi.org/10.23668/psycharchives.6497",
+        "DOI": "10.23668/psycharchives.6497",
+        "Year": 2011
+      },
+      {
+        "Type": "other",
+        "Citation": "Bassand, G., Papon, A. & Samson, A. C. (2024). La version française du Questionnaire du Modèle Processuel de la Régulation des Émotions (PMERQ - Français). https://doi.org/10.17605/OSF.IO/YQ3FK",
+        "DOI": "10.17605/OSF.IO/YQ3FK",
+        "Year": 2024
+      },
+      {
+        "Type": "other",
+        "Citation": "Gross, J. J. (2015). Emotion regulation: Current status and future prospects. Psychological Inquiry, 26(1), 1–26. https://doi.org/10.1080/1047840X.2014.940781",
+        "DOI": "10.1080/1047840X.2014.940781",
+        "Year": 2015
+      },
+      {
+        "Type": "primary",
+        "Citation": "Heekerens, J. B., Olderbak, S., Gross, J. J., Wingenfeld, K., & Roepke, S. (2024). The Process Model of Emotion Regulation Scale (PMERQ): Psychometric properties and validity of a German version. European Journal of Psychological Assessment. Advance online publication. https://doi.org/10.1027/1015-5759/a000863",
+        "DOI": "10.1027/1015-5759/a000863",
+        "Year": 2024
+      },
+      {
+        "Type": "other",
+        "Citation": "Larionow, P., Preece, D. A., & Mudło-Głagolska, K. (2024). Assessing emotion beliefs with the Polish version of the Emotion Beliefs Questionnaire (EBQ): psychometric properties, norms, and links with emotional reactivity and psychopathology. Current Psychology, 43(17), 15939-15951.",
+        "Year": 2024
+      },
+      {
+        "Type": "other",
+        "Citation": "Olderbak, S., Uusberg, A., MacCann, C., Pollak, K. M., & Gross, J. J. (2022). The process model of emotion regulation questionnaire: Assessing individual differences in strategy stage and orientation. Assessment. https://doi.org/10.1177/10731911221134601",
+        "DOI": "10.1177/10731911221134601",
+        "Year": 2022
+      },
+      {
+        "Type": "other",
+        "Citation": "Orta, A. M., Sheehan, A., & Chernicoff, L. (2025). Traducción del Process Model of Emotion Regulation Questionnaire-Youth Version por AtentaMente. Online verfügbar unter: https://docs.google.com/document/d/1uhtz3NR2ppBtIfkV4IfwxwjG31tNGYsw/edit?usp=sharing&ouid=106695542729749583795&rtpof=true&sd=true (Stand: 15.09.2025)",
+        "Year": 2025
+      },
+      {
+        "Type": "other",
+        "Citation": "Pruessner, L., Holt, D. V., Gölz, R., Sevcenko, N., Hofmann, S. G., & Backenstrass, M. (2020). Psychometrische Eigenschaften der deutschsprachigen Version des Interpersonal Emotion Regulation Questionnaire [Psychometric Properties of the German Version of the Interpersonal Emotion Regulation Questionnaire]. Diagnostica, 66(1), 62–73. https://doi.org/10.1026/0012-1924/a000239",
+        "DOI": "10.1026/0012-1924/a000239",
+        "Year": 2020
+      },
+      {
+        "Type": "other",
+        "Citation": "Rammstedt, B., Kemper, C. J., Klein, M. C., Beierlein, C., & Kovaleva, A. (2017). A short scale for assessing the Big Five dimensions of personality: 10 item Big Five inventory (BFI-10). methoden, daten, analysen, 7(2), 233–249. https://doi.org/10.12758/mda.2013.013",
+        "DOI": "10.12758/mda.2013.013",
+        "Year": 2017
+      },
+      {
+        "Type": "other",
+        "Citation": "Stöber, J. (1999). Die Soziale-Erwünschtheits-Skala-17 (SES-17): Entwicklung und erste Befunde zu Reliabilität und Validität. [The social desirability scale-17 (SES-17): Development and initial findings on reliability and validity. Diagnostica, 45(4), 173–177. https://doi.org/10.1026//0012-1924.45.4.173",
+        "DOI": "10.1026//0012-1924.45.4.173",
+        "Year": 1999
+      },
+      {
+        "Type": "other",
+        "Citation": "Bassand, G., Papon, A. & Samson, A. C. (2024). La version française du Questionnaire du Modèle Processuel de la Régulation des Émotions (PMERQ - Français). https://doi.org/10.17605/OSF.IO/YQ3FK",
+        "DOI": "10.17605/OSF.IO/YQ3FK",
+        "Year": 2024
+      },
+      {
+        "Type": "other",
+        "Citation": "Larionow, P., Preece, D. A., & Mudło-Głagolska, K. (2024). Assessing emotion beliefs with the Polish version of the Emotion Beliefs Questionnaire (EBQ): psychometric properties, norms, and links with emotional reactivity and psychopathology. Current Psychology, 43(17), 15939-15951.",
+        "Year": 2024
+      },
+      {
+        "Type": "other",
+        "Citation": "Olderbak, S., Uusberg, A., MacCann, C., Pollak, K. M., & Gross, J. J. (2022). The process model of emotion regulation questionnaire: Assessing individual differences in strategy stage and orientation. Assessment. https://doi.org/10.1177/10731911221134601",
+        "DOI": "10.1177/10731911221134601",
+        "Year": 2022
+      },
+      {
+        "Type": "other",
+        "Citation": "Orta, A. M., Sheehan, A., & Chernicoff, L. (2025). Traducción del Process Model of Emotion Regulation Questionnaire-Youth Version por AtentaMente. Online verfügbar unter: https://docs.google.com/document/d/1uhtz3NR2ppBtIfkV4IfwxwjG31tNGYsw/edit?usp=sharing&ouid=106695542729749583795&rtpof=true&sd=true (Stand: 15.09.2025)",
+        "Year": 2025
+      }
+    ],
+    "Keywords": [
+      "Category: Personality tests / Attribution and locus of control",
+      "Category: Personality tests / Other personality tests",
+      "Engl. Name: German Version of the Process Model of Emotion Regulation Questionnaire"
+    ],
+    "Access": "public",
+    "Notes": "Format: Paper-Pencil. Contact data (section Kontaktdaten) and e-mail addresses are not copied (personal data). The English descriptions are machine translations (Claude, Anthropic) of the archive's German text, not verified by the test authors; the German original is on the archive page https://www.testarchiv.eu/de/test/9009026.",
+    "ArchiveMetadata": {
+      "fields": {
+        "Format": "Paper-pencil",
+        "Konstrukt": "Emotion regulation",
+        "Itemzahl": "45 items",
+        "Subskalen": "10 subscales: (1) Confronting unpleasant situations, (2) Avoiding unpleasant situations, (3) Resolving conflicts, (4) Avoiding conflicts, (5) Focusing on other things, (6) Cognitive distraction, (7) Weighing the benefits, (8) Reducing the importance, (9) Support through emotion sharing, (10) Suppression of expression",
+        "Durchführungszeit": "10-15 minutes",
+        "Auswertungsdauer": "10 minutes",
+        "Reliabilität": "Internal consistency: McDonald's ω = .76 and ω = .92",
+        "Validität": "Findings on construct validity.",
+        "Normierung": "None. Reference values: means and standard deviations for each subscale.",
+        "Anwendungsbereich": "Research",
+        "Altersbereich": "Adults (from 18 years)",
+        "Sprachversionen": "German"
+      },
+      "sections": {
+        "Kurzabstract": "The German adaptation of the PMERQ measures individual differences in emotion regulation in adults along all five stages of Gross's (2015) process model of emotion generation (situation selection, situation modification, attentional deployment, cognitive change and response modulation) using 45 items comprising 10 subscales. Reliability: Internal consistencies according to McDonald's omega vary between ω = .76 and ω = .92. Validity: Convergent and discriminant validity as well as the assumed factor structure could be demonstrated. However, limitations regarding measurement invariance across age groups and genders were found.",
+        "Diagnostische Zielsetzung": "The German-language PMERQ comprehensively assesses individual differences in emotion regulation in adults along all five stages of Gross's (2015) process model and differentiates between engagement and disengagement strategies. The aim is the differentiated assessment of which strategies persons use in different regulation stages to reduce negative emotions. The instrument is primarily aimed at research. For clinical single-case diagnostics, no norms or cut-off values are available.",
+        "Aufbau": "The questionnaire comprises 45 items assigned to 10 subscales - two per process stage, one for engagement and one for disengagement. Each subscale measures specific regulation strategies in the respective stage of emotion generation. The items are answered on a 6-point scale. Scoring is done by averaging per subscale.",
+        "Grundlagen und Konstruktion": "The PMERQ is based on the process model of emotion regulation (Gross, 2015), which describes regulation in five stages: situation selection, situation modification, attentional deployment, cognitive change and response modulation. The German version was developed in a multi-step translation and testing procedure with several revisions to optimize the factor structure and item wording.",
+        "Empirische Prüfung und Gütekriterien": "Reliability: In the validation studies, the internal consistencies (McDonald's omega) for all subscales were between ω = .76 and ω = .92 and are thus consistently sufficient to high.\nValidity: The subscales show convergent and discriminant validity. The expected associations with other emotion regulation questionnaires, personality dimensions, well-being, and psychological distress were confirmed. The factor structure largely corresponded to expectations; however, limitations regarding measurement invariance across age groups and genders were found.\nNorms: No norm values are available. Means and \"Standabweichungen\" are given as reference values for all subscales.",
+        "Testkonzept/Theoretischer Hintergrund": "The Process Model of Emotion Regulation Questionnaire (PMERQ; Olderbak et al., 2022) comprehensively assesses individual differences in emotion regulation in adults. The instrument is based on the process model of emotion regulation according to Gross (2015), which describes how emotion regulation can take place in all five stages of emotion generation: situation selection, situation modification, attentional deployment, cognitive reappraisal and response modulation. In contrast to existing questionnaires (e.g. the Emotion Regulation Questionnaire), which mostly cover only individual strategies, the PMERQ distinguishes between disengagement and engagement strategies and covers all stages of the process model.",
+        "Testkonzept/Testaufbau": "The PMERQ comprises 45 items distributed across 10 subscales, which in turn are assigned to the five stages of the process model of emotion regulation (Gross, 2015). Each of these stages is differentiated both by engagement strategies (confrontational, actively solution-oriented) and by disengagement strategies (avoidant, distracting), so that two subscales are formed per stage.\nThe number of items per subscale varies slightly: while, for example, Confront Unpleasant Situations (situation selection, engagement) contains four items, Avoid Unpleasant Situations (situation selection, disengagement) has six items. The other subscales such as Resolve Conflicts (situation modification, engagement), Avoid Conflicts (situation modification, disengagement), Focus Elsewhere (attentional deployment, engagement), Cognitively Distract (attentional deployment, disengagement), Consider Benefits (cognitive reappraisal, engagement), Reduce Importance (cognitive reappraisal, disengagement), Support by Emotion Sharing (response modulation, engagement) and Expressive Suppression (response modulation, disengagement) each have three to six items, according to their content focus.\nThe response mode is throughout a self-report on a 6-point Likert scale from \"stimme überhaupt nicht zu\" (1) to \"stimme voll und ganz zu\" (6).",
+        "Testkonzept/Auswertungsmodus": "There are no reverse-coded items; each response is scored directly according to the value marked. For each of the ten subscales, a raw score is calculated per person by averaging the associated items. If individual items of a subscale are not answered, the mean is formed from the available responses. We recommend forming a mean provided that at least two items were answered. A total score for the overarching construct of emotion regulation is not calculated, since the PMERQ explicitly aims at the differentiated assessment of specific strategies across all five process stages and in two orientations (engagement, disengagement).",
+        "Testkonzept/Auswertungshilfen": "None available.",
+        "Testkonzept/Auswertungszeit": "Scoring time is approx. 10 minutes.",
+        "Durchführung/Testformen": "Besides the American original of the same name (Olderbak et al., 2022), a French version (Bassand et al., 2024), a Polish version (Larionow et al., 2024) and a Spanish version (Orta et al., 2025) are known. A current list of available test versions is available at https://spl.stanford.edu/resources#measures. No online version for direct use is available.",
+        "Durchführung/Altersbereiche": "The test is recommended for adults (from 18 years). Analyses of measurement invariance show that comparisons between age groups (the analyses distinguished under/over 45 years) should be interpreted with caution; it could be shown that responses to individual items differ depending on age (see Heekerens et al., 2024).",
+        "Durchführung/Durchführungszeit": "Completion time is approx. 10-15 minutes.",
+        "Durchführung/Material": "Besides the present documentation of the procedure as a manual and the questionnaire, no further materials are provided or needed.",
+        "Durchführung/Instruktion": "The standardized instruction on the questionnaire reads:\n„Wir möchten Ihnen gerne einige Fragen zu Ihren Gefühlen stellen. Uns interessiert, was Sie tun, um Ihre Gefühle unter Kontrolle zu halten, bzw. zu regulieren. Dabei interessiert uns besonders, was Sie tun, um die unangenehmen Gefühle, die Sie empfinden, zu verringern.\nBitte beantworten Sie die Fragen, indem Sie die aufgeführten Antwortmöglichkeiten nutzen. Obwohl manche der Fragen ähnlich klingen, unterscheiden sie sich in wesentlichen Punkten. Es gibt keine richtige oder falsche Antwort.“",
+        "Durchführung/Durchführungsvoraussetzungen": "None.",
+        "Testkonstruktion": "The PMERQ is a German adaptation of the questionnaire of the same name developed by Olderbak and colleagues (2022) and was developed in a forward-backward translation process, and further developed and evaluated according to the criteria of classical test theory. Several studies were carried out, from the translation through to the examination of item and scale properties, and are described in detail in Heekerens et al. (2024). Some information on psychometric quality can be found under \"Reliability\" and \"Validity\".",
+        "Gütekriterien/Objektivität": "Objectivity is assumed: Administration is online or in writing and standardized - the instruction is identical for all participants. The computation of the mean per subscale is unambiguous and can be fully automated, so that different scorers should arrive at identical results.",
+        "Gütekriterien/Reliabilität": "Internal consistency: The subscales of the German PMERQ version consistently show sufficient to very high internal consistency, with McDonald's omega values between ω = .76 and ω = .92 (depending on subscale and study, see Zimmermann et al., 2024).\nHomogeneity: Most subscales consist of homogeneously worded items; median item-subscale correlations are typically around r = .70.",
+        "Gütekriterien/Validität": "Content validity: The items cover all stages of the process model of emotion regulation and were developed in a multi-step translation and expert review procedure. In addition, the item-subscale intercorrelations are around r = .70.\nFactorial validity: The model analyses confirm an adequate factor structure for the ten subscales, although individual deviations in measurement invariance may exist depending on age group/gender.\nConvergent and discriminant validity: In the study by Heerkerens et al. (2024), largely expected moderate to high \"posiive\" correlations of the PMERQ subscales with other established measures of emotion regulation such as the Emotion Regulation Questionnaire (ERQ; Abler & Kessler, 2011) and the Interpersonal Emotion Regulation Questionnaire (IERQ; Pruessner et al., 2020) are found. In addition, weak to moderate associations with Big Five personality dimensions and social desirability are found - examined with the Big Five Inventory-10 (BFI-10; Rammstedt et al., 2017) and the Soziale-Erwünschtheits-Skala-17 (SES-17; Stöber et al., 1999).\nCriterion validity: The subscales differentiate, as expected, between well-being (e.g. life satisfaction) and measures of psychological distress (e.g. depression, anxiety).",
+        "Gütekriterien/Normierung": "The PMERQ is not normed. In the following table, means and standard deviations for each subscale are given as reference values.\nTable 1\nMeans (M) and standard deviations (SD) of the subscales of the German PMERQ version (modified from Heekerens, Olderbak, Gross, Wingenfeld & Roepke, 2024, S. 4, Tab. 1)\nScale (Subscale) | M | SD\nConfront Unpleasant Situations | 3.68 | 1.04\nAvoid Unpleasant Situations | 3.98 | 0.98\nResolve Conflicts | 4.07 | 0.81\nAvoid Conflicts | 3.32 | 0.96\nFocus Elsewhere | 3.72 | 0.90\nCognitively Distract | 3.60 | 0.96\nConsider Benefits | 3.83 | 0.90\nReduce Importance | 3.64 | 0.98\nSupport by Emotion Sharing | 3.51 | 1.06\nExpressive Suppression | 3.70 | 0.99\nNotes. The values were taken from Study 3: N = 198; M = 43.07 years, SD = 12.80 years (range: 20-73 years); 114 male, 82 female.",
+        "Anwendungsmöglichkeiten": "The PMERQ is primarily designed for research and assesses emotion regulation strategies in adults according to the process model of Gross (2015). It covers all five stages of emotion regulation and distinguishes between engagement and disengagement strategies - a unique feature compared with other German-language instruments, which mostly capture only individual strategies (e.g. Emotion Regulation Questionnaire [ERQ], Abler & Kessler, 2011).\nFor individual and differential diagnostics, the PMERQ is currently not recommended, as no clinical norms, cut-off values or validations on patient samples are available.\nExamples of research questions:\nHow are specific emotion regulation strategies related to well-being and mental health?\nHow do engagement and disengagement strategies differ in their effectiveness?\nHow do strategy patterns change through interventions?",
+        "Bewertung": "The German PMERQ is a scientifically grounded and differentiated instrument for assessing individual differences in emotion regulation in adults. The comprehensive consideration of all five stages of the extended process model, as well as the clear distinction between engagement and disengagement strategies, represent a substantial advance over existing instruments, which mostly capture only individual strategies or stages. The psychometric quality of the German PMERQ meets common standards. However, the factor structure does not coincide in all areas with the theoretically intended model: for some subscales (e.g. Reduce Importance, Avoid Unpleasant Situations), the assignment to engagement versus disengagement is only possible to a limited extent. Furthermore, measurement invariance across age groups, genders and relative to the English original version is not given for all scales. Further studies evaluating the psychometric properties of the German PMERQ in persons with mental disorders are currently being carried out (as of September 2025).",
+        "Orginalfassung/Anderssprachlige Fassungen": "Bassand, G., Papon, A. & Samson, A. C. (2024). La version française du Questionnaire du Modèle Processuel de la Régulation des Émotions (PMERQ - Français). https://doi.org/10.17605/OSF.IO/YQ3FK\nLarionow, P., Preece, D. A., & Mudło-Głagolska, K. (2024). Assessing emotion beliefs with the Polish version of the Emotion Beliefs Questionnaire (EBQ): psychometric properties, norms, and links with emotional reactivity and psychopathology. Current Psychology, 43(17), 15939-15951.\nOlderbak, S., Uusberg, A., MacCann, C., Pollak, K. M., & Gross, J. J. (2022). The process model of emotion regulation questionnaire: Assessing individual differences in strategy stage and orientation. Assessment. https://doi.org/10.1177/10731911221134601\nOrta, A. M., Sheehan, A., & Chernicoff, L. (2025). Traducción del Process Model of Emotion Regulation Questionnaire-Youth Version por AtentaMente. Online verfügbar unter: https://docs.google.com/document/d/1uhtz3NR2ppBtIfkV4IfwxwjG31tNGYsw/edit?usp=sharing&ouid=106695542729749583795&rtpof=true&sd=true (Stand: 15.09.2025)",
+        "Testpaket (Paper-Pencil)/Rückmeldung an die Autor/-innen": "Please inform the authors about the use of the test instrument! The contact details can be found under \"Kontaktinformationen\"! If authors in the Open Test Archive have already died or if no contact details (e-mail or address) are available for them, users are exempt from the obligation to provide feedback."
+      }
+    },
+    "Construct": "Emotion regulation",
+    "Description": "The German adaptation of the PMERQ measures individual differences in emotion regulation in adults along all five stages of Gross's (2015) process model of emotion generation (situation selection, situation modification, attentional deployment, cognitive change and response modulation) using 45 items comprising 10 subscales. Reliability: Internal consistencies according to McDonald's omega vary between ω = .76 and ω = .92. Validity: Convergent and discriminant validity as well as the assumed factor structure could be demonstrated. However, limitations regarding measurement invariance across age groups and genders were found.",
+    "Reliability": "Internal consistency: The subscales of the German PMERQ version consistently show sufficient to very high internal consistency, with McDonald's omega values between ω = .76 and ω = .92 (depending on subscale and study, see Zimmermann et al., 2024).\nHomogeneity: Most subscales consist of homogeneously worded items; median item-subscale correlations are typically around r = .70.",
+    "Validity": "Content validity: The items cover all stages of the process model of emotion regulation and were developed in a multi-step translation and expert review procedure. In addition, the item-subscale intercorrelations are around r = .70.\nFactorial validity: The model analyses confirm an adequate factor structure for the ten subscales, although individual deviations in measurement invariance may exist depending on age group/gender.\nConvergent and discriminant validity: In the study by Heerkerens et al. (2024), largely expected moderate to high \"posiive\" correlations of the PMERQ subscales with other established measures of emotion regulation such as the Emotion Regulation Questionnaire (ERQ; Abler & Kessler, 2011) and the Interpersonal Emotion Regulation Questionnaire (IERQ; Pruessner et al., 2020) are found. In addition, weak to moderate associations with Big Five personality dimensions and social desirability are found - examined with the Big Five Inventory-10 (BFI-10; Rammstedt et al., 2017) and the Soziale-Erwünschtheits-Skala-17 (SES-17; Stöber et al., 1999).\nCriterion validity: The subscales differentiate, as expected, between well-being (e.g. life satisfaction) and measures of psychological distress (e.g. depression, anxiety).",
+    "Norming": "The PMERQ is not normed. In the following table, means and standard deviations for each subscale are given as reference values.\nTable 1\nMeans (M) and standard deviations (SD) of the subscales of the German PMERQ version (modified from Heekerens, Olderbak, Gross, Wingenfeld & Roepke, 2024, S. 4, Tab. 1)\nScale (Subscale) | M | SD\nConfront Unpleasant Situations | 3.68 | 1.04\nAvoid Unpleasant Situations | 3.98 | 0.98\nResolve Conflicts | 4.07 | 0.81\nAvoid Conflicts | 3.32 | 0.96\nFocus Elsewhere | 3.72 | 0.90\nCognitively Distract | 3.60 | 0.96\nConsider Benefits | 3.83 | 0.90\nReduce Importance | 3.64 | 0.98\nSupport by Emotion Sharing | 3.51 | 1.06\nExpressive Suppression | 3.70 | 0.99\nNotes. The values were taken from Study 3: N = 198; M = 43.07 years, SD = 12.80 years (range: 20-73 years); 114 male, 82 female.",
+    "AdministrationTime": {
+      "min": 10,
+      "max": 15
+    },
+    "ScoringTime": {
+      "min": 10,
+      "max": 10
+    },
+    "AgeRange": "Adults (from 18 years)",
+    "Instructions": "Wir möchten Ihnen gerne einige Fragen zu Ihren Gefühlen stellen. Uns interessiert, was Sie tun, um Ihre Gefühle unter Kontrolle zu halten, bzw. zu regulieren. Dabei interessiert uns besonders, was Sie tun, um die unangenehmen Gefühle, die Sie empfinden, zu verringern. Bitte beantworten Sie die Fragen, indem Sie die aufgeführten Antwortmöglichkeiten nutzen. Obwohl manche der Fragen ähnlich klingen, unterscheiden sie sich in wesentlichen Punkten. Es gibt keine richtige oder falsche Antwort. „stimme überhaupt nicht zu“ - „stimme voll und ganz zu“"
+  },
+  "PMERQ01": {
+    "Description": "Um mich zu beruhigen, zeige ich anderen nicht, wie ich mich fühle.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ02": {
+    "Description": "Um mich weniger aufzuregen, konzentriere ich mich auf das Positive in einer unangenehmen Situation.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ03": {
+    "Description": "Um mich während eines Konflikts weniger ängstlich zu fühlen, verlagere ich das Gespräch auf ein anderes Thema.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ04": {
+    "Description": "Um mich weniger ängstlich zu fühlen, vermeide ich stressige Situationen.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ05": {
+    "Description": "Ich arbeite aktiv an der Lösung von Konflikten mit anderen, um mich nicht so schlecht zu fühlen.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ06": {
+    "Description": "Wenn die Dinge nicht so laufen wie geplant, überlege ich, welche Vorteile sich daraus ergeben könnten, um mich weniger aufzuregen.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ07": {
+    "Description": "Um mich weniger schlecht zu fühlen, teile ich meinen Freundinnen/Freunden mit, wie ich mich fühle.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ08": {
+    "Description": "Um mich weniger schlecht zu fühlen, vermeide ich Situationen, die als unangenehm gelten.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ09": {
+    "Description": "Wenn ich etwas mit jemandem zu besprechen habe, tue ich es direkt, um mich nicht so schlecht zu fühlen.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ10": {
+    "Description": "Während Konflikten wechsle ich das Thema zu etwas weniger Stressigem, um mich nicht so schlecht zu fühlen.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ11": {
+    "Description": "Ich stelle mich schwierigen Situationen direkt, um mich weniger aufzuregen.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ12": {
+    "Description": "Ich meide Menschen, mit denen ich eine unangenehme Begegnung erwarte, um mich nicht so schlecht zu fühlen.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ13": {
+    "Description": "Um mich in stressigen Situationen weniger ängstlich zu fühlen, lenke ich meine Aufmerksamkeit von der Situation ab.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ14": {
+    "Description": "Ich lenke das Thema in kontroversen Gesprächen auf etwas anderes, um mich weniger aufzuregen.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ15": {
+    "Description": "Um mich weniger ängstlich zu fühlen, packe ich stressige Situationen direkt an.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ16": {
+    "Description": "Ich unterdrücke meinen Gefühlsausdruck während stressiger Gespräche, um mich weniger ängstlich zu fühlen.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ17": {
+    "Description": "Um mich weniger über Konflikte aufzuregen, finde ich aktiv Kompromisse.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ18": {
+    "Description": "Ich vermeide stressige Situationen, um zu verhindern, dass ich mich ängstlich fühle.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ19": {
+    "Description": "Um mich während eines Konflikts zu beruhigen, arbeite ich daran, einen Kompromiss zu finden.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ20": {
+    "Description": "Um mich weniger aufzuregen, wenn ich einen Fehler mache, sage ich mir, dass es eine Chance zu Wachsen ist.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ21": {
+    "Description": "Um mich während einer stressigen Situation weniger schlecht zu fühlen, denke ich über die guten Dinge nach, die sich durch die Situation ergeben könnten.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ22": {
+    "Description": "Um mich während unangenehmer Gespräche weniger schlecht zu fühlen, konzentriere ich mich darauf, was die Person einigermaßen Angenehmes sagt.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ23": {
+    "Description": "Während Konflikten beruhige ich mich, indem ich eine Lösung für den Konflikt aushandle.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ24": {
+    "Description": "Um mich weniger aufzuregen, wenn die Dinge nicht so laufen wie geplant, denke ich daran, dass dies eine Lernmöglichkeit ist.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ25": {
+    "Description": "Wenn etwas nicht so läuft, wie geplant, sage ich mir, dass es nicht so wichtig ist, um mich weniger schlecht zu fühlen.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ26": {
+    "Description": "Ich konzentriere mich in stressigen Situationen auf das Positive, um mich weniger ängstlich zu fühlen.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ27": {
+    "Description": "Ich lenke mich während unangenehmer Situationen ab, um mich weniger schlecht zu fühlen.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ28": {
+    "Description": "Um mich weniger über eine Situation aufzuregen, gehe ich sie direkt an.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ29": {
+    "Description": "Um mich in stressigen Situationen weniger aufzuregen, lenke ich meine Aufmerksamkeit von dem Geschehen ab.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ30": {
+    "Description": "Um mich weniger gestresst zu fühlen, bitte ich andere um Hilfe.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ31": {
+    "Description": "Um mich während stressiger Gespräche weniger ängstlich zu fühlen, konzentriere ich mich auf die eher positiven Dinge, die die Person sagt.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ32": {
+    "Description": "Ich spreche mit anderen über das, was mich nervös macht, um mich weniger ängstlich zu fühlen.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ33": {
+    "Description": "Um mich in unangenehmen Situationen weniger schlecht zu fühlen, lenke ich mich ab.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ34": {
+    "Description": "Ich sage anderen nicht, wie ich mich fühle, um mich weniger aufzuregen.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ35": {
+    "Description": "Ich lenke mich während stressiger Situationen ab, um mich weniger ängstlich zu fühlen.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ36": {
+    "Description": "Um mich in Konflikten weniger schlecht zu fühlen, bemühe ich mich, die Meinungsverschiedenheit zu klären.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ37": {
+    "Description": "Um mich während eines hitzigen Gesprächs weniger aufzuregen, wechsle ich das Thema.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ38": {
+    "Description": "Falls etwas nicht so klappt, wie ich es mir gewünscht habe, sage ich mir, dass es nicht so wichtig ist, um mich weniger schlecht zu fühlen.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ39": {
+    "Description": "Ich arbeite daran, eine Lösung für Konflikte zu finden, um mich weniger ängstlich zu fühlen.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ40": {
+    "Description": "Wenn etwas nicht klappt, versuche ich mich zu beruhigen, indem ich aktiv über die positiven Aspekte der Situation nachdenke.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ41": {
+    "Description": "Wenn ich ein Ziel verfolge und dabei unter Stress gerate, sage ich mir, dass es nicht so wichtig ist, um mich weniger ängstlich zu fühlen.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ42": {
+    "Description": "Um mich weniger über eine Situation aufzuregen, vermeide ich sie.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ43": {
+    "Description": "Ich lenke strittige Gespräche auf neutrale Themen, um mich nicht so schlecht zu fühlen.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ44": {
+    "Description": "Ich vermeide aufwühlende Gespräche, um mich weniger aufzuregen.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  },
+  "PMERQ45": {
+    "Description": "Wenn etwas Aufwühlendes passiert, denke ich über mögliche positive Aspekte der Situation nach, um mich weniger aufzuregen.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "6": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 6,
+    "ScaleType": "likert"
+  }
+}

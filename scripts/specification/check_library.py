@@ -7,7 +7,9 @@ Rules: (a) Study.License quotes the rights holder, (b) Study.Source is an absolu
 (e) only languages named in Study.LicenseLanguages, (e2) descriptive Study metadata (Description, Notes,
 LicenseTerms, ...) is English (a quotation in quote marks of up to 300 characters may be in another language): other languages only in items, Levels, Instructions, OriginalName, bibliographic
 data, the quoted Study.License evidence and the instruction and bibliographic sections of
-ArchiveMetadata (ARCHIVE_TEXT_EXEMPT), (f) no Study.ItemCount, Study.Subscales or item Reversed, (g) bibliographic
+ArchiveMetadata (ARCHIVE_TEXT_EXEMPT), (e3) Study.LicenseByLanguage (language code -> licence entry) only for languages in
+Study.LicenseLanguages; rules (a)-(d) and the English rule apply to each entry, and the template-level licence (a-d)
+is required unless every language has its own entry, (f) no Study.ItemCount, Study.Subscales or item Reversed, (g) bibliographic
 completeness: Study.Authors is a non-empty list, Study.Year an integer and Study.Citation a real citation (not the
 placeholder "Official webpage"), (h) no text-extraction artefacts in any string of a template: no Latin ligature
 characters (U+FB00-FB06), soft hyphen (U+00AD) or zero-width characters (U+200B-U+200D, U+FEFF); the message names the
@@ -97,11 +99,11 @@ def artefact_problems(value, path="") -> list[str]:
     return [line for k, v in items for line in artefact_problems(v, f"{path}.{k}" if path else str(k))]
 
 
-def english_problems(study: dict) -> list[str]:
+def english_problems(study: dict, prefix: str = "Study") -> list[str]:
     """Descriptive Study metadata must be English, except the ARCHIVE_TEXT_EXEMPT sections of ArchiveMetadata."""
     out = []
     for field in ENGLISH_FIELDS:
-        value, label = study.get(field), f"Study.{field}"
+        value, label = study.get(field), f"{prefix}.{field}"
         if field == "ArchiveMetadata" and isinstance(value, dict) and isinstance(value.get("sections"), dict):
             value = {**value, "sections": {k: v for k, v in value["sections"].items() if k not in ARCHIVE_TEXT_EXEMPT}}
         if isinstance(value, dict) and field != "ArchiveMetadata":
@@ -116,8 +118,12 @@ def english_problems(study: dict) -> list[str]:
     return out
 
 
+LICENCE_KEYS = ("License", "Source", "LicenseChecked", "LicenseTerms")
+
+
 def _langs_skip(path, k):
-    return path == "Study." and k in ENGLISH_FIELDS
+    # LicenseByLanguage is checked entry by entry in template_problems
+    return path == "Study." and (k in ENGLISH_FIELDS or k == "LicenseByLanguage")
 
 
 NON_ITEMS = ("Technical", "Metadata", "I18n", "Study", "Normative")
@@ -147,32 +153,53 @@ def _langs(value, path, allowed, out, level_map=False):
                 _langs(v, f"{path}{k}.", allowed, out, level_map=(k == "Levels"))
 
 
-def template_problems(data: dict) -> list[str]:
-    study = data.get("Study") or {}
+def licence_problems(block: dict, label: str) -> list[str]:
+    """Rules (a)-(d) for one licence block: the Study itself or one Study.LicenseByLanguage entry."""
     out = []
-    lic = study.get("License")
+    lic = block.get("License")
     lic = " ".join(map(str, lic.values())) if isinstance(lic, dict) else lic
     if not (isinstance(lic, str) and QUOTE.search(lic)):
-        out.append("Study.License must quote the rights holder's statement")
-    src = study.get("Source")
+        out.append(f"{label}.License must quote the rights holder's statement")
+    src = block.get("Source")
     u = urlparse(src) if isinstance(src, str) else None
     if not (u and u.scheme == "https" and u.netloc):
-        out.append("Study.Source must be an absolute https URL")
-    checked = study.get("LicenseChecked")
+        out.append(f"{label}.Source must be an absolute https URL")
+    checked = block.get("LicenseChecked")
     try:
         ok = isinstance(checked, str) and re.fullmatch(r"\d{4}-\d{2}-\d{2}", checked)
         ok = ok and datetime.date.fromisoformat(checked)
     except ValueError:
         ok = False
     if not ok:
-        out.append("Study.LicenseChecked must be a date YYYY-MM-DD")
-    terms = study.get("LicenseTerms")
+        out.append(f"{label}.LicenseChecked must be a date YYYY-MM-DD")
+    terms = block.get("LicenseTerms")
     if not (isinstance(terms, list) and terms and all(isinstance(t, str) and 0 < len(t) <= 300 for t in terms)):
-        out.append("Study.LicenseTerms must be a non-empty list of short strings")
+        out.append(f"{label}.LicenseTerms must be a non-empty list of short strings")
+    return out
+
+
+def template_problems(data: dict) -> list[str]:
+    study = data.get("Study") or {}
+    out = []
     langs = study.get("LicenseLanguages")
     if not (isinstance(langs, list) and langs and all(isinstance(x, str) and LANG.fullmatch(x) for x in langs)):
         out.append("Study.LicenseLanguages must be a non-empty list of language codes such as ['en']")
         langs = []
+    by_lang = study.get("LicenseByLanguage", {})
+    if not isinstance(by_lang, dict) or not all(isinstance(v, dict) for v in by_lang.values()):
+        out.append("Study.LicenseByLanguage must be a map of language code to licence entry")
+        by_lang = {}
+    # the template-level licence covers every language without its own entry (and a template without languages)
+    if not langs or any(x not in by_lang for x in langs) or any(k in study for k in LICENCE_KEYS):
+        out += licence_problems(study, "Study")
+    for code, entry in by_lang.items():
+        where = f"Study.LicenseByLanguage.{code}"
+        if not LANG.fullmatch(code):
+            out.append(f"{where}: language key must be a lowercase code such as 'de'")
+        elif code not in langs:
+            out.append(f"{where}: language {code!r} is not in Study.LicenseLanguages")
+        out += licence_problems(entry, where)
+        out += english_problems({"LicenseTerms": entry.get("LicenseTerms")}, where)
     tech = (data.get("Technical") or {}).get("Language")
     i18n = (data.get("I18n") or {}).get("Languages")
     if not isinstance(tech, str):
@@ -182,6 +209,8 @@ def template_problems(data: dict) -> list[str]:
     used = ([tech] if isinstance(tech, str) else []) + (i18n if isinstance(i18n, list) else [])
     out += [f"language {x!r} is not in Study.LicenseLanguages" for x in used if x not in langs]
     _langs(data, "", langs, out)
+    for code, entry in by_lang.items():
+        _langs(entry, f"Study.LicenseByLanguage.{code}.", langs, out)
     out += english_problems(study)
     if not (isinstance(study.get("Authors"), list) and study["Authors"]):
         out.append("Study.Authors must be a non-empty list")

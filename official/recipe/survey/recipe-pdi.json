@@ -1,0 +1,31 @@
+{
+  "RecipeVersion": "1.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "PDI",
+    "Reference": "survey-pdi.json",
+    "TaskName": "pdi"
+  },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Sum of all 7 life areas, read as a global measure of the degree of impairment",
+      "Items": [
+        "PDI01",
+        "PDI02",
+        "PDI03",
+        "PDI04",
+        "PDI05",
+        "PDI06",
+        "PDI07"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 0,
+        "max": 70
+      },
+      "HigherMeans": "greater pain-related impairment",
+      "Note": "The archive documentation names no reverse-coded items, so none are applied here."
+    }
+  ]
+}
