@@ -85,9 +85,9 @@ Per item key, two kinds of hash, so today's messages `changed scale` / `changed 
   and `MaxValue`; the same things `_scale_matches` compares today. `Scales` has one hash for the item and one per
   `VariantScales` entry. Level labels are not part of it.
 - Not in it: item order, study metadata, notes, references, other languages.
-- Equality is exactly what `_scale_matches` and `_item_reason` use today (answer codes compared as strings, min/max as
-  given, an integer-valued float counts as that integer); a difference there is a bug to fix in that one function, not a
-  second rule. Canonical form = JSON with sorted keys and no whitespace. The file carries `"Version": 1` because the
+- Fingerprint equality is exact, and therefore stricter than `_scale_matches` and `_item_reason`: a missing `Levels`,
+  `MinValue` or `MaxValue` is a value of its own (the library path keeps its lenient comparison). Answer codes are
+  compared as strings, min/max as given, an integer-valued float counts as that integer. Canonical form = JSON with sorted keys and no whitespace. The file carries `"Version": 1` because the
   accepted format is frozen. An item without a `Description` is matched on its scale alone.
 - The language of a column is `Technical.Language` of the sidecar (default `en`, as `resolve` does today); a
   multi-language `Description` is hashed once per language it carries. `add-survey --language` selects one language out of

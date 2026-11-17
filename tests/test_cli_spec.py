@@ -576,3 +576,11 @@ def test_remove_survey(tmp_path):
     assert code == 0 and json.loads(out)["success"]
     assert not (project / "code" / "specification" / "survey" / "mytask.json").exists()
     assert _run("spec", "local", "remove-survey", "--project", str(project), "mytask")[0] == 1
+
+
+def test_add_survey_deeply_nested_sidecar_exits_1(tmp_path):
+    project = _project(tmp_path / "p")
+    deep = tmp_path / "deep.json"
+    deep.write_text("[" * 100000, encoding="utf-8")
+    code, out = _run("spec", "local", "add-survey", "--project", str(project), "--sidecar", str(deep))
+    assert code == 1 and out.startswith("Error:")

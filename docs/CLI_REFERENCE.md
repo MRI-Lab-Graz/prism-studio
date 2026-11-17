@@ -1013,6 +1013,13 @@ Look up the shipped metric terms (the term registry, see the Terms section of
     python prism_tools.py terms suggest <column> [--specimen saliva] [--modality biosample] [--json]
     python prism_tools.py terms propose (--sidecar <sidecar.json> | --data <file.tsv>) --column <column> [--label TEXT] [--open] [--out FILE] [--modality biosample] [--json]
 
+
+`terms resolve` prints four tab-separated columns: column, item ID (`-` for none), reason, source (`library` or
+`local`). With `--project` the project's own survey fingerprints (`code/specification/survey/<task>.json`) also count,
+and messages about invalid fingerprint files are shown first as `warning: ...` (JSON: `problems`). `spec local add-survey`
+stores only hashes of an item's wording and scale (never the item text); `--language` registers one language, and
+a later call adds another language to the same task file. `remove-survey` deletes the task's file. For a task the library ships, local fingerprints are consulted only for items the library has (a task only the project has uses its local file for all items).
+
 - `list`: every term with its level, units and status.
 - `show`: one term; `<term>` is an ID (`prism:cortisol`), a local name, a label, an alias or an equivalent. Exit code 1 if it is unknown. Its ontology links (`SameAs` in `official/library/mappings/<modality>/`, for example SNOMED CT) are listed under `Links` (`links` with `--json`), the parent term's included, each with the term it comes from. `Measures` (a child without its own shows its parent's, with the ID it comes from; `measures`, `measures_from` with `--json`) and the term's own `ValueRules` (`value_rules`) from the same mapping files are printed when present.
 - `--modality survey` lists and shows the IDs of the official survey library, derived from the templates and recipes: `prism:<task>` (instrument), `prism:<task>.<item-key>` (item, e.g. `prism:demo.demo02`), `prism:<task>.score-<name>` (score, e.g. `prism:demo.score-routine`). `terms show` also prints `RecallPeriod`, `HigherMeans` and `LowerMeans` when the template or recipe sets them.
@@ -1026,12 +1033,6 @@ Look up the shipped metric terms (the term registry, see the Terms section of
 The validator's "not an official metric" notice prints the matching `--data` command. Exit code 1 if the metric is already official (the message names the term to use with `Term`), the sidecar or column cannot be read, or the proposal fails the checks.
 
 ## spec
-
-`terms resolve` prints four tab-separated columns: column, item ID (`-` for none), reason, source (`library` or
-`local`). With `--project` the project's own survey fingerprints (`code/specification/survey/<task>.json`) also count,
-and messages about invalid fingerprint files are shown first as `warning: ...` (JSON: `problems`). `spec local add-survey`
-stores only hashes of an item's wording and scale (never the item text); `--language` registers one language, and
-a later call adds another language to the same task file. `remove-survey` deletes the task's file.
 
 Your project's own, not yet official specification: metrics PRISM does not know yet, used in this project
 right away, and sharing them later. They live in the project at `code/specification/terms/<modality>/` (one

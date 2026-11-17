@@ -84,3 +84,33 @@ def test_remove_deletes_only_that_task(tmp_path):
     assert list(load_local_survey(tmp_path)[0]) == ["gad"]
     with pytest.raises(OverlayError):
         remove_local_survey(tmp_path, "phq")
+
+
+def test_task_names_with_a_segment_are_refused(tmp_path):
+    with pytest.raises(OverlayError):
+        write_local_survey(tmp_path, fp(task="ads.x"))
+    with pytest.raises(OverlayError):
+        remove_local_survey(tmp_path, "ads.x")
+    d = _folder(tmp_path)
+    (d / "ads.x.json").write_text(json.dumps(fp(task="ads.x")), encoding="utf-8")
+    found, problems = load_local_survey(tmp_path)
+    assert found == {} and "ads.x" in " ".join(problems)
+
+
+@pytest.mark.parametrize("version", [True, 1.0])
+def test_version_must_be_the_integer_one(tmp_path, version):
+    (_folder(tmp_path) / "v.json").write_text(json.dumps({**fp(task="v"), "Version": version}), encoding="utf-8")
+    found, problems = load_local_survey(tmp_path)
+    assert found == {} and "v.json" in " ".join(problems)
+
+
+def test_load_skips_symlinked_files(tmp_path):
+    d = _folder(tmp_path)
+    real = tmp_path / "real.json"
+    real.write_text(json.dumps(fp(task="link")), encoding="utf-8")
+    try:
+        (d / "link.json").symlink_to(real)
+    except OSError:
+        pytest.skip("symlinks not available")
+    found, problems = load_local_survey(tmp_path)
+    assert found == {} and "link.json" in " ".join(problems) and "symbolic link" in " ".join(problems)

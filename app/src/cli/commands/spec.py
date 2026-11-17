@@ -138,8 +138,10 @@ def cmd_spec_local_add_survey(args) -> None:
             raise ValueError("the sidecar must hold a JSON object")
         fingerprint = fingerprint_sidecar(sidecar, args.language)
         written = write_local_survey(args.project, fingerprint)
-    except (OSError, ValueError, OverlayError) as exc:
-        _fail(args, f"cannot register {args.sidecar}: {exc}" if not isinstance(exc, OverlayError) else str(exc))
+    except OverlayError as exc:  # a ValueError subclass: keep before ValueError
+        _fail(args, str(exc))
+    except (OSError, ValueError, RecursionError) as exc:
+        _fail(args, f"cannot register {args.sidecar}: {exc or type(exc).__name__}")
     languages = sorted({lang for item in fingerprint["Items"].values() for lang in item["Wording"]})
     _emit(
         args,

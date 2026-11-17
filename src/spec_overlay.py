@@ -255,15 +255,17 @@ def remove_local_terms(project_root, modality: str, term_id: str) -> list[Path]:
 # --- a project's survey fingerprints (code/specification/survey/<task>.json) ----------------------------
 
 _HASH = re.compile(r"[0-9a-f]{64}")
+# one segment, as scripts/specification/survey_ids.py _LOCAL: a task name with a "." would collide with an item ID
+_TASK = re.compile(r"[a-z][a-z0-9-]{0,62}")
 
 
 def _survey_problem(data, stem: str) -> str | None:
     """Why a fingerprint file's content is not valid, or None."""
     if not isinstance(data, dict):
         return "must be a JSON object"
-    if data.get("Version") != 1:
+    if type(data.get("Version")) is not int or data["Version"] != 1:
         return f"Version {data.get('Version')!r} is not supported (expected 1)"
-    if data.get("Task") != stem or not _scripts()[1]._LOCAL.fullmatch(stem):
+    if data.get("Task") != stem or not _TASK.fullmatch(stem):
         return f"Task {data.get('Task')!r} must be the file name {stem!r} (a slug)"
     items = data.get("Items")
     if not isinstance(items, dict):
@@ -291,6 +293,9 @@ def load_local_survey(project_root) -> tuple[dict[str, dict], list[str]]:
     found: dict[str, dict] = {}
     problems: list[str] = []
     for path in files:
+        if path.is_symlink():
+            problems.append(f"{path.name}: is a symbolic link, not read")
+            continue
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, ValueError, RecursionError) as exc:
@@ -337,7 +342,7 @@ def write_local_survey(project_root, fingerprint: dict) -> Path:
 
 def remove_local_survey(project_root, task: str) -> Path:
     """Remove a task's fingerprint file."""
-    if not isinstance(task, str) or not _scripts()[1]._LOCAL.fullmatch(task):
+    if not isinstance(task, str) or not _TASK.fullmatch(task):
         raise OverlayError(f"{task!r} is not a valid task name")
     target = _real_overlay_folder(project_root, "survey") / f"{task}.json"
     if target.is_symlink() or not target.is_file():
