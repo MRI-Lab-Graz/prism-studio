@@ -241,7 +241,7 @@ export function initBiometrics(elements) {
         wrapper.innerHTML = `
             <div class="input-group input-group-sm">
                 <span class="input-group-text bg-light"><i class="fas fa-folder-open text-muted"></i></span>
-                <select class="form-select form-select-sm" id="biometricsSourcedataFileSelect">
+                <select class="form-select form-select-sm" id="biometricsSourcedataFileSelect" aria-label="Sourcedata file">
                     <option value="">Loading sourcedata files...</option>
                 </select>
             </div>

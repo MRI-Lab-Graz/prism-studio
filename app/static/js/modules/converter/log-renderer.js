@@ -1,18 +1,12 @@
-const LOG_COLORS = {
-    info: '#17a2b8',
-    success: '#28a745',
-    warning: '#ffc107',
-    error: '#dc3545',
-    step: '#6c757d',
-};
+// The colours live in studio-theme.css (.converter-log-<type>), so the WCAG enhanced view can change them.
+const LOG_TYPES = new Set(['info', 'success', 'warning', 'error', 'step']);
 
 function createConverterLogLine(message, type = 'info') {
     const timestamp = new Date().toLocaleTimeString();
-    const color = LOG_COLORS[type] || LOG_COLORS.info;
     const rawMessage = String(message ?? '');
     const commandMatch = rawMessage.match(/(\bcmd=)(.+)$/);
     const line = document.createElement('span');
-    line.style.color = color;
+    line.className = `converter-log-${LOG_TYPES.has(type) ? type : 'info'}`;
 
     if (!commandMatch || typeof commandMatch.index !== 'number') {
         line.textContent = `[${timestamp}] ${rawMessage}`;

@@ -153,7 +153,7 @@ export function initEnvironment(elements) {
         wrapper.innerHTML = `
             <div class="input-group input-group-sm">
                 <span class="input-group-text bg-light"><i class="fas fa-folder-open text-muted"></i></span>
-                <select class="form-select form-select-sm" id="envSourcedataFileSelect">
+                <select class="form-select form-select-sm" id="envSourcedataFileSelect" aria-label="Sourcedata file">
                     <option value="">Loading sourcedata files...</option>
                 </select>
             </div>

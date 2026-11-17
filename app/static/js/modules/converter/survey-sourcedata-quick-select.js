@@ -41,7 +41,7 @@ export function createSurveySourcedataQuickSelectController({
         wrapper.innerHTML = `
             <div class="input-group input-group-sm">
                 <span class="input-group-text bg-light"><i class="fas fa-folder-open text-muted"></i></span>
-                <select class="form-select form-select-sm" id="sourcedataFileSelect">
+                <select class="form-select form-select-sm" id="sourcedataFileSelect" aria-label="Sourcedata file">
                     <option value="">Load from sourcedata/...</option>
                 </select>
             </div>

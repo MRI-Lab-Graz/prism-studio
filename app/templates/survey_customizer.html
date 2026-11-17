@@ -437,16 +437,16 @@
 </div>
 
 <!-- Questionnaire Preview Modal -->
-<div class="modal fade" id="previewQuestionnaireModal" tabindex="-1">
+<div class="modal fade" id="previewQuestionnaireModal" tabindex="-1" aria-labelledby="previewQuestionnaireTitle">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 class="h5 modal-title"><i class="fas fa-eye me-2"></i>Questionnaire Preview</h3>
+                <h3 class="h5 modal-title" id="previewQuestionnaireTitle"><i class="fas fa-eye me-2"></i>Questionnaire Preview</h3>
                 <div class="ms-auto me-3 d-flex align-items-center gap-2">
-                    <label class="form-label mb-0 small">Language:</label>
+                    <label class="form-label mb-0 small" for="previewModalLang">Language:</label>
                     <select id="previewModalLang" class="form-select form-select-sm" style="width:auto;"></select>
                 </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body" id="previewModalBody" style="background:#fff;">
             </div>
@@ -461,12 +461,12 @@
 </div>
 
 <!-- Add Group Modal -->
-<div class="modal fade" id="addGroupModal" tabindex="-1">
+<div class="modal fade" id="addGroupModal" tabindex="-1" aria-labelledby="addGroupTitle">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h4 class="h5 modal-title">Add New Group</h4>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <h4 class="h5 modal-title" id="addGroupTitle">Add New Group</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div class="mb-3">
@@ -483,16 +483,16 @@
 </div>
 
 <!-- Rename Group Modal -->
-<div class="modal fade" id="renameGroupModal" tabindex="-1">
+<div class="modal fade" id="renameGroupModal" tabindex="-1" aria-labelledby="renameGroupTitle">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Rename Group</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <h5 class="modal-title" id="renameGroupTitle">Rename Group</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div class="mb-3">
-                    <label class="form-label">Group Name</label>
+                    <label class="form-label" for="renameGroupName">Group Name</label>
                     <input type="text" class="form-control" id="renameGroupName">
                 </div>
             </div>

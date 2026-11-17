@@ -93,7 +93,7 @@
                     <div
                         class="progress-bar progress-bar-striped progress-bar-animated bg-success"
                         id="revalidateProgressBar"
-                        role="progressbar"
+                        role="progressbar" aria-label="Revalidation progress"
                         style="width: 0%"
                         aria-valuemin="0"
                         aria-valuemax="100"
@@ -184,8 +184,8 @@
                 {% if results.summary %}
                 {% set pass_rate = (results.summary.valid_files / results.summary.total_files * 100)|round(1) if results.summary.total_files > 0 else 0 %}
                 <div class="progress rounded-0 progress-thin">
-                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ pass_rate }}%" aria-valuenow="{{ pass_rate }}" aria-valuemin="0" aria-valuemax="100"></div>
-                    <div class="progress-bar bg-danger" role="progressbar" style="width: {{ 100 - pass_rate }}%" aria-valuenow="{{ 100 - pass_rate }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    <div class="progress-bar bg-success" role="progressbar" aria-label="Share of valid files" style="width: {{ pass_rate }}%" aria-valuenow="{{ pass_rate }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    <div class="progress-bar bg-danger" aria-hidden="true" style="width: {{ 100 - pass_rate }}%"></div>
                 </div>
                 {% endif %}
             </div>
@@ -498,7 +498,7 @@
                 <h5 class="mb-0 fw-bold">
                     <i class="fas fa-check-circle text-success me-2"></i>
                     Valid Files ({{ results.summary.valid_files }})
-                    <button class="btn btn-sm btn-outline-secondary float-end" type="button" data-bs-toggle="collapse" data-bs-target="#validFiles">
+                    <button class="btn btn-sm btn-outline-secondary float-end" type="button" data-bs-toggle="collapse" data-bs-target="#validFiles" aria-controls="validFiles" aria-expanded="false" aria-label="Show or hide valid files">
                         <i class="fas fa-chevron-down"></i>
                     </button>
                 </h5>
@@ -534,7 +534,7 @@
                 <h5 class="mb-0 fw-bold">
                     <i class="fas fa-times-circle text-danger me-2"></i>
                     Invalid Files ({{ results.summary.invalid_files }})
-                    <button class="btn btn-sm btn-outline-secondary float-end" type="button" data-bs-toggle="collapse" data-bs-target="#invalidFiles">
+                    <button class="btn btn-sm btn-outline-secondary float-end" type="button" data-bs-toggle="collapse" data-bs-target="#invalidFiles" aria-controls="invalidFiles" aria-expanded="true" aria-label="Show or hide invalid files">
                         <i class="fas fa-chevron-down"></i>
                     </button>
                 </h5>
