@@ -27,6 +27,8 @@ DISPATCH_CASES = [
     (dict(command="spec", action="local", local_action="remove"), "spec_local_remove"),
     (dict(command="spec", action="local", local_action="add-values"), "spec_local_add_values"),
     (dict(command="spec", action="local", local_action="remove-values"), "spec_local_remove_values"),
+    (dict(command="spec", action="local", local_action="add-survey"), "spec_local_add_survey"),
+    (dict(command="spec", action="local", local_action="remove-survey"), "spec_local_remove_survey"),
     (dict(command="spec", action="propose"), "spec_propose"),
     (dict(command="spec", action="catalog"), "spec_catalog"),
     (dict(command="spec", action="example"), "spec_example"),

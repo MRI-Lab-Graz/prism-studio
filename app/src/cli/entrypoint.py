@@ -179,6 +179,8 @@ from src.cli.commands.spec import (
     cmd_spec_local_list,
     cmd_spec_local_remove,
     cmd_spec_local_remove_values,
+    cmd_spec_local_add_survey,
+    cmd_spec_local_remove_survey,
     cmd_spec_propose,
 )
 from src.cli.commands.lookup import cmd_doi_lookup, cmd_orcid_search
@@ -232,6 +234,8 @@ def main() -> None:
             "spec_local_remove": cmd_spec_local_remove,
             "spec_local_add_values": cmd_spec_local_add_values,
             "spec_local_remove_values": cmd_spec_local_remove_values,
+            "spec_local_add_survey": cmd_spec_local_add_survey,
+            "spec_local_remove_survey": cmd_spec_local_remove_survey,
             "spec_propose": cmd_spec_propose,
             "spec_catalog": cmd_spec_catalog,
             "spec_example": cmd_spec_example,
