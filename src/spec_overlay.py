@@ -263,8 +263,10 @@ def _survey_problem(data, stem: str) -> str | None:
     """Why a fingerprint file's content is not valid, or None."""
     if not isinstance(data, dict):
         return "must be a JSON object"
-    if type(data.get("Version")) is not int or data["Version"] != 1:
-        return f"Version {data.get('Version')!r} is not supported (expected 1)"
+    from src.survey_fingerprints import VERSION  # lazily: it imports the survey term machinery
+
+    if type(data.get("Version")) is not int or data["Version"] != VERSION:
+        return f"Version {data.get('Version')!r} is not supported (expected {VERSION})"
     if data.get("Task") != stem or not _TASK.fullmatch(stem):
         return f"Task {data.get('Task')!r} must be the file name {stem!r} (a slug)"
     items = data.get("Items")
@@ -282,14 +284,11 @@ def _survey_problem(data, stem: str) -> str | None:
 
 def load_local_survey(project_root) -> tuple[dict[str, dict], list[str]]:
     """The valid local survey fingerprints (task -> content) and one message per file that was skipped."""
-    folder = overlay_root(project_root) / "survey"
-    files = sorted(folder.glob("*.json")) if folder.is_dir() else []
-    if not files:
-        return {}, []
     try:
-        _scripts()
+        folder = _real_overlay_folder(project_root, "survey")  # never follow a symlinked folder out of the project
     except OverlayError as exc:
         return {}, [str(exc)]
+    files = sorted(folder.glob("*.json")) if folder.is_dir() else []
     found: dict[str, dict] = {}
     problems: list[str] = []
     for path in files:
@@ -321,7 +320,9 @@ def write_local_survey(project_root, fingerprint: dict) -> Path:
     merged = fingerprint
     if path.exists() or path.is_symlink():
         try:
-            old = json.loads(path.read_text(encoding="utf-8")) if not path.is_symlink() else None
+            if path.is_symlink():
+                raise OSError("symbolic link")
+            old = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, ValueError, RecursionError):
             old = None
         if old is None or _survey_problem(old, task):

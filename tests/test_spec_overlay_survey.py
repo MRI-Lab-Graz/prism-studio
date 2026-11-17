@@ -114,3 +114,17 @@ def test_load_skips_symlinked_files(tmp_path):
         pytest.skip("symlinks not available")
     found, problems = load_local_survey(tmp_path)
     assert found == {} and "link.json" in " ".join(problems) and "symbolic link" in " ".join(problems)
+
+
+def test_load_does_not_follow_a_symlinked_specification_folder(tmp_path):
+    outside = tmp_path / "outside"
+    (outside / "survey").mkdir(parents=True)
+    (outside / "survey" / "phq.json").write_text(json.dumps(fp()), encoding="utf-8")
+    project = tmp_path / "proj"
+    (project / "code").mkdir(parents=True)
+    try:
+        (project / "code" / "specification").symlink_to(outside)
+    except OSError:
+        pytest.skip("symlinks not available")
+    found, problems = load_local_survey(project)
+    assert found == {} and len(problems) == 1 and "symbolic link" in problems[0]

@@ -430,7 +430,7 @@ def test_resolve_without_project_is_unchanged(tmp_path):
     path.write_text(json.dumps(side), encoding="utf-8")
     code, out = _run("resolve", "--sidecar", str(path))
     assert code == 0 and "DEMO01\tprism:demo.demo01\t\tlibrary" in out
-    assert "problems" not in json.loads(_run("resolve", "--sidecar", str(path), "--json")[1])
+    assert json.loads(_run("resolve", "--sidecar", str(path), "--json")[1])["problems"] == []
 
 
 def test_resolve_shows_messages_about_invalid_local_files(tmp_path):

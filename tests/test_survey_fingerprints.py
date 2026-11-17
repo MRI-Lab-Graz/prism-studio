@@ -80,3 +80,20 @@ def test_item_matches_reasons():
     assert item_matches(entry, {**col, "Description": "Anderer Text"}, "de") == "changed wording"
     assert item_matches(entry, {**col, "Description": "Secret text"}, "fr") == "language not registered"
     assert item_matches(entry, {**col, "AliasOf": "Q9"}, "de") == "alias"
+
+
+@pytest.mark.parametrize("weird", [
+    {"Description": ["a", "b"], "Levels": {"1": "x"}},
+    {"Description": 5, "Levels": {"1": "x"}},
+    {"Description": {"en": "t"}, "Levels": ["1", "2"]},
+    {"Description": {"en": "t"}, "VariantScales": "abc"},
+    {"Description": {"en": "t"}, "VariantScales": [5, None]},
+    {"Description": {"en": "t"}, "Levels": {"1": "x"}, "MinValue": "a", "MaxValue": [1]},
+])
+def test_weird_items_never_raise(weird):
+    fingerprint_sidecar({"Study": {"TaskName": "t"}, "Q1": weird})
+
+
+@pytest.mark.parametrize("top", [{"Study": ["x"]}, {"Technical": {"Language": 5}}, {"Technical": ["en"]}, {"Study": {"TaskName": 5}}])
+def test_weird_headers_never_raise(top):
+    fingerprint_sidecar({**top, "Q1": {"Description": {"en": "t"}}})

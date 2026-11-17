@@ -39,8 +39,8 @@ def fingerprint_sidecar(sidecar: dict, language: str | None = None) -> dict:
             continue
         scales = [scale_hash(item)]
         for variant in item.get("VariantScales") or []:
-            if isinstance(variant, dict) and scale_hash(variant) not in scales:
-                scales.append(scale_hash(variant))
+            if isinstance(variant, dict) and (h := scale_hash(variant)) not in scales:
+                scales.append(h)
         items[key] = {"Wording": wording_hashes(item.get("Description"), default), "Scales": scales}
     if language is not None:
         if not any(language in entry["Wording"] for entry in items.values()):

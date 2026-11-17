@@ -225,7 +225,8 @@ def _item_reason(column: dict, item: dict, column_language: str, library_languag
 def resolve_survey_sidecar(sidecar: dict, library_dir: Path | None = None, recipe_dir: Path | None = None, project_root=None) -> dict:
     """Give each column of a project's survey sidecar its official item ID, or the reason it has none.
 
-    {"instrument": TermID | None, "columns": [{"column", "term", "reason", "source"}]}; reason is "" with a term, else one
+    {"instrument": TermID | None, "columns": [{"column", "term", "reason", "source"}], "problems": [...]}; problems
+    are the messages about the project's invalid fingerprint files ([] without project_root); reason is "" with a term, else one
     of unknown instrument, unknown item, alias, changed scale, changed wording, language not registered. source is
     "library", "local" (the project's own fingerprints, only with project_root) or "" without a term. A local
     fingerprint never overrides the library result, except for a language the library item does not carry.
@@ -240,8 +241,9 @@ def resolve_survey_sidecar(sidecar: dict, library_dir: Path | None = None, recip
     language = str(technical.get("Language") or "en")
     task = _slug(str(study.get("TaskName") or "").strip())
     template = next((t for _, name, t in _templates(library_dir, []) if name == task), None) if task else None
-    # an invalid project file is skipped; its messages belong to the spec commands, resolve just runs without it
-    local = load_local_survey(project_root)[0].get(task) if project_root is not None and task else None
+    # an invalid project file is skipped and reported in problems
+    loaded, problems = load_local_survey(project_root) if project_root is not None else ({}, [])
+    local = loaded.get(task) if task else None
     local_items = local["Items"] if local else {}
     columns = []
     for key, column in sidecar.items():
@@ -273,4 +275,4 @@ def resolve_survey_sidecar(sidecar: dict, library_dir: Path | None = None, recip
             term = None if reason else f"prism:{item_local_id(task, key)}"
         columns.append({"column": key, "term": term, "reason": reason, "source": source})
     instrument = f"prism:{task}" if template or local else None
-    return {"instrument": instrument, "columns": columns}
+    return {"instrument": instrument, "columns": columns, "problems": problems}

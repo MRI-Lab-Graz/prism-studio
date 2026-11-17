@@ -193,7 +193,7 @@ def _one(out):
 
 def test_an_unchanged_item_resolves_to_its_official_id(tmp_path):
     out = _resolve(tmp_path, _sidecar(TIPI01=copy.deepcopy(TIPI["TIPI01"])))
-    assert out == {"instrument": "prism:tipi", "columns": [{"column": "TIPI01", "term": "prism:tipi.tipi01", "reason": "", "source": "library"}]}
+    assert out == {"instrument": "prism:tipi", "problems": [], "columns": [{"column": "TIPI01", "term": "prism:tipi.tipi01", "reason": "", "source": "library"}]}
 
 
 @pytest.mark.parametrize("change,reason", [

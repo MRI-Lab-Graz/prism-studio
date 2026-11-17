@@ -1016,7 +1016,7 @@ Look up the shipped metric terms (the term registry, see the Terms section of
 
 `terms resolve` prints four tab-separated columns: column, item ID (`-` for none), reason, source (`library` or
 `local`). With `--project` the project's own survey fingerprints (`code/specification/survey/<task>.json`) also count,
-and messages about invalid fingerprint files are shown first as `warning: ...` (JSON: `problems`). `spec local add-survey`
+and messages about invalid fingerprint files are shown first as `warning: ...` (JSON: `problems`, always present, empty without `--project`). `spec local add-survey`
 stores only hashes of an item's wording and scale (never the item text); `--language` registers one language, and
 a later call adds another language to the same task file. `remove-survey` deletes the task's file. For a task the library ships, local fingerprints are consulted only for items the library has (a task only the project has uses its local file for all items).
 
