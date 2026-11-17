@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from src.survey_fingerprints import fingerprint_sidecar, item_matches, scale_hash, wording_hashes
+from src.survey_fingerprints import fingerprint_sidecar, item_matches, normalize_text, scale_hash, wording_hashes
 
 
 def test_scale_hash_ignores_level_labels_and_order():
@@ -19,16 +19,54 @@ def test_scale_hash_treats_1_and_1_0_alike_but_not_01():
     assert scale_hash({"MinValue": 1}) != scale_hash({"MinValue": 2})
 
 
-def test_wording_hash_collapses_whitespace_and_keeps_case():
-    assert wording_hashes("I  feel\n fine", "en") == wording_hashes("I feel fine", "en")
-    assert wording_hashes("I feel fine", "en") != wording_hashes("i feel fine", "en")
-    assert wording_hashes("I feel fine.", "en") != wording_hashes("I feel fine", "en")
+def _w(description, language="en"):
+    return wording_hashes({"Description": description}, language)
+
+
+def test_wording_hash_collapses_whitespace_case_and_punctuation():
+    assert _w("I  feel\n fine") == _w("I feel fine")
+    assert _w("I feel fine") == _w("i feel fine")
+    assert _w("I feel fine.") == _w("I feel fine")
+    assert _w("I feel fine") != _w("I feel well")
 
 
 def test_wording_hashes_one_per_language_of_a_dict():
-    h = wording_hashes({"en": "Hello", "de": "Hallo", "x": 5}, "en")
+    h = wording_hashes({"Description": {"en": "Hello", "de": "Hallo", "x": 5}}, "en")
     assert set(h) == {"en", "de"}
-    assert wording_hashes(None, "en") == {}
+    assert wording_hashes({}, "en") == {}
+
+
+def test_normalize_text():
+    assert normalize_text("  I don\u2019t FEEL fine\u2026 \u2013 really. ") == normalize_text("i don't feel fine - really")
+    assert normalize_text("well-being") == normalize_text("well being")
+    assert normalize_text("\uff21") == normalize_text("a")
+
+
+def test_two_typings_of_one_item_match():
+    first = {"Description": "I feel \u201csad\u201d.", "Levels": {"1": "no", "2": "yes"}}
+    second = {"Description": 'i feel "sad"', "Levels": {"1": "no", "2": "yes"}}
+    entry = fingerprint_sidecar({"Study": {"TaskName": "t"}, "Q1": first})["Items"]["Q1"]
+    assert item_matches(entry, second, "en") == ""
+
+
+def test_reversed_scale_is_changed_wording():
+    a = {"Description": "Q", "Levels": {"1": "never", "2": "always"}}
+    b = {"Description": "Q", "Levels": {"1": "always", "2": "never"}}
+    assert scale_hash(a) == scale_hash(b)
+    entry = fingerprint_sidecar({"Study": {"TaskName": "t"}, "Q1": a})["Items"]["Q1"]
+    assert item_matches(entry, b, "en") == "changed wording"
+
+
+def test_labels_in_every_shape():
+    item = {"Description": {"en": "x", "de": "y"}, "Levels": {"1": "plain", "2": {"en": "a", "de": "b"}, "3": 5}}
+    assert set(wording_hashes(item, "en")) == {"en", "de"}
+
+
+def test_item_without_description_still_matches_on_scale():
+    item = {"Levels": {"1": "a", "2": "b"}}
+    assert wording_hashes(item, "en") == {}
+    entry = fingerprint_sidecar({"Study": {"TaskName": "t"}, "Q1": {"Description": "x", **item}})["Items"]["Q1"]
+    assert item_matches(entry, item, "en") == ""
 
 
 SIDECAR = {
@@ -73,7 +111,7 @@ def test_fingerprint_holds_no_item_text():
 
 def test_item_matches_reasons():
     entry = fingerprint_sidecar(SIDECAR)["Items"]["Q1"]
-    col = {"Description": {"de": "Geheimer Text"}, "Levels": {"1": "x", "2": "y"}}
+    col = {"Description": {"de": "Geheimer Text"}, "Levels": {"1": "a", "2": "b"}}
     assert item_matches(entry, col, "de") == ""
     assert item_matches(entry, {"Levels": {"1": "x", "2": "y"}}, "de") == ""  # no Description: scale alone
     assert item_matches(entry, {**col, "Levels": {"1": "x"}}, "de") == "changed scale"
