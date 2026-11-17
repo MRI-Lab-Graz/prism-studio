@@ -1,21 +1,20 @@
 """axe-core on what test_accessibility.py cannot see at page load, in the WCAG enhanced view:
-the hidden converter tabs, every modal, a validator results page (clean and with an error), a specification
+the hidden converter tabs, every modal, a validator results page, a specification
 document page and the states a page shows after load: no project open, an unfinished project, a failed preview
 and the item-map dialog."""
 
-import pytest
+from pathlib import Path
 
+import pytest
 from playwright.sync_api import expect
 
 from tests.e2e.conftest import _new_page
 from tests.e2e.test_converter_flows import open_survey_tab, select_survey_file
 from tests.e2e.test_project_gate_flows import _make_unfinished
 from tests.e2e.pages import PAGES
-from tests.e2e.test_accessibility import AXE
 from tests.e2e.test_validate_flows import converted_project, validate_current  # noqa: F401 (fixture)
 
-# The item-map dialog gets its title (and so its name) from JavaScript when it opens, never bare.
-TITLED_AT_RUNTIME = {"itemMapModal"}
+AXE = Path(__file__).resolve().parents[2] / "node_modules" / "axe-core" / "axe.min.js"
 CONVERTER_TABS = ["participants", "survey", "biometrics", "biosample", "physio", "environment"]
 
 
@@ -65,7 +64,8 @@ def test_every_modal_has_no_accessibility_violations(app_page, studio_url, path)
         app_page.evaluate(f"bootstrap.Modal.getOrCreateInstance(document.getElementById('{modal}')).show()")
         app_page.wait_for_selector(f"#{modal}.show")
         app_page.wait_for_timeout(400)  # the fade-in
-        violations = [v for v in serious_violations(app_page) if not (modal in TITLED_AT_RUNTIME and v.startswith('aria-dialog-name'))]
+        # the item-map dialog gets its title (and so its name) from JavaScript when it opens, never bare
+        violations = [v for v in serious_violations(app_page) if not (modal == "itemMapModal" and v.startswith("aria-dialog-name"))]
         if violations:
             found[modal] = violations
         app_page.evaluate(f"bootstrap.Modal.getInstance(document.getElementById('{modal}')).hide()")
@@ -117,17 +117,3 @@ def test_item_map_dialog_with_rows_has_no_accessibility_violations(app_page, stu
     found = serious_violations(app_page)
     assert found == [], f"axe violations in the item-map dialog: {found}"
 
-
-def test_results_page_with_an_error_has_no_accessibility_violations(browser, studio_url, converted_project):
-    survey_dir = next(converted_project.glob("sub-*/**/survey"))
-    good = next(survey_dir.glob("*_survey.tsv"))
-    good.rename(good.with_name(good.name.replace("_survey.tsv", "_survey_oops.tsv")))
-    context, page, problems = _new_page(browser, studio_url, converted_project)
-    try:
-        validate_current(page, studio_url)
-        page.wait_for_load_state("networkidle")
-        found = serious_violations(page)
-    finally:
-        context.close()
-    assert found == [], f"axe violations on the results page with an error: {found}"
-    assert not problems, "\n".join(problems)

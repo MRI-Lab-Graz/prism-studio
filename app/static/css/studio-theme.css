@@ -771,8 +771,7 @@ html[data-wcag] .studio-theme :is(.nav-pills, .nav-tabs) .nav-link {
 html[data-wcag] .studio-theme :is(.nav-pills, .nav-tabs) .nav-link:hover {
     color: var(--studio-semantic-primary-hover);
 }
-html[data-wcag] .studio-theme .nav-pills .nav-link.active,
-html[data-wcag] .studio-theme .nav-pills .show > .nav-link {
+html[data-wcag] .studio-theme .nav-pills .nav-link.active {
     color: #fff;
     background-color: var(--studio-semantic-primary);
 }

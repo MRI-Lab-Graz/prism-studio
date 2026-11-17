@@ -6,7 +6,7 @@ from playwright.sync_api import expect
 
 from tests.e2e.conftest import _new_page
 from tests.e2e.test_accessibility_states import serious_violations
-from tests.e2e.test_converter_flows import convert_survey, open_survey_tab, select_survey_file
+from tests.e2e.test_converter_flows import open_survey_tab, select_survey_file
 from tests.e2e.test_file_management_flows import (
     WIDE,
     build_two_subjects,
