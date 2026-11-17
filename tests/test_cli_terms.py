@@ -390,3 +390,56 @@ def test_terms_show_without_mappings_has_empty_measures(capsys):
 
 def test_terms_show_without_links_prints_no_links_line(capsys):
     assert "Links" not in _show("cortisol.serum", capsys)
+
+
+def _demo_sidecar(tmp_path, wording):
+    side = json.loads((REPO / "official" / "library" / "survey" / "survey-demo.json").read_text(encoding="utf-8"))
+    side["Study"]["TaskName"] = "demo"
+    side["Technical"]["Language"] = "de"   # a language the library item does not carry
+    side["DEMO01"]["Description"] = {"de": wording}
+    path = tmp_path / "task-demo_survey.json"
+    path.write_text(json.dumps(side), encoding="utf-8")
+    return path
+
+
+def _project_with_fingerprint(tmp_path, sidecar):
+    project = tmp_path / "proj"
+    project.mkdir()
+    r = subprocess.run(
+        [sys.executable, str(REPO / "prism_tools.py"), "spec", "local", "add-survey", "--project", str(project),
+         "--sidecar", str(sidecar)], capture_output=True, text=True)
+    assert r.returncode == 0, r.stdout + r.stderr
+    return project
+
+
+def test_resolve_with_project_uses_local_fingerprints(tmp_path):
+    sidecar = _demo_sidecar(tmp_path, "Mein eigener Wortlaut")
+    code, out = _run("resolve", "--sidecar", str(sidecar))
+    assert "DEMO01\tprism:demo.demo01\t\tlibrary" in out and "local" not in out
+    project = _project_with_fingerprint(tmp_path, sidecar)
+    code, out = _run("resolve", "--sidecar", str(sidecar), "--project", str(project))
+    assert code == 0 and "DEMO01\tprism:demo.demo01\t\tlocal" in out
+    data = json.loads(_run("resolve", "--sidecar", str(sidecar), "--project", str(project), "--json")[1])
+    assert data["columns"][0]["source"] == "local" and data["problems"] == []
+
+
+def test_resolve_without_project_is_unchanged(tmp_path):
+    side = json.loads((REPO / "official" / "library" / "survey" / "survey-demo.json").read_text(encoding="utf-8"))
+    side["Study"]["TaskName"] = "demo"
+    path = tmp_path / "s.json"
+    path.write_text(json.dumps(side), encoding="utf-8")
+    code, out = _run("resolve", "--sidecar", str(path))
+    assert code == 0 and "DEMO01\tprism:demo.demo01\t\tlibrary" in out
+    assert "problems" not in json.loads(_run("resolve", "--sidecar", str(path), "--json")[1])
+
+
+def test_resolve_shows_messages_about_invalid_local_files(tmp_path):
+    sidecar = _demo_sidecar(tmp_path, "x")
+    project = tmp_path / "proj"
+    folder = project / "code" / "specification" / "survey"
+    folder.mkdir(parents=True)
+    (folder / "bad.json").write_text("{not json", encoding="utf-8")
+    code, out = _run("resolve", "--sidecar", str(sidecar), "--project", str(project))
+    assert code == 0 and out.startswith("warning: ")
+    data = json.loads(_run("resolve", "--sidecar", str(sidecar), "--project", str(project), "--json")[1])
+    assert data["problems"]

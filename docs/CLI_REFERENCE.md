@@ -1009,7 +1009,7 @@ Look up the shipped metric terms (the term registry, see the Terms section of
     python prism_tools.py terms list [--modality biosample] [--json]
     python prism_tools.py terms show <term> [--modality biosample] [--json]
     python prism_tools.py terms freeze --modality survey [--json]
-    python prism_tools.py terms resolve --sidecar <survey-sidecar.json> [--json]
+    python prism_tools.py terms resolve --sidecar <survey-sidecar.json> [--project <project>] [--json]
     python prism_tools.py terms suggest <column> [--specimen saliva] [--modality biosample] [--json]
     python prism_tools.py terms propose (--sidecar <sidecar.json> | --data <file.tsv>) --column <column> [--label TEXT] [--open] [--out FILE] [--modality biosample] [--json]
 
@@ -1027,6 +1027,12 @@ The validator's "not an official metric" notice prints the matching `--data` com
 
 ## spec
 
+`terms resolve` prints four tab-separated columns: column, item ID (`-` for none), reason, source (`library` or
+`local`). With `--project` the project's own survey fingerprints (`code/specification/survey/<task>.json`) also count,
+and messages about invalid fingerprint files are shown first as `warning: ...` (JSON: `problems`). `spec local add-survey`
+stores only hashes of an item's wording and scale (never the item text); `--language` registers one language, and
+a later call adds another language to the same task file. `remove-survey` deletes the task's file.
+
 Your project's own, not yet official specification: metrics PRISM does not know yet, used in this project
 right away, and sharing them later. They live in the project at `code/specification/terms/<modality>/` (one
 JSON file per term, exactly the term a proposal carries) and are read by the validator together with the
@@ -1037,6 +1043,8 @@ official registry; the official registry always wins, and a local term never rea
     python prism_tools.py spec local remove --project <project> <term-id> [--json]
     python prism_tools.py spec local add-values --project <project> --field <field> --value <value> [--value <value> ...] [--json]
     python prism_tools.py spec local remove-values --project <project> --field <field> --value <value> [--value <value> ...] [--json]
+    python prism_tools.py spec local add-survey --project <project> --sidecar <survey-sidecar.json> [--language <code>] [--json]
+    python prism_tools.py spec local remove-survey --project <project> <task> [--json]
     python prism_tools.py spec propose --project <project> (--term <term-id> [--term <term-id> ...] | --all | --patch) [--patch] [--out FILE] [--open] [--json]
 
 - `local list`: every local item with its status: `local`, `now-official` (the official registry has it since; the official definition is used, remove your copy) or `invalid` (a file that was skipped, with the reason).

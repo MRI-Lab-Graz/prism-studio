@@ -117,7 +117,7 @@ decided it (`library`, `official`, `local`). Local, not-yet-accepted fingerprint
 
 ```
 spec local add-survey   --project <p> --sidecar <sidecar.json> [--language <code>] [--json]
-spec local remove       --project <p> <task>                      (existing command, extended)
+spec local remove-survey --project <p> <task>
 spec propose            --project <p> --survey <task> [--out FILE] [--open] [--json]
 ```
 

@@ -2269,6 +2269,7 @@ def build_prism_tools_parsers(
             _p.add_argument("term", help="Term ID, e.g. prism:cortisol, or a local name")
         if _name == "resolve":
             _p.add_argument("--sidecar", required=True, help="The survey sidecar .json")
+            _p.add_argument("--project", help="Also use this project's own survey fingerprints (code/specification/survey/)")
         if _name == "suggest":
             _p.add_argument("column", help="Column name as it appears in your sidecar")
             _p.add_argument("--specimen", help="Technical.SpecimenType of the sidecar")
@@ -2363,6 +2364,8 @@ def build_prism_tools_parsers(
         ("remove", spec_local_subparsers.add_parser("remove", help="Remove a local term (and its local children)")),
         ("add-values", spec_local_subparsers.add_parser("add-values", help="Allow new values of a field in this project (for example a new SpecimenType)")),
         ("remove-values", spec_local_subparsers.add_parser("remove-values", help="Remove values added with add-values")),
+        ("add-survey", spec_local_subparsers.add_parser("add-survey", help="Register a survey's item wording and scales as local fingerprints (no item text is stored)")),
+        ("remove-survey", spec_local_subparsers.add_parser("remove-survey", help="Remove a task's local survey fingerprints")),
         ("propose", parser_spec_propose),
     ):
         _parser.add_argument("--project", required=True, help="The PRISM project folder")
@@ -2379,6 +2382,11 @@ def build_prism_tools_parsers(
             _parser.add_argument("--value", action="append", required=True, help="A value to allow (repeatable)")
         if _name in ("remove",):
             _parser.add_argument("term", help="Term ID, for example prism:dhea-s")
+        if _name == "add-survey":
+            _parser.add_argument("--sidecar", required=True, help="The survey sidecar .json")
+            _parser.add_argument("--language", help="Register only this language of the wording (default: every language the sidecar carries)")
+        if _name == "remove-survey":
+            _parser.add_argument("task", help="The task name, for example mytask")
         if _name == "propose":
             _what = _parser.add_mutually_exclusive_group()
             _what.add_argument("--term", action="append", help="A local term to share, for example prism:dhea-s (repeatable)")

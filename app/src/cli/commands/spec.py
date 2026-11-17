@@ -15,9 +15,12 @@ from src.spec_overlay import (
     list_local_items,
     load_local_patches,
     proposal_for_local_terms,
+    remove_local_survey,
     remove_local_terms,
     remove_local_values,
+    write_local_survey,
 )
+from src.survey_fingerprints import fingerprint_sidecar
 from src.spec_contribute import check_new_kind_name, example_entries, proposal_for_new_kind, proposal_for_new_metric, proposal_for_values, spec_catalog
 from src.term_proposal import deliver_proposal, vendored_term_proposal
 
@@ -125,6 +128,33 @@ def cmd_spec_local_remove_values(args) -> None:
         f"Removed from this project: {args.field} = {', '.join(result['removed'])}"
         + ("" if written else " (no additions left: the patch file was removed)"),
     )
+
+
+def cmd_spec_local_add_survey(args) -> None:
+    """Register a survey sidecar's wording and scales as local fingerprints (never the item text)."""
+    try:
+        sidecar = json.loads(Path(args.sidecar).read_text(encoding="utf-8"))
+        if not isinstance(sidecar, dict):
+            raise ValueError("the sidecar must hold a JSON object")
+        fingerprint = fingerprint_sidecar(sidecar, args.language)
+        written = write_local_survey(args.project, fingerprint)
+    except (OSError, ValueError, OverlayError) as exc:
+        _fail(args, f"cannot register {args.sidecar}: {exc}" if not isinstance(exc, OverlayError) else str(exc))
+    languages = sorted({lang for item in fingerprint["Items"].values() for lang in item["Wording"]})
+    _emit(
+        args,
+        {"success": True, "task": fingerprint["Task"], "items": len(fingerprint["Items"]), "languages": languages, "written": str(written)},
+        f"Registered task {fingerprint['Task']}: {len(fingerprint['Items'])} item(s), languages {', '.join(languages)}\n  {written}",
+    )
+
+
+def cmd_spec_local_remove_survey(args) -> None:
+    """Remove a task's local survey fingerprints."""
+    try:
+        removed = remove_local_survey(args.project, args.task)
+    except OverlayError as exc:
+        _fail(args, str(exc))
+    _emit(args, {"success": True, "removed": str(removed)}, f"Removed:\n  {removed}")
 
 
 def cmd_spec_propose(args) -> None:

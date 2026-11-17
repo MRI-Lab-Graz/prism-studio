@@ -514,3 +514,65 @@ def test_spec_check_kind_name():
     assert code == 0 and json.loads(text)["success"]
     code, text = _run("spec", "check-kind-name", "func", "--json")
     assert code == 1 and "already taken" in json.loads(text)["error"]
+
+
+def _survey_sidecar(tmp_path, texts=None):
+    side = {"Study": {"TaskName": "mytask", "OriginalName": {"en": "My task"}},
+            "Technical": {"Language": "en"},
+            "Q1": {"Description": {"en": "Secret wording one"}, "Levels": {"1": "no", "2": "yes"}},
+            "Q2": {"Description": {"en": "Secret wording two"}, "Levels": {"1": "no", "2": "yes"}}}
+    if texts:
+        side["Q1"]["Description"].update(texts)
+    path = tmp_path / "task-mytask_survey.json"
+    path.write_text(json.dumps(side), encoding="utf-8")
+    return path
+
+
+def test_add_survey_writes_fingerprints_without_item_text(tmp_path):
+    project = _project(tmp_path / "p")
+    sidecar = _survey_sidecar(tmp_path)
+    code, out = _run("spec", "local", "add-survey", "--project", str(project), "--sidecar", str(sidecar), "--json")
+    data = json.loads(out)
+    assert code == 0 and data["success"] and data["task"] == "mytask" and data["items"] == 2 and data["languages"] == ["en"]
+    written = (project / "code" / "specification" / "survey" / "mytask.json").read_text(encoding="utf-8")
+    assert "Secret wording" not in written and "Levels" not in written
+
+
+def test_add_survey_second_language_merges(tmp_path):
+    project = _project(tmp_path / "p")
+    sidecar = _survey_sidecar(tmp_path, {"de": "Geheim eins"})
+    assert _run("spec", "local", "add-survey", "--project", str(project), "--sidecar", str(sidecar), "--language", "en")[0] == 0
+    code, out = _run("spec", "local", "add-survey", "--project", str(project), "--sidecar", str(sidecar), "--language", "de", "--json")
+    assert code == 0 and json.loads(out)["languages"] == ["de"]
+    saved = json.loads((project / "code" / "specification" / "survey" / "mytask.json").read_text(encoding="utf-8"))
+    assert set(saved["Items"]["Q1"]["Wording"]) == {"en", "de"}
+
+
+def test_add_survey_refuses_a_language_the_sidecar_lacks(tmp_path):
+    project = _project(tmp_path / "p")
+    sidecar = _survey_sidecar(tmp_path)
+    code, out = _run("spec", "local", "add-survey", "--project", str(project), "--sidecar", str(sidecar), "--language", "fr")
+    assert code == 1 and "fr" in out
+    assert not (project / "code" / "specification" / "survey").exists()
+
+
+def test_add_survey_refuses_the_same_language_twice(tmp_path):
+    project = _project(tmp_path / "p")
+    sidecar = _survey_sidecar(tmp_path)
+    assert _run("spec", "local", "add-survey", "--project", str(project), "--sidecar", str(sidecar))[0] == 0
+    assert _run("spec", "local", "add-survey", "--project", str(project), "--sidecar", str(sidecar))[0] == 1
+
+
+def test_add_survey_unreadable_sidecar_exits_1(tmp_path):
+    project = _project(tmp_path / "p")
+    assert _run("spec", "local", "add-survey", "--project", str(project), "--sidecar", str(tmp_path / "nope.json"))[0] == 1
+
+
+def test_remove_survey(tmp_path):
+    project = _project(tmp_path / "p")
+    sidecar = _survey_sidecar(tmp_path)
+    _run("spec", "local", "add-survey", "--project", str(project), "--sidecar", str(sidecar))
+    code, out = _run("spec", "local", "remove-survey", "--project", str(project), "mytask", "--json")
+    assert code == 0 and json.loads(out)["success"]
+    assert not (project / "code" / "specification" / "survey" / "mytask.json").exists()
+    assert _run("spec", "local", "remove-survey", "--project", str(project), "mytask")[0] == 1

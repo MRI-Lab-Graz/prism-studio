@@ -13,6 +13,7 @@ from src.term_proposal import (
     deliver_proposal,
     load_inherited_sidecar,
 )
+from src.spec_overlay import load_local_survey
 from src.survey_terms import build_survey_registry, freeze_report, released_ids, resolve_survey_sidecar, write_released_ids
 from src.term_registry import (
     context_value,
@@ -83,9 +84,15 @@ def cmd_terms_resolve(args) -> None:
     except (OSError, ValueError) as exc:
         _emit(args, {"success": False, "error": str(exc)}, f"Error: cannot read {args.sidecar}: {exc}")
         sys.exit(1)
-    result = resolve_survey_sidecar(sidecar)
-    _emit(args, {"success": True, **result},
-          "\n".join(f"{c['column']}\t{c['term'] or '-'}\t{c['reason']}" for c in result["columns"]))
+    project = getattr(args, "project", None)
+    result = resolve_survey_sidecar(sidecar, project_root=project)
+    payload = {"success": True, **result}
+    lines = [f"{c['column']}\t{c['term'] or '-'}\t{c['reason']}\t{c.get('source', '')}" for c in result["columns"]]
+    if project:
+        problems = load_local_survey(project)[1]
+        payload["problems"] = problems
+        lines = [f"warning: {m}" for m in problems] + lines
+    _emit(args, payload, "\n".join(lines))
 
 
 def cmd_terms_show(args) -> None:
