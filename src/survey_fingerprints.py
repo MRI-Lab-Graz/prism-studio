@@ -58,7 +58,7 @@ def item_matches(entry: dict, column: dict, language: str) -> str:
         return "changed scale"
     ours = wording_hashes(column.get("Description"), language)  # no Description: scale alone
     theirs = entry.get("Wording", {})
-    if ours and not ours.keys() & theirs.keys():
+    if ours and theirs and not ours.keys() & theirs.keys():
         return "language not registered"
     if any(ours[lang] != theirs[lang] for lang in ours.keys() & theirs.keys()):
         return "changed wording"
