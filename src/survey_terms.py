@@ -259,7 +259,7 @@ def resolve_survey_sidecar(sidecar: dict, library_dir: Path | None = None, recip
                 term, reason = None, "unknown item"
             else:
                 reason = item_matches(entry, column, language)
-                term = None if reason else f"prism:{item_local_id(task, key)}"
+                term = None if reason else f"local:{item_local_id(task, key)}"
                 source = "" if reason else "local"
         elif not isinstance(item, dict) or "AliasOf" in item or not isinstance(column, dict):
             term, reason = None, "unknown item"
@@ -274,5 +274,5 @@ def resolve_survey_sidecar(sidecar: dict, library_dir: Path | None = None, recip
                     reason, source = local_reason, "" if local_reason else "local"
             term = None if reason else f"prism:{item_local_id(task, key)}"
         columns.append({"column": key, "term": term, "reason": reason, "source": source})
-    instrument = f"prism:{task}" if template or local else None
+    instrument = f"prism:{task}" if template else f"local:{task}" if local else None
     return {"instrument": instrument, "columns": columns, "problems": problems}

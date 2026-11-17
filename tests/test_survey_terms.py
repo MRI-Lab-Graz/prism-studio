@@ -327,8 +327,8 @@ def _res(tmp_path, sidecar, root):
 def test_project_only_task_resolves_from_local_fingerprints(tmp_path):
     root = _project(tmp_path, _mine(Q1=copy.deepcopy(_Q)))
     out = _res(tmp_path, _mine(Q1=copy.deepcopy(_Q), Q2=copy.deepcopy(_Q)), root)
-    assert out["instrument"] == "prism:mine"
-    assert out["columns"] == [{"column": "Q1", "term": "prism:mine.q1", "reason": "", "source": "local"},
+    assert out["instrument"] == "local:mine"
+    assert out["columns"] == [{"column": "Q1", "term": "local:mine.q1", "reason": "", "source": "local"},
                               {"column": "Q2", "term": None, "reason": "unknown item", "source": ""}]
 
 
@@ -352,6 +352,15 @@ def test_local_never_overrides_the_library(tmp_path):
     column = copy.deepcopy(other)
     out = resolve_survey_sidecar(_sidecar(TIPI01=column), *_lib(tmp_path, {"tipi": TIPI})[:1], project_root=root)
     assert _one(out)["reason"] == "changed wording" and _one(out)["term"] is None
+
+
+def test_library_item_in_a_local_language_keeps_prism_id(tmp_path):
+    de = {**TIPI["TIPI02"], "Description": {"de": "Kritisch"}}
+    root = _project(tmp_path, {"Study": {"TaskName": "tipi"}, "Technical": {"Language": "de"}, "TIPI02": de})
+    sidecar = {**_sidecar(TIPI02=copy.deepcopy(de)), "Technical": {"Language": "de"}}
+    out = resolve_survey_sidecar(sidecar, *_lib(tmp_path, {"tipi": TIPI})[:1], project_root=root)
+    assert out["instrument"] == "prism:tipi"
+    assert _one(out) == {"column": "TIPI02", "term": "prism:tipi.tipi02", "reason": "", "source": "local"}
 
 
 def test_local_german_works_with_a_library_english_task(tmp_path):

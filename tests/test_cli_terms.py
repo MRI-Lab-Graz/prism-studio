@@ -423,6 +423,17 @@ def test_resolve_with_project_uses_local_fingerprints(tmp_path):
     assert data["columns"][0]["source"] == "local" and data["problems"] == []
 
 
+def test_resolve_project_only_task_gets_local_names(tmp_path):
+    q = {"Description": {"en": "Slept well"}, "Levels": {"1": "no", "2": "yes"}, "MinValue": 1, "MaxValue": 2}
+    path = tmp_path / "task-mylab_survey.json"
+    path.write_text(json.dumps({"Study": {"TaskName": "mylab"}, "Technical": {"Language": "en"}, "Q1": q}), encoding="utf-8")
+    project = _project_with_fingerprint(tmp_path, path)
+    code, out = _run("resolve", "--sidecar", str(path), "--project", str(project))
+    assert code == 0 and "Q1\tlocal:mylab.q1\t\tlocal" in out
+    data = json.loads(_run("resolve", "--sidecar", str(path), "--project", str(project), "--json")[1])
+    assert data["instrument"] == "local:mylab" and data["columns"][0]["term"] == "local:mylab.q1"
+
+
 def test_resolve_without_project_is_unchanged(tmp_path):
     side = json.loads((REPO / "official" / "library" / "survey" / "survey-demo.json").read_text(encoding="utf-8"))
     side["Study"]["TaskName"] = "demo"
