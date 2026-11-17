@@ -252,6 +252,100 @@ def remove_local_terms(project_root, modality: str, term_id: str) -> list[Path]:
     return doomed
 
 
+# --- a project's survey fingerprints (code/specification/survey/<task>.json) ----------------------------
+
+_HASH = re.compile(r"[0-9a-f]{64}")
+
+
+def _survey_problem(data, stem: str) -> str | None:
+    """Why a fingerprint file's content is not valid, or None."""
+    if not isinstance(data, dict):
+        return "must be a JSON object"
+    if data.get("Version") != 1:
+        return f"Version {data.get('Version')!r} is not supported (expected 1)"
+    if data.get("Task") != stem or not _scripts()[1]._LOCAL.fullmatch(stem):
+        return f"Task {data.get('Task')!r} must be the file name {stem!r} (a slug)"
+    items = data.get("Items")
+    if not isinstance(items, dict):
+        return "Items must be an object"
+    for key, item in items.items():
+        wording = item.get("Wording") if isinstance(item, dict) else None
+        scales = item.get("Scales") if isinstance(item, dict) else None
+        if not isinstance(wording, dict) or not all(isinstance(k, str) and isinstance(v, str) and _HASH.fullmatch(v) for k, v in wording.items()):
+            return f"item {key!r}: Wording must map a language to a 64-character hash"
+        if not isinstance(scales, list) or not all(isinstance(v, str) and _HASH.fullmatch(v) for v in scales):
+            return f"item {key!r}: Scales must be a list of 64-character hashes"
+    return None
+
+
+def load_local_survey(project_root) -> tuple[dict[str, dict], list[str]]:
+    """The valid local survey fingerprints (task -> content) and one message per file that was skipped."""
+    folder = overlay_root(project_root) / "survey"
+    files = sorted(folder.glob("*.json")) if folder.is_dir() else []
+    if not files:
+        return {}, []
+    try:
+        _scripts()
+    except OverlayError as exc:
+        return {}, [str(exc)]
+    found: dict[str, dict] = {}
+    problems: list[str] = []
+    for path in files:
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError, RecursionError) as exc:
+            problems.append(f"{path.name}: cannot read ({type(exc).__name__})")
+            continue
+        if (why := _survey_problem(data, path.stem)):
+            problems.append(f"{path.name}: {why}")
+        else:
+            found[path.stem] = data
+    return found, problems
+
+
+def write_local_survey(project_root, fingerprint: dict) -> Path:
+    """Write the task's fingerprint file, or merge new items, languages and scale hashes into the existing one.
+
+    A language already present for an item raises OverlayError; everything is checked before anything is written.
+    """
+    task = fingerprint.get("Task")
+    if (why := _survey_problem(fingerprint, task if isinstance(task, str) else "")):
+        raise OverlayError(f"not a valid survey fingerprint: {why}")
+    folder = _real_overlay_folder(project_root, "survey")
+    path = folder / f"{task}.json"
+    merged = fingerprint
+    if path.exists() or path.is_symlink():
+        try:
+            old = json.loads(path.read_text(encoding="utf-8")) if not path.is_symlink() else None
+        except (OSError, ValueError, RecursionError):
+            old = None
+        if old is None or _survey_problem(old, task):
+            raise OverlayError(f"{path.name} already exists in the project's specification folder and is not a valid fingerprint; remove it first")
+        for key, item in fingerprint["Items"].items():
+            clash = set(item["Wording"]) & set(old["Items"].get(key, {}).get("Wording", {}))
+            if clash:
+                raise OverlayError(f"{path.name} already has {', '.join(sorted(clash))} for item {key!r}; remove the file first")
+        merged = old
+        for key, item in fingerprint["Items"].items():
+            target = merged["Items"].setdefault(key, {"Wording": {}, "Scales": []})
+            target["Wording"].update(item["Wording"])
+            target["Scales"] += [h for h in item["Scales"] if h not in target["Scales"]]
+    folder.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(merged, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    return path
+
+
+def remove_local_survey(project_root, task: str) -> Path:
+    """Remove a task's fingerprint file."""
+    if not isinstance(task, str) or not _scripts()[1]._LOCAL.fullmatch(task):
+        raise OverlayError(f"{task!r} is not a valid task name")
+    target = _real_overlay_folder(project_root, "survey") / f"{task}.json"
+    if target.is_symlink() or not target.is_file():
+        raise OverlayError(f"no local survey fingerprint {task} in this project")
+    target.unlink()
+    return target
+
+
 # --- operations the CLI and the Contribute page share ------------------------------------------------
 
 _NOT_PROJECT_DATA = {"code", "derivatives", "sourcedata", ".git", ".datalad"}
