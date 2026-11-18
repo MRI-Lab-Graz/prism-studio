@@ -260,7 +260,7 @@
     "scripts/specification/check_mappings.py": "90cb30a99dfc561e3a84e697747b2ccdef5af5f0ae27a9b8aae33bf829abddde",
     "scripts/specification/check_modalities.py": "5608e6f3f19749eff0fcc4de27176f57ef9b615e07d39ff614c3760ef1a9ea5c",
     "scripts/specification/check_schema_versions.py": "f3e4f24182f0b199d8c4ba1157e5231dc6835407898324562437f328c375403a",
-    "scripts/specification/check_terms.py": "edcf4a4db397da46fec7bedf6d9d48086dafb114b25011fa467342233af97075",
+    "scripts/specification/check_terms.py": "8d6cdf4bb0d569a8c0cd5087e7ac4ef053b90354260084bef8eb032af9a7c469",
     "scripts/specification/entities_entry.schema.json": "b0f471628a35b97f861a6ec1f1bd0930dfe7d08a3267fc86f083fbbe3c532be4",
     "scripts/specification/fingerprint.py": "fbb7e797ee1a369796df32a9610cfa07bbcf1926a60c0e72f6010398aae3680f",
     "scripts/specification/generate_schema_reference.py": "a303670cc17e222fa8a7c9c0a5310fe552cf98a85f1ecb784a800cb71d93a006",
