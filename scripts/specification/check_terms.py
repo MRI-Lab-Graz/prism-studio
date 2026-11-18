@@ -181,6 +181,14 @@ def check_registry(registry: dict[str, dict], specimen_types: list[str] | None,
     return problems
 
 
+# local:<slug>[.<item>] is a project's own, not yet official ID: never registered here, never an IRI.
+_LOCAL = re.compile(r"local:[a-z][a-z0-9-]{0,62}(\.[a-z0-9][a-z0-9-]{0,62})?")
+
+
+def is_local_id(term_id: str) -> bool:
+    return bool(_LOCAL.fullmatch(term_id))
+
+
 # The prism: prefix is a namespace: prism:<local> is the URL of the term's file, found by looking the
 # local ID up in every modality's term folder. w3id.org redirects to wherever the repository is published.
 NAMESPACE = "https://w3id.org/prism-specification/terms/"
@@ -189,6 +197,8 @@ NAMESPACE = "https://w3id.org/prism-specification/terms/"
 def expand(term_id: str, repo: Path = Path(__file__).resolve().parent.parent) -> str:
     """The URL of a prism: term (ValueError when the ID is not a term of this repository)."""
     prefix, _, local = term_id.partition(":")
+    if prefix == "local":
+        raise ValueError(f"{term_id!r} is a local ID: it belongs to one project and has no IRI")
     if prefix != "prism" or not _LOCAL_ID.fullmatch(local):
         raise ValueError(f"{term_id!r} is not a prism:<id> term")
     for modality in term_modalities(repo):
@@ -206,6 +216,15 @@ def cross_registry_problems(registries: dict[str, dict[str, dict]]) -> list[str]
             if seen.setdefault(key, modality) != modality:
                 problems.append(f"{key}: ID exists in both {seen[key]} and {modality}; an ID must name one concept")
     return problems
+
+
+def survey_registry(repo: Path) -> dict[str, dict]:
+    """The released survey IDs (ids/survey-ids.txt, without `prism:`) shaped like a term registry."""
+    try:
+        lines = (Path(repo) / "ids" / "survey-ids.txt").read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return {}
+    return {l.strip().removeprefix("prism:"): {} for l in lines if l.strip()}
 
 
 def context_values(schema_file: Path, field: str | None) -> list[str] | None:
@@ -264,6 +283,7 @@ def main(argv: list[str] | None = None) -> int:
         registries[terms.name] = registry
         problems += [prefix + p for p in found + check_registry(registry, context, loinc)]
     if args.all:
+        registries["survey"] = survey_registry(args.repo)
         problems += cross_registry_problems(registries)
     for problem in problems:
         print(problem)
