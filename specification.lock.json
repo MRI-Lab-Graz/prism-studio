@@ -46,7 +46,7 @@
     "docs/specs/entities.md": "99ed861be3c330b9e8d5353a5839e276da7b53505fa988171099205ab858cb91",
     "docs/specs/environment.md": "de9c3ebd7fcd7a67316cf434ab2a0e464f31a9ac44b7f96063c0642d7f9cc839",
     "docs/specs/events.md": "6d82bf192ce2d86c823c54f0f500fed61601a1946219452c95dd5093927c4702",
-    "docs/specs/instrument-ids.md": "26d09c46a345569c742fe0908d18447410f679ecf4d9dbdc1f79135e26aefb5c",
+    "docs/specs/instrument-ids.md": "3abcbf9c41470eff920978506a1939d8649efb8e48ca62bfe480f4647fb68dcd",
     "docs/specs/mappings.md": "341e13f0bb3d3712dd50634cfe9ef1db7872d93b6b9d50265878987e7ac30f46",
     "docs/specs/physio.md": "b9a08f26b9d73c94e1bb513b82248493236da9bef98c9ae19a35035a0f83e9fd",
     "docs/specs/survey.md": "79a5ababd396dea762c7a8871e2e42ea63eb2905322053356aeb2baff0e53ae2",
@@ -271,5 +271,5 @@
     "scripts/specification/term_proposal.py": "cf007ffb6031a4b3410e5636704f863ad889d49eecc6a37b598d6b4ec1005482"
   },
   "repository": "MRI-Lab-Graz/prism-specification",
-  "tag": "v1.5.13"
+  "tag": "v1.5.14"
 }

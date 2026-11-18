@@ -1,6 +1,6 @@
 # Instrument IDs: who gets one, and what stays private
 
-Design note. Status: agreed, not yet implemented.
+Design note. Status: agreed, not yet implemented (IRIs and `local:` IDs: last section).
 
 ## The ID
 
@@ -9,7 +9,7 @@ An instrument ID is `prism:<slug>`; its items are `prism:<slug>.<item>` (for exa
 `terms/<modality>/`), and an ID never changes once released. A hand-made `prism:survey:ads` form is not valid.
 
 IDs are listed in `ids/survey-ids.txt`, frozen, added by pull request. The IRI form is
-`https://w3id.org/prism-specification/<slug>` (redirect registered with w3id.org; the ID stays `prism:<slug>`).
+`https://w3id.org/prism-specification/<slug>` (see "IRIs and `local:` IDs" below; the ID stays `prism:<slug>`).
 
 ## One library entry per instrument
 
@@ -70,3 +70,64 @@ How a local survey is linked to an ID:
    The partial result (how many items match) is shown to help that review.
 
 A hash only confirms text someone already has; it is not a secret and gives away nothing of the licensed content.
+
+## IRIs and `local:` IDs
+
+Design note, status: agreed, not yet implemented. The w3id.org base `https://w3id.org/prism-specification/` is
+registered and redirects (302) to this repository, but **deeper paths all land on the front page**. Until the per-term
+redirect below is live, nothing may link to a term IRI.
+
+`prism:<slug>` only means something inside PRISM. An IRI gives outside tools a unique, persistent, resolvable identity
+(mappings, citations, FAIR). The base stays fixed while the redirect target can move.
+
+### The prefix
+
+`prism:` is defined **once**, as a prefix map (or JSON-LD context) in this repository:
+
+```
+prism: https://w3id.org/prism-specification/
+```
+
+An ID such as `prism:ads.ads01` expands to `https://w3id.org/prism-specification/ads.ads01`. Templates, terms and
+mappings keep the short form; a full IRI is never written into a template. Only exports and mapping files that
+leave PRISM expand it.
+
+### Decisions
+
+1. **Pattern** `https://w3id.org/prism-specification/<slug>`. A short reserved list (`schemas`, `terms`, `docs`,
+   `ids`, `library`, `mappings`, `recipes`, `specs`) is kept free for fixed paths: no slug may use these names, and
+   the slug rule rejects them. The w3id redirect rules for those paths come before the slug rule.
+2. **Items** keep the dot form: `<slug>.<item>`, IRI `https://w3id.org/prism-specification/<slug>.<item>`.
+3. **Official vs local.** Official IDs are `prism:<slug>`; IDs that exist only in one project are
+   `local:<slug>` (items `local:<slug>.<item>`). `local:` is never registered, never expanded to an IRI and never
+   leaves the project.
+   - A `local:<slug>` whose slug is also an official slug is a **warning**: "now official, use `prism:<slug>`".
+   - The same check runs when a local term is created (the promotion path): creating `local:x` while `prism:x`
+     exists is reported at once.
+   - Specification change: a project's local terms (`code/specification/terms/`) are today validated as
+     `prism:<slug>`; they become `local:<slug>`.
+4. **Redirect target** is the template or stub file of the instrument; an item goes to its instrument's file. One
+   regex rule in the w3id `.htaccess` (`^<slug>(\.[^/]+)?$` to the file path), no per-term entries. For a restricted
+   instrument the IRI resolves to its **stub**, never to full texts.
+
+### What gets an IRI, what does not
+
+| Gets an IRI | Gets none |
+|---|---|
+| official instruments and their items; biosample and environment terms | project-local (`local:`) IDs |
+| schemas (`$id`, today `https://prism.org/schemas/...`, a domain we do not own), with the next schema version bump | data, projects, Studio pages |
+| the `prism:` prefix itself, defined once | raw GitHub URLs, the private item store |
+
+### External links
+
+External vocabularies (SNOMED, LOINC, ...) are linked in `mappings/<modality>/*.json` as full IRIs under `SameAs`,
+keyed by PRISM ID, checked against `mappings/vocabularies.json`. That is the one style to build on. The bare
+`"LOINC": "30522-7"` field in `terms/biosample/` and the short `snomed:123` IDs of `participants.json` (which uses two
+different SNOMED bases, probably a bug) move to `mappings/` once the prefix map exists.
+
+### Order
+
+1. This note, plus the prefix definition.
+2. Per-term redirect pull request to perma-id (one regex rule).
+3. Schema `$id` change together with the next schema change (a version bump per modality).
+4. Only then IRIs in mappings, exports and Studio.
