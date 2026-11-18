@@ -73,3 +73,14 @@ def test_a_local_term_the_official_registry_has_is_reported_with_its_local_id():
     local = {"cortisol": {"TermID": "local:cortisol", "Level": "analyte", "Label": "x"}}
     merged, in_use, ignored = merge_terms(official, local)
     assert ignored == ("local:cortisol",) and in_use == frozenset() and merged["cortisol"]["TermID"] == "prism:cortisol"
+
+
+def test_a_new_specimen_of_an_existing_local_analyte_is_added(tmp_path):
+    project = _added(tmp_path)
+    sidecar = tmp_path / "p" / "biosample-saliva_biosample.json"
+    data = json.loads(sidecar.read_text(encoding="utf-8"))
+    data["Technical"]["SpecimenType"] = "plasma"
+    data["dhea_p"] = {"Description": "Plasma DHEA-S", "Units": "pg/mL", "Term": "local:dhea-s"}
+    sidecar.write_text(json.dumps(data), encoding="utf-8")
+    add_local_term(project, column="dhea_p", sidecar_file=str(sidecar), label="DHEA-S")
+    assert _file(project, "dhea-s.plasma.json")["Parent"] == "local:dhea-s"

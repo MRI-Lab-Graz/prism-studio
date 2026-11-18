@@ -128,7 +128,7 @@ def load_local_terms(project_root, modality: str = "biosample") -> tuple[dict[st
         elif "Status" in data:
             problems.append(f"{path.name}: a local term has no Status (the maintainers' merge sets it)")
         elif _local_part(data.get("TermID")) != path.stem:
-            problems.append(f"{path.name}: TermID {data.get('TermID')!r} must be prism:{path.stem}")
+            problems.append(f"{path.name}: TermID {data.get('TermID')!r} must be local:{path.stem}")
         elif (bad := check_terms.type_problems(data, path.name)):
             problems += bad
         else:
@@ -231,7 +231,7 @@ def write_local_terms(project_root, modality: str, terms: list[dict]) -> list[Pa
     """Write one file per term (exactly the proposal term); every ID is checked before anything is written."""
     for term in terms:
         if _local_part(term.get("TermID")) is None:
-            raise OverlayError(f"{term.get('TermID')!r} is not a valid local term ID (prism:<slug>[.<specimen>])")
+            raise OverlayError(f"{term.get('TermID')!r} is not a valid local term ID (local:<slug>[.<specimen>])")
     folder = _real_terms_folder(project_root, modality)
     stems = {_local_part(term["TermID"]) for term in terms} | set(load_local_terms(project_root, modality)[0])
     terms = [_relabel(term, "local", stems) for term in terms]
@@ -307,6 +307,7 @@ def add_local_term(
     except (ProposalError, OSError, ValueError, RecursionError) as exc:
         raise OverlayError(str(exc) or type(exc).__name__) from exc
     local_stems = set(load_local_terms(project_root, modality)[0])  # the check speaks prism: (the proposal's form)
+    proposal["terms"] = [_relabel(term, "prism", local_stems) for term in proposal["terms"]]
     # the check wants a Status on every registry entry; a local term has none until the maintainers merge it
     checked_against = {
         stem: term if "Status" in term else {**_relabel(term, "prism", local_stems), "Status": "official"}
@@ -315,7 +316,7 @@ def add_local_term(
     new_stems = {term["TermID"].partition(":")[2] for term in proposal["terms"]}
     if taken := sorted(new_stems & local_stems):
         raise OverlayError("; ".join(f"local:{stem} is already a local term of this project" for stem in taken))
-    other_stems = set(load_local_terms(project_root, modality)[0]) - new_stems  # existing local terms
+    other_stems = local_stems - new_stems  # existing local terms
     # another, already broken local term must not stop an unrelated metric: drop only the problems that name one
     # (the registry check prefixes its messages with the file stem); everything else blocks, the safe default
     problems = [
