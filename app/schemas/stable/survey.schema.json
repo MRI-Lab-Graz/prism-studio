@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://prism.org/schemas/survey/v2.1.4",
-  "version": "2.1.4",
+  "$id": "https://prism.org/schemas/survey/v2.1.5",
+  "version": "2.1.5",
   "x-prism": {
     "projectOnlyRequired": {
       "Technical": ["Respondent", "AdministrationMethod", "SoftwarePlatform"]
@@ -239,6 +239,10 @@
           "type": "string",
           "enum": ["public", "permission-required", "licensed", "unknown", ""],
           "description": "High-level access/permission classification for transparency"
+        },
+        "ItemTextsIncluded": {
+          "type": "boolean",
+          "description": "false marks a stub: the instrument's facts and item fingerprints without any item text (Description and Levels labels are null). Default true. See specs/instrument-ids.md."
         },
         "PermissionsNote": {
           "type": ["string", "object"],
@@ -488,6 +492,36 @@
           }
         }
       }
+    },
+    {
+      "$comment": "Stub rule: with Study.ItemTextsIncluded false no item may carry text; otherwise no item may be null.",
+      "if": {
+        "required": ["Study"],
+        "properties": {
+          "Study": {
+            "required": ["ItemTextsIncluded"],
+            "properties": { "ItemTextsIncluded": { "const": false } }
+          }
+        }
+      },
+      "then": {
+        "properties": {"Technical": true, "I18n": true, "Study": true, "Metadata": true},
+        "additionalProperties": {
+          "properties": {
+            "Description": { "type": "null" },
+            "Levels": { "patternProperties": { "^.*$": { "type": "null" } } }
+          }
+        }
+      },
+      "else": {
+        "properties": {"Technical": true, "I18n": true, "Study": true, "Metadata": true},
+        "additionalProperties": {
+          "properties": {
+            "Description": { "type": ["string", "object"] },
+            "Levels": { "patternProperties": { "^.*$": { "type": ["string", "object"] } } }
+          }
+        }
+      }
     }
   ],
   "additionalProperties": {
@@ -496,8 +530,8 @@
         "type": "object",
         "properties": {
           "Description": {
-            "type": ["string", "object"],
-            "description": "The exact question text presented to the participant"
+            "type": ["string", "object", "null"],
+            "description": "The exact question text presented to the participant. null only in a stub (Study.ItemTextsIncluded false); the allOf rules below enforce this both ways."
           },
           "Help": {
             "type": ["string", "object"],
@@ -529,8 +563,14 @@
             "type": "object",
             "description": "Mapping of numeric values to text labels",
             "patternProperties": {
-              "^.*$": { "type": ["string", "object"] }
+              "^.*$": { "type": ["string", "object", "null"] }
             }
+          },
+          "Fingerprint": {
+            "type": "object",
+            "description": "SHA-256 of the normalised item text, per language (see specs/instrument-ids.md). Lets a stub identify an item without carrying its text.",
+            "propertyNames": { "pattern": "^[a-z]{2,3}$" },
+            "additionalProperties": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
           },
           "Unit": {
             "type": "string",

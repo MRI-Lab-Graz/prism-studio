@@ -265,6 +265,7 @@ in the repository root for the full citation, including all authors.
    specs/environment
    specs/physio
    specs/mappings
+   specs/instrument-ids
    specs/project
    specs/dataset_description
    specs/entities
