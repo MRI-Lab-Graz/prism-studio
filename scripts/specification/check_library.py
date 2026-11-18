@@ -11,7 +11,7 @@ ArchiveMetadata (ARCHIVE_TEXT_EXEMPT), (e3) Study.LicenseByLanguage (language co
 Study.LicenseLanguages; rules (a)-(d) and the English rule apply to each entry, and the template-level licence (a-d)
 is required unless every language has its own entry, (f) no Study.ItemCount, Study.Subscales or item Reversed, (g) bibliographic
 completeness: Study.Authors is a non-empty list, Study.Year an integer and Study.Citation a real citation (not the
-placeholder "Official webpage"), (h) no text-extraction artefacts in any string of a template: no Latin ligature
+placeholder "Official webpage"), (i) a stub (Study.ItemTextsIncluded false) carries no item text and a Fingerprint per item; a normal template has no null text, (h) no text-extraction artefacts in any string of a template: no Latin ligature
 characters (U+FB00-FB06), soft hyphen (U+00AD) or zero-width characters (U+200B-U+200D, U+FEFF); the message names the
 field and the code point. Normal umlauts, ss, quotes and the ellipsis are fine.
 """
@@ -225,7 +225,26 @@ def template_problems(data: dict) -> list[str]:
             out.append(f"Study.{key} must not be set")
     out += [f"{k}.Reversed must not be set" for k, v in data.items()
             if k not in NON_ITEMS and isinstance(v, dict) and "Reversed" in v]
-    return out + artefact_problems(data)
+    return out + stub_problems(data) + artefact_problems(data)
+
+
+def stub_problems(data: dict) -> list[str]:
+    """Study.ItemTextsIncluded false: a stub, no item text and a fingerprint per item. Otherwise no null text."""
+    stub = (data.get("Study") or {}).get("ItemTextsIncluded") is False
+    out = []
+    for k, v in data.items():
+        if k in NON_ITEMS or not isinstance(v, dict) or "AliasOf" in v:
+            continue
+        labels = v.get("Levels") if isinstance(v.get("Levels"), dict) else {}
+        vals = ([v["Description"]] if "Description" in v else []) + list(labels.values())
+        has_text, has_null = any(x is not None for x in vals), any(x is None for x in vals)
+        if stub and has_text:
+            out.append(f"{k}: a stub (Study.ItemTextsIncluded false) must not carry item text")
+        if stub and not v.get("Fingerprint"):
+            out.append(f"{k}: a stub item needs a Fingerprint")
+        if not stub and has_null:
+            out.append(f"{k}: null item text is only allowed in a stub (Study.ItemTextsIncluded false)")
+    return out
 
 
 def check(repo: Path) -> list[str]:
