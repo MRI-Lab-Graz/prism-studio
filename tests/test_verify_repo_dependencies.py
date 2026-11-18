@@ -100,3 +100,38 @@ def test_check_dependencies_npm_registry_outage_is_not_blocking(
     )
 
     assert passed
+
+def _npm_audit_outcome(monkeypatch, tmp_path, advisories, capsys) -> str:
+    verify_repo = _load_verify_repo_module()
+    (tmp_path / "requirements.txt").write_text("", encoding="utf-8")
+    (tmp_path / "package.json").write_text("{}\n", encoding="utf-8")
+    import json
+
+    report = {
+        "vulnerabilities": {
+            "picomatch": {"via": [{"url": f"https://github.com/advisories/{a}"} for a in advisories]},
+            "vite": {"via": ["picomatch"]},
+        }
+    }
+
+    def fake_run_command(command, cwd=None):
+        if command.endswith("--json"):
+            return SimpleNamespace(returncode=1, stdout=json.dumps(report))
+        return SimpleNamespace(returncode=1 if "npm audit" in command else 0, stdout="")
+
+    monkeypatch.setattr(verify_repo, "check_tool", lambda t, _h: t == "npm")
+    monkeypatch.setattr(verify_repo, "run_command", fake_run_command)
+    verify_repo.check_dependencies(str(tmp_path))
+    return capsys.readouterr().out
+
+
+def test_npm_audit_ignores_allowlisted_advisory(monkeypatch, tmp_path, capsys) -> None:
+    out = _npm_audit_outcome(monkeypatch, tmp_path, ["GHSA-fc5q-39xc-vjpf"], capsys)
+    assert "npm audit found issues" not in out
+
+
+def test_npm_audit_still_flags_other_advisories(monkeypatch, tmp_path, capsys) -> None:
+    out = _npm_audit_outcome(
+        monkeypatch, tmp_path, ["GHSA-fc5q-39xc-vjpf", "GHSA-new-new-new"], capsys
+    )
+    assert "npm audit found issues" in out

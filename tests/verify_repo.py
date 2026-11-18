@@ -140,6 +140,12 @@ PIP_AUDIT_IGNORED_ADVISORIES = {
     "CVE-2026-112940",
 }
 
+# npm advisories we cannot fix yet. GHSA-fc5q-39xc-vjpf (picomatch ReDoS, 2026-10-19):
+# no patched release exists (latest 4.0.7 is affected), and picomatch only reaches
+# us through vitest -> vite -> tinyglobby -> fdir, the dev-only JS test runner
+# (package.json is not shipped). Remove once picomatch publishes a fix.
+NPM_AUDIT_IGNORED_ADVISORIES = {"GHSA-fc5q-39xc-vjpf"}
+
 # Curated flake8-bandit (ruff "S") rules for the `ruff-security` check.
 #
 # Ruff runs these over the whole tree in well under a second, so this is the
@@ -1217,6 +1223,22 @@ def check_semgrep(repo_path, fix=False):
         print_warning("Semgrep not installed.")
 
 
+def _npm_audit_only_ignored(repo_path):
+    """True when every advisory in `npm audit` is in NPM_AUDIT_IGNORED_ADVISORIES."""
+    result = run_command("npm audit --package-lock-only --json", cwd=repo_path)
+    try:
+        report = json.loads(result.stdout)
+    except (AttributeError, ValueError):
+        return False
+    found = {
+        via["url"].rsplit("/", 1)[-1]
+        for vuln in report.get("vulnerabilities", {}).values()
+        for via in vuln.get("via", [])
+        if isinstance(via, dict) and "url" in via
+    }
+    return bool(found) and found <= NPM_AUDIT_IGNORED_ADVISORIES
+
+
 def check_pip_audit(repo_path, fix=False):
     print_header("Running Pip-Audit (Dependency Vulnerabilities)")
     if check_tool("pip-audit", "pip install pip-audit"):
@@ -1228,7 +1250,7 @@ def check_pip_audit(repo_path, fix=False):
         if os.path.exists(req_file):
             print_info("Auditing requirements.txt...")
             result = run_command(
-                f"pip-audit -r requirements.txt {ignore_args}",
+                f"pip-audit --timeout 60 -r requirements.txt {ignore_args}",
                 cwd=repo_path,
             )
             if result and result.returncode == 0:
@@ -1385,6 +1407,8 @@ def check_dependencies(repo_path, fix=False):
                         "npm audit could not reach the registry (service unavailable); skipping."
                     )
                     print(result.stdout)
+                elif _npm_audit_only_ignored(repo_path):
+                    print_info("npm audit: only allowlisted advisories remain.")
                 else:
                     print_warning("npm audit found issues.")
                     if result:
