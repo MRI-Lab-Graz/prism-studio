@@ -120,6 +120,8 @@ def stage(dest: Path) -> None:
     shutil.copytree(ROOT / "app" / "schemas", pkg / "app" / "schemas")
     # term registry: src/term_registry.py reads <package root>/official/library/terms
     shutil.copytree(ROOT / "official" / "library" / "terms", pkg / "official" / "library" / "terms")
+    # instrument IDs: src/instrument_ids.py reads the official survey templates next to the terms
+    shutil.copytree(ROOT / "official" / "library" / "survey", pkg / "official" / "library" / "survey")
     # project overlay: src/spec_overlay.py checks local terms with the vendored prism-specification scripts
     # (the whole folder: the scripts load each other by path, term_proposal.py needs schema_patch.py and release_patch.py)
     shutil.copytree(ROOT / "scripts" / "specification", pkg / "scripts" / "specification", ignore=shutil.ignore_patterns("__pycache__"))

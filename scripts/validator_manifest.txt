@@ -33,6 +33,7 @@ src/project_settings.py
 src/eligibility.py
 src/entity_rules.py
 src/formatters.py
+src/instrument_ids.py
 src/language_codes.py
 src/modality_versions.py
 src/participant_ids.py
