@@ -92,9 +92,8 @@ An ID carries no modality, but the IRI does: `prism:ads.ads01` expands to
 `https://w3id.org/prism-specification/terms/survey/ads.ads01`, `prism:cortisol.saliva` to
 `.../terms/biosample/cortisol.saliva`. So an IRI is **not** prefix + ID; the modality comes from the term's folder
 (`terms/<modality>/`), and the one function that expands an ID looks it up. This only works while an ID is unique
-across all modalities; `scripts/check_terms.py --all` enforces that (term folders and `ids/survey-ids.txt` together; an unreadable or
-malformed `survey-ids.txt` fails the run). A run for one modality does not look at the others. Templates, terms and
-mappings keep the short form; a full IRI is never written into a template. Only exports and mapping files that leave PRISM expand it.
+across all modalities; the slug rule must enforce that (it holds today, checked 2026-11-18, but no check exists yet). Templates, terms and mappings keep the
+short form; a full IRI is never written into a template. Only exports and mapping files that leave PRISM expand it.
 
 All modalities are treated alike. Survey is only the first one to be built.
 
@@ -110,8 +109,7 @@ All modalities are treated alike. Survey is only the first one to be built.
    - A `local:<slug>` whose slug is also an official slug is a **warning**: "now official, use `prism:<slug>`".
    - The same check runs when a local term is created (the promotion path): creating `local:x` while `prism:x`
      exists is reported at once.
-   - Specification side: `scripts/check_terms.py` defines the pattern (`is_local_id`) and refuses to expand a `local:` ID.
-   - Studio change (next PR): a project's local terms (`code/specification/terms/`) are today validated as
+   - Specification change: a project's local terms (`code/specification/terms/`) are today validated as
      `prism:<slug>`; they become `local:<slug>`.
 4. **Redirect rules**: one per modality, all of the form `^terms/<modality>/<id>$` to the file that defines the term
    (no per-term entries; a new modality adds one line). A single regex for all modalities is not possible because the
