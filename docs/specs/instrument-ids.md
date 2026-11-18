@@ -92,8 +92,9 @@ An ID carries no modality, but the IRI does: `prism:ads.ads01` expands to
 `https://w3id.org/prism-specification/terms/survey/ads.ads01`, `prism:cortisol.saliva` to
 `.../terms/biosample/cortisol.saliva`. So an IRI is **not** prefix + ID; the modality comes from the term's folder
 (`terms/<modality>/`), and the one function that expands an ID looks it up. This only works while an ID is unique
-across all modalities; `scripts/check_terms.py --all` enforces that (term folders and `ids/survey-ids.txt` together). Templates, terms and mappings keep the
-short form; a full IRI is never written into a template. Only exports and mapping files that leave PRISM expand it.
+across all modalities; `scripts/check_terms.py --all` enforces that (term folders and `ids/survey-ids.txt` together; an unreadable or
+malformed `survey-ids.txt` fails the run). A run for one modality does not look at the others. Templates, terms and
+mappings keep the short form; a full IRI is never written into a template. Only exports and mapping files that leave PRISM expand it.
 
 All modalities are treated alike. Survey is only the first one to be built.
 

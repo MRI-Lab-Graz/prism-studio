@@ -182,7 +182,8 @@ def check_registry(registry: dict[str, dict], specimen_types: list[str] | None,
 
 
 # local:<slug>[.<item>] is a project's own, not yet official ID: never registered here, never an IRI.
-_LOCAL = re.compile(r"local:[a-z][a-z0-9-]{0,62}(\.[a-z0-9][a-z0-9-]{0,62})?")
+# Same shape as a prism: ID, so that promoting local:x to prism:x never changes the rest of the ID.
+_LOCAL = re.compile("local:" + _LOCAL_ID.pattern)
 
 
 def is_local_id(term_id: str) -> bool:
@@ -218,13 +219,23 @@ def cross_registry_problems(registries: dict[str, dict[str, dict]]) -> list[str]
     return problems
 
 
-def survey_registry(repo: Path) -> dict[str, dict]:
-    """The released survey IDs (ids/survey-ids.txt, without `prism:`) shaped like a term registry."""
+def survey_registry(repo: Path) -> tuple[dict[str, dict], list[str]]:
+    """The released survey IDs (ids/survey-ids.txt, without `prism:`) shaped like a term registry, and the problems."""
+    path = Path(repo) / "ids" / "survey-ids.txt"
     try:
-        lines = (Path(repo) / "ids" / "survey-ids.txt").read_text(encoding="utf-8").splitlines()
-    except OSError:
-        return {}
-    return {l.strip().removeprefix("prism:"): {} for l in lines if l.strip()}
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError as exc:
+        return {}, [f"{path.name}: cannot read ({exc})"]
+    registry, problems = {}, []
+    for number, line in enumerate(lines, 1):
+        line = line.strip()
+        if not line:
+            continue
+        if not line.startswith("prism:") or not _LOCAL_ID.fullmatch(line[6:]):
+            problems.append(f"{path.name}:{number}: {line!r} is not a prism:<id>")
+        else:
+            registry[line[6:]] = {}
+    return registry, problems
 
 
 def context_values(schema_file: Path, field: str | None) -> list[str] | None:
@@ -283,7 +294,8 @@ def main(argv: list[str] | None = None) -> int:
         registries[terms.name] = registry
         problems += [prefix + p for p in found + check_registry(registry, context, loinc)]
     if args.all:
-        registries["survey"] = survey_registry(args.repo)
+        registries["survey"], found = survey_registry(args.repo)
+        problems += found
         problems += cross_registry_problems(registries)
     for problem in problems:
         print(problem)
