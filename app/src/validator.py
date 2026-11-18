@@ -13,6 +13,7 @@ from typing import Callable
 from jsonschema import validate, ValidationError
 from src.schema_manager import validate_schema_version, apply_schema_validation_profile
 from src.entity_rules import check_entities, load_entity_rules
+from src.instrument_ids import stub_id_problems
 from src.specification import current_specification
 from src.term_registry import context_value, resolve_column, term_columns
 from src.converters.survey_core import get_allowed_values
@@ -1464,6 +1465,7 @@ class DatasetValidator:
                 if ("stub", key) not in self._terms_checked:  # once per sidecar, not per data file
                     self._terms_checked.add(("stub", key))
                     issues.append(("WARNING", f"{key}: {SURVEY_STUB_MESSAGE}"))
+                    issues.extend(("ERROR", f"{key}: {p}") for p in stub_id_problems(sidecar_data))
             # Validate against schema if available (PRISM modalities only)
             schema = self._schema_for_sidecar(modality, sidecar_path)
             if schema:
