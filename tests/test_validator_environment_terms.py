@@ -142,10 +142,10 @@ def test_local_environment_term_used(tmp_path):
         "Description": "Sound pressure level at the site.",
         "Units": "dB",
     }), encoding="utf-8")
-    issues = _v2(tmp_path, {"noise_db": {"Term": "prism:noise-level"}}, {"noise_db": "55"})
+    issues = _v2(tmp_path, {"noise_db": {"Term": "local:noise-level"}}, {"noise_db": "55"})
     assert not _msgs(issues, "ERROR") and not _msgs(issues, "WARNING"), issues
     notes = [m for m in _msgs(issues, "INFO") if "uses the local term" in m]
-    assert len(notes) == 1 and "prism:noise-level" in notes[0]
+    assert len(notes) == 1 and "local:noise-level" in notes[0]
 
 
 def test_retired_sidecar_detection():
@@ -169,9 +169,9 @@ def test_local_term_share_command_names_the_modality(tmp_path):
         "TermID": "prism:noise-level", "Level": "variable", "Label": "noise level",
         "Aliases": ["noise_db"], "Description": "Sound pressure level at the site.", "Units": "dB",
     }), encoding="utf-8")
-    issues = _v2(tmp_path, {"noise_db": {"Term": "prism:noise-level"}}, {"noise_db": "55"})
+    issues = _v2(tmp_path, {"noise_db": {"Term": "local:noise-level"}}, {"noise_db": "55"})
     note = next(m for m in _msgs(issues, "INFO") if "uses the local term" in m)
-    assert "--term prism:noise-level --modality environment" in note, note
+    assert "--term local:noise-level --modality environment" in note, note
 
 
 def test_retired_sidecar_is_reported_once_for_all_its_data_files(tmp_path):
