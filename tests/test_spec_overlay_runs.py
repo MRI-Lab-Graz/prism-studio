@@ -30,7 +30,7 @@ def _project(root: Path, overlay: bool) -> Path:
         "Study": {"BiosampleName": "saliva"},
         "Metadata": {"SchemaVersion": "1.1.0", "CreationDate": "2026-10-23"},
         "sample_id": {"Description": "Tube", "Units": "n/a", "DataType": "string"},
-        "dhea_s": {"Term": "prism:dhea-s"},
+        "dhea_s": {"Term": "local:dhea-s"},
     }), encoding="utf-8")
     folder = root / "sub-01" / "ses-1" / "biosample"
     folder.mkdir(parents=True)
@@ -56,7 +56,7 @@ def test_the_next_project_does_not_see_it(tmp_path):
     assert any("less than MinValue" in m for m in _messages(a))
     after = _messages(b)
     assert not any("less than MinValue" in m for m in after)
-    assert any("not in the term registry" in m for m in after)  # B does not know prism:dhea-s
+    assert any("not in the term registry" in m for m in after)  # B does not know local:dhea-s
 
 
 def test_the_same_holds_for_a_run_in_a_worker_thread(tmp_path):
@@ -75,7 +75,7 @@ def test_official_terms_win_on_collision(tmp_path):
     write_local_terms(tmp_path / "p", "biosample", [{**PARENT, "TermID": "prism:cortisol", "Label": "mine"}])
     spec = load_specification(project_root=tmp_path / "p")
     assert spec.terms["biosample"]["cortisol"] == official
-    assert spec.ignored_local == ("prism:cortisol",) and "prism:cortisol" not in spec.local_terms
+    assert spec.ignored_local == ("local:cortisol",) and "local:cortisol" not in spec.local_terms
 
 
 def test_merge_terms_adds_local_and_ignores_official_stems_and_ids():
@@ -124,8 +124,8 @@ def test_a_column_using_a_local_term_says_so_once_with_the_share_command(tmp_pat
     project = _project(tmp_path / "a", overlay=True)
     notes = [m for m in _infos(project) if "uses the local term" in m]
     assert len(notes) == 1
-    assert "prism:dhea-s.saliva" in notes[0] and "applies to this project only" in notes[0]
-    assert f'spec propose --project "{project}" --term prism:dhea-s.saliva' in notes[0]
+    assert "local:dhea-s.saliva" in notes[0] and "applies to this project only" in notes[0]
+    assert f'spec propose --project "{project}" --term local:dhea-s.saliva' in notes[0]
 
 
 def test_official_terms_get_no_local_term_notice(tmp_path):
@@ -142,7 +142,7 @@ def test_a_local_term_that_became_official_is_reported_once_per_run(tmp_path):
     write_local_terms(project, "biosample", [{**PARENT, "TermID": "prism:cortisol", "Label": "mine"}])
     notes = [m for m in _infos(project) if "is now official" in m]
     assert len(notes) == 1 and "prism:cortisol" in notes[0]
-    assert f'spec local remove --project "{project}" prism:cortisol' in notes[0]
+    assert f'spec local remove --project "{project}" local:cortisol' in notes[0]
 
 
 def test_a_bad_overlay_file_is_a_warning(tmp_path):
@@ -177,11 +177,11 @@ def test_a_local_term_cannot_shadow_an_official_alias(tmp_path):
         {"TermID": "prism:hydrocortisone", "Level": "analyte", "Label": "mine", "Aliases": [], "Description": "d"},
     ])
     spec = load_specification(project_root=project)
-    assert set(spec.ignored_local) == {"prism:cort", "prism:hydrocortisone"}  # cort / hydrocortisone are official aliases
+    assert set(spec.ignored_local) == {"local:cort", "local:hydrocortisone"}  # cort / hydrocortisone are official aliases
     res = resolve_column(spec.terms["biosample"], "x", {"Term": "cort"}, "saliva")
     assert res.term["TermID"] == "prism:cortisol.saliva" and res.term["Units"] == "nmol/L"
     assert resolve_column(spec.terms["biosample"], "hydrocortisone", {}, "saliva").term["TermID"] == "prism:cortisol"
-    assert "prism:cort.saliva" in spec.local_terms  # an orphan child is harmless: nothing reaches it
+    assert "local:cort.saliva" in spec.local_terms  # an orphan child is harmless: nothing reaches it
 
 
 def test_merge_terms_ignores_a_local_term_whose_label_is_an_official_name():

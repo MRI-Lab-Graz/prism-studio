@@ -194,7 +194,7 @@ def _validate_dataset(
     issues.extend(
         (
             "INFO",
-            f"The local term {term_id} is now official: remove the local copy: "
+            f"The local term {term_id} is now official (use prism:{term_id.partition(':')[2]}): remove the local copy: "
             f'python prism_tools.py spec local remove --project "{os.path.abspath(root_dir)}" {term_id}',
         )
         for term_id in spec.ignored_local

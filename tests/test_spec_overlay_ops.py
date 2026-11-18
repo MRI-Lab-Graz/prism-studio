@@ -62,9 +62,9 @@ def test_add_refuses_an_official_metric_naming_the_term(tmp_path):
 def test_add_refuses_a_term_a_local_term_already_owns(tmp_path):
     tsv = _dataset(tmp_path / "p", {**DHEA, "dhea2": {"Description": "d", "Units": "pg/mL"}})
     add_local_term(tmp_path / "p", column="dhea_s", data_file=str(tsv), label="DHEA-S")
-    with pytest.raises(OverlayError, match="prism:dhea-s"):
+    with pytest.raises(OverlayError, match="local:dhea-s"):
         add_local_term(tmp_path / "p", column="dhea_s", data_file=str(tsv))  # its alias now resolves
-    with pytest.raises(OverlayError, match="prism:dhea-s"):
+    with pytest.raises(OverlayError, match="local:dhea-s"):
         add_local_term(tmp_path / "p", column="dhea2", data_file=str(tsv), label="DHEA-S")  # same ID
 
 
@@ -84,7 +84,7 @@ def test_list_shows_local_now_official_and_invalid(tmp_path):
     ])
     (project / "code" / "specification" / "terms" / "biosample" / "broken.json").write_text("{no", encoding="utf-8")
     status = {item["id"] or item["path"].split("/")[-1]: item["status"] for item in list_local_items(project)}
-    assert status == {"prism:dhea-s": "local", "prism:cortisol": "now-official", "broken.json": "invalid"}
+    assert status == {"local:dhea-s": "local", "local:cortisol": "now-official", "broken.json": "invalid"}
     assert all(item["layer"] == 3 and item["modality"] == "biosample" for item in list_local_items(project))
 
 
@@ -165,9 +165,9 @@ def test_terms_the_official_registry_adopted_are_skipped_and_reported(tmp_path):
     write_local_terms(project, "biosample", [{"TermID": "prism:cortisol", "Level": "analyte", "Label": "mine", "Aliases": [], "Description": "d"}])
     result = proposal_for_local_terms(project)
     assert [t["TermID"] for t in result["proposal"]["terms"]] == ["prism:dhea-s", "prism:dhea-s.saliva"]
-    assert result["skipped"] == ["prism:cortisol"]
+    assert result["skipped"] == ["local:cortisol"]
     named = proposal_for_local_terms(project, ["prism:cortisol", "prism:dhea-s"])
-    assert named["skipped"] == ["prism:cortisol"] and len(named["proposal"]["terms"]) == 2
+    assert named["skipped"] == ["local:cortisol"] and len(named["proposal"]["terms"]) == 2
 
 
 def test_nothing_to_share_is_an_error(tmp_path):
