@@ -96,8 +96,8 @@ def dispatch_prism_tools(
     elif args.command == "orcid":
         handlers["orcid_search"](args)
     elif args.command == "terms":
-        if args.action in ("list", "show", "suggest", "propose", "freeze", "resolve"):
-            handlers[f"terms_{args.action}"](args)
+        if args.action in ("list", "show", "suggest", "propose", "freeze", "resolve", "check-links"):
+            handlers[f"terms_{args.action.replace('-', '_')}"](args)
         else:
             parsers["terms"].print_help()
     elif args.command == "modality-version":

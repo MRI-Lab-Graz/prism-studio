@@ -140,6 +140,21 @@ def _fail(args, message: str, **extra) -> None:
     sys.exit(1)
 
 
+def cmd_terms_check_links(args) -> None:
+    """Check mapping files (a folder, or a project's local links) with the specification's checker; exit 1 on problems."""
+    from src.mappings_check import check_links
+    from src.spec_overlay import OverlayError
+
+    try:
+        problems = check_links(Path(args.dir) if args.dir else None, project=args.project)
+    except OverlayError as exc:
+        _fail(args, str(exc))
+    _emit(args, {"success": not problems, "problems": problems},
+          "\n".join(problems) if problems else "No problems: every link is a known vocabulary, a real ID and a well-formed address.")
+    if problems:
+        sys.exit(1)
+
+
 def cmd_terms_propose(args) -> None:
     """Build a proposal for a new metric from a sidecar column; send nothing unless --open."""
     if getattr(args, "data", None):

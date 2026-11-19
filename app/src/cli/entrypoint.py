@@ -182,7 +182,7 @@ from src.cli.commands.spec import (
     cmd_spec_propose,
 )
 from src.cli.commands.lookup import cmd_doi_lookup, cmd_orcid_search
-from src.cli.commands.terms import cmd_terms_freeze, cmd_terms_list, cmd_terms_propose, cmd_terms_resolve, cmd_terms_show, cmd_terms_suggest
+from src.cli.commands.terms import cmd_terms_check_links, cmd_terms_freeze, cmd_terms_list, cmd_terms_propose, cmd_terms_resolve, cmd_terms_show, cmd_terms_suggest
 from src.cli.commands.modality_version import (
     cmd_modality_version_freeze,
     cmd_modality_version_list,
@@ -241,6 +241,7 @@ def main() -> None:
             "spec_check_kind_name": cmd_spec_check_kind_name,
             "doi_lookup": cmd_doi_lookup,
             "orcid_search": cmd_orcid_search,
+            "terms_check_links": cmd_terms_check_links,
             "terms_list": cmd_terms_list,
             "terms_show": cmd_terms_show,
             "terms_freeze": cmd_terms_freeze,
