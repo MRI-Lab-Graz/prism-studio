@@ -1191,7 +1191,7 @@
         });
 
         container.appendChild(translationTable);
-        container.appendChild(addLangBtn);
+        if (StudioTheme.offersMultilingual(path.split('/')[0], fieldName)) container.appendChild(addLangBtn);
         return container;
       }
 
@@ -1785,7 +1785,7 @@
       addRowBtn.type = 'button';
       addRowBtn.className = 'btn btn-sm btn-outline-primary mt-1';
       addRowBtn.textContent = 'Add language';
-      container.appendChild(addRowBtn);
+      if (StudioTheme.offersMultilingual(path.split('/')[0], fieldName)) container.appendChild(addRowBtn);
 
       // Internal state for table keys (fixed once added)
       let tableData = {};

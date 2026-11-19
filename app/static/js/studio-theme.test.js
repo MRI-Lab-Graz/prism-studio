@@ -155,6 +155,13 @@ describe('offersMultilingual (descriptive header fields are English only)', () =
     }
   });
 
+  it('covers the descriptive biometrics fields of Study, Technical, Scoring and Normative', () => {
+    for (const f of ['ExclusionCriteria', 'TargetPopulation', 'WarmupProtocol']) expect(StudioTheme.offersMultilingual('Study', f)).toBe(false);
+    expect(StudioTheme.offersMultilingual('Technical', 'Equipment')).toBe(false);
+    for (const f of ['ScoringMethod', 'CutoffsSource', 'NormsSource']) expect(StudioTheme.offersMultilingual('Scoring', f)).toBe(false);
+    for (const f of ['ReferencePopulation', 'ReferenceSource']) expect(StudioTheme.offersMultilingual('Normative', f)).toBe(false);
+  });
+
   it('keeps it for fields where any language is allowed', () => {
     for (const f of ['Instructions', 'OriginalName', 'Levels', 'Text']) expect(StudioTheme.offersMultilingual('Study', f)).toBe(true);
   });
