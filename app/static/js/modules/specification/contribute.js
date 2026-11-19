@@ -709,14 +709,10 @@
         });
         return Object.keys(levels).length ? levels : null;
     }
-    // "VOCABULARY=URL" lines as {vocabulary: url}; a line without "=" is sent with an empty address, the backend refuses it
+    // the lines as typed ("VOCABULARY=URL"); the backend reads them, as it does `--link`
     function readLinks() {
-        const links = {};
-        m.links.value.split("\n").map(function (l) { return l.trim(); }).filter(Boolean).forEach(function (line) {
-            const at = line.indexOf("=");
-            links[at < 0 ? line : line.slice(0, at).trim()] = at < 0 ? "" : line.slice(at + 1).trim();
-        });
-        return Object.keys(links).length ? links : null;
+        const lines = m.links.value.split("\n").map(function (l) { return l.trim(); }).filter(Boolean);
+        return lines.length ? lines : null;
     }
     m.share.addEventListener("click", function () {
         const oneLevel = currentKind().specimen_level === false;

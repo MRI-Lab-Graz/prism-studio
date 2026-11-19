@@ -2378,7 +2378,6 @@ def build_prism_tools_parsers(
             _source.add_argument("--data", help="A data file (.tsv): its sidecar is resolved with BIDS inheritance")
             _parser.add_argument("--column", required=True, help="The column whose metric becomes a local term")
             _parser.add_argument("--label", help="Name for the new term (default: the column name)")
-        _parser.add_argument("--link", action="append", help=_LINK_HELP)
         if _name in ("add-values", "remove-values"):
             _parser.add_argument("--field", required=True, help="The sidecar field, for example Technical.SpecimenType")
             _parser.add_argument("--value", action="append", required=True, help="A value to allow (repeatable)")

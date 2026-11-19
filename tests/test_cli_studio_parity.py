@@ -707,9 +707,20 @@ def test_proposing_a_metric_with_links_gives_the_same_document_in_the_cli_and_in
                            link=["loinc=https://loinc.org/2191-5", "snomed=https://snomed.info/id/396820008"])
     cmd_spec_propose_metric(args)
     cli = json.loads(capsys.readouterr().out)["document"]
-    body = {**fields, "links": {"loinc": "https://loinc.org/2191-5", "snomed": "https://snomed.info/id/396820008"}}
+    body = {**fields, "links": args.link}  # the page sends the lines as typed
     from flask import Flask
 
     with Flask(__name__).test_request_context("/", method="POST", json=body):
         studio = propose_metric().get_json()["document"]
     assert cli == studio and "mappings/biosample/dhea.json" in cli["files"]
+
+
+def test_a_vocabulary_given_twice_is_refused_in_the_cli_and_in_studio(capsys):
+    from app.src.web.blueprints.specification_contribute import propose_metric
+    from flask import Flask
+
+    body = {"name": "DHEA", "description": "d", "units": "pg/mL", "specimen": "saliva",
+            "links": ["loinc=https://loinc.org/2191-5", "loinc=https://loinc.org/2192-3"]}
+    with Flask(__name__).test_request_context("/", method="POST", json=body):
+        response = propose_metric()
+    assert "twice" in str(response[0].get_json())

@@ -352,7 +352,16 @@ def test_attach_links_goes_to_the_measured_term_and_none_means_unchanged():
     assert "links" not in p and not any(f.startswith("mappings/") for f in as_v2(p)["files"])
 
 
-@pytest.mark.parametrize("bad", ["loinc", "=https://x", "loinc=", "loinc=a=b c"])
+def test_parse_links_keeps_an_equals_sign_inside_the_address():
+    assert parse_links(["snomed=https://example.org/?a=b&c=d"]) == {"snomed": "https://example.org/?a=b&c=d"}
+
+
+def test_a_bad_loinc_code_in_the_sidecar_is_named_as_such():
+    with pytest.raises(ProposalError, match="LOINC"):
+        build_proposal(REGISTRY, _sidecar("ferr", {"Description": "F", "Units": "ug/L", "LOINC": "2276 4"}, "serum"), "ferr")
+
+
+@pytest.mark.parametrize("bad", ["loinc", "=https://x", "loinc=", "loinc=a b"])
 def test_parse_links_names_the_bad_item(bad):
     with pytest.raises(ProposalError, match="--link"):
         parse_links([bad])

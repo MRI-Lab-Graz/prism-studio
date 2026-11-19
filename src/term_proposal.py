@@ -146,6 +146,8 @@ def build_proposal(
     child.update({f: col_def[f] for f in _OPTIONAL_CHILD_FIELDS if col_def.get(f) is not None})
     proposal = {"modality": modality, "terms": ([new_parent] if new_parent else []) + [child]}
     if col_def.get("LOINC"):
+        if not re.fullmatch(r"\d+-\d", str(col_def["LOINC"])):
+            raise ProposalError(f"column {column!r}: LOINC {col_def['LOINC']!r} does not look like 2276-4")
         attach_links(proposal, {"loinc": f"https://loinc.org/{col_def['LOINC']}"})
     return proposal
 
@@ -155,7 +157,7 @@ def parse_links(items) -> dict[str, str]:
     links: dict[str, str] = {}
     for item in items or []:
         vocabulary, _, url = item.partition("=")
-        if not vocabulary or not url or re.search(r"\s", url) or "=" in url:
+        if not vocabulary or not url or re.search(r"\s", url):
             raise ProposalError(f"--link {item!r}: use VOCABULARY=URL (for example loinc=https://loinc.org/2276-4)")
         if vocabulary in links:
             raise ProposalError(f"--link {vocabulary!r} is given twice")
