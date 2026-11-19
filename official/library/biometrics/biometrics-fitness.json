@@ -15,10 +15,7 @@
       "de": "Basis-Fitnessbewertung",
       "en": "Basic Fitness Assessment Battery"
     },
-    "ShortName": {
-      "de": "FAB",
-      "en": "FAB"
-    },
+    "ShortName": "FAB",
     "Category": "cardiorespiratory",
     "Protocol": "Standard Fitness Test Protocol v1.0",
     "Description": {

@@ -73,7 +73,7 @@
   // Descriptive fields are English only (a stored translation object still displays; only the offer to add or convert a language goes).
   // Instructions, OriginalName, items and Levels stay free: they are the instrument's own text.
   const ENGLISH_ONLY = {
-    Study: ['Description', 'Construct', 'Reliability', 'Validity', 'Norming', 'Notes', 'PermissionsNote', 'Keywords', 'Citation', 'LicenseTerms', 'RecallPeriod',
+    Study: ['ShortName', 'Description', 'Construct', 'Reliability', 'Validity', 'Norming', 'Notes', 'PermissionsNote', 'Keywords', 'Citation', 'LicenseTerms', 'RecallPeriod',
       'ExclusionCriteria', 'TargetPopulation', 'WarmupProtocol'],
     Technical: ['Equipment'],
     Scoring: ['ScoringMethod', 'CutoffsSource', 'NormsSource'],
