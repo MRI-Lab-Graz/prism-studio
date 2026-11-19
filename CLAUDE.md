@@ -20,6 +20,13 @@ show the result. (What stays in the GUI is UI state only: which card is open, wh
 - Before you edit anything in `app/src/web/**` ask: "is this the CLI's job?" It almost always is.
 - Known open differences are tracked in `docs/CLI_STUDIO_DIVERGENCES.md`. Remove entries; never add one on purpose.
 
+## Be agnostic: no feature for one example
+
+Never build a field, flag or code path for one example (LOINC, biosample). It works for every vocabulary in
+`mappings/vocabularies.json` and every modality, or it does not exist. Start from the example, write the general
+mechanism, and treat all data equally. (A sidecar `LOINC` field on biosample columns was exactly this mistake: the
+general form is a link, `vocabulary=URL`, on any term of any modality, in `mappings/`.)
+
 ## Structured GUI behaviour: the project page is the reference
 
 Every Studio page behaves like the project page (`app/templates/projects.html`,

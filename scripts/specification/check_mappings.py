@@ -200,6 +200,17 @@ def _released_survey_ids(repo: Path) -> set[str]:
         return set()
 
 
+def missing_targets(repo: Path) -> list[str]:
+    """Warnings: released survey instruments with no library file, so their IRI has nothing to point at (404)."""
+    derived, _ = survey_definitions(repo)
+    have = {tid.split(".")[0] for tid in derived}
+    gone = sorted(i for i in _released_survey_ids(repo) if "." not in i and i not in have)
+    if not gone:
+        return []
+    return [f"{len(gone)} released survey ID{'s' if len(gone) > 1 else ''} have no library file, "
+            f"their IRI returns 404 until a stub is added: {', '.join(gone)}"]
+
+
 def check(repo: Path, mappings: Path | None = None) -> list[str]:
     repo = Path(repo)
     mappings = Path(mappings) if mappings else repo / "mappings"
@@ -220,6 +231,7 @@ def check(repo: Path, mappings: Path | None = None) -> list[str]:
     problems += [f"ids/survey-ids.txt: {tid} (derived from library/ and recipes/) is not in the released list"
                  for tid in sorted(set(derived) - released)]
     known["survey"] = {tid: derived.get(tid) for tid in released}
+    have = {tid.split(".")[0] for tid in derived}
 
     owner: dict[str, str] = {}
     for folder in sorted(p for p in mappings.iterdir() if p.is_dir()):
@@ -252,6 +264,8 @@ def check(repo: Path, mappings: Path | None = None) -> list[str]:
                     problems.append(f"{where}: not a released {modality} ID")
                 if key in owner and owner[key] != name:
                     problems.append(f"{where}: already mapped in {owner[key]} (an ID is in one file)")
+                if modality == "survey" and key in ids and f"prism:{family}" not in have:
+                    problems.append(f"{where}: no library file for this instrument, its IRI would return 404")
                 owner.setdefault(key, name)
                 problems += entry_problems(entry, where, vocabs, ids.get(key))
     return problems
@@ -263,6 +277,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--mappings", type=Path, help="the mappings folder (default REPO/mappings)")
     args = ap.parse_args(argv)
     problems = check(args.repo, args.mappings)
+    for warning in missing_targets(args.repo):
+        print(f"warning: {warning}")
     for problem in problems:
         print(problem)
     return 1 if problems else 0

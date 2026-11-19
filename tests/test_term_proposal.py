@@ -34,7 +34,7 @@ def _sidecar(column, definition, specimen="saliva"):
 
 
 def test_unknown_metric_becomes_parent_and_child():
-    sidecar = _sidecar("ferr_ugl", {"Description": "Ferritin", "Units": "ug/L", "MinValue": 0, "LOINC": "2276-4"}, "serum")
+    sidecar = _sidecar("ferr_ugl", {"Description": "Ferritin", "Units": "ug/L", "MinValue": 0}, "serum")
     p = build_proposal(REGISTRY, sidecar, "ferr_ugl")
     parent, child = p["terms"]
     assert p["modality"] == "biosample"
@@ -42,8 +42,7 @@ def test_unknown_metric_becomes_parent_and_child():
                       "Aliases": ["ferr_ugl"], "Description": "Ferritin"}
     assert child == {"TermID": "prism:ferr-ugl.serum", "Level": "analyte-specimen", "Parent": "prism:ferr-ugl",
                      "SpecimenType": "serum", "Units": "ug/L", "MinValue": 0}
-    # the LOINC code of the sidecar is a link in the mappings layer, not a field of the term
-    assert p["links"] == {"prism:ferr-ugl.serum": {"loinc": "https://loinc.org/2276-4"}}
+    assert "links" not in p  # the sidecar LOINC field is gone from the schema: a link is given with --link
 
 
 def test_known_analyte_new_specimen_becomes_child_only():
@@ -354,11 +353,6 @@ def test_attach_links_goes_to_the_measured_term_and_none_means_unchanged():
 
 def test_parse_links_keeps_an_equals_sign_inside_the_address():
     assert parse_links(["snomed=https://example.org/?a=b&c=d"]) == {"snomed": "https://example.org/?a=b&c=d"}
-
-
-def test_a_bad_loinc_code_in_the_sidecar_is_named_as_such():
-    with pytest.raises(ProposalError, match="LOINC"):
-        build_proposal(REGISTRY, _sidecar("ferr", {"Description": "F", "Units": "ug/L", "LOINC": "2276 4"}, "serum"), "ferr")
 
 
 @pytest.mark.parametrize("bad", ["loinc", "=https://x", "loinc=", "loinc=a b"])

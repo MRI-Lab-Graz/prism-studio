@@ -76,7 +76,7 @@ BIOSAMPLE_RECOMMENDED_TECHNICAL = (
 
 # Column fields a resolved term supplies when the column does not set them.
 TERM_INHERITED_FIELDS = (
-    "Units", "DataType", "MinValue", "MaxValue", "WarnMinValue", "WarnMaxValue", "LOINC", "Levels",
+    "Units", "DataType", "MinValue", "MaxValue", "WarnMinValue", "WarnMaxValue", "Levels",
 )
 
 MRI_SUFFIX_REGEX = re.compile(

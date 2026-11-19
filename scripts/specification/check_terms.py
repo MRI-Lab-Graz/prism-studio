@@ -24,12 +24,11 @@ from pathlib import Path
 ID_PREFIXES = ("prism", "bids")
 _SLUG = re.compile(r"^[a-z][a-z0-9-]{0,62}$")  # at most 63 characters per segment
 _CF_NAME = re.compile(r"^[a-z][a-z0-9_]*$")
-_LOINC = re.compile(r"^\d+-\d$")
 _LOCAL_ID = re.compile(r"[a-z][a-z0-9-]{0,62}(\.[a-z][a-z0-9-]{0,62})?")  # <analyte>[.<specimen>]
 _STATUSES = ("official", "deprecated")
 
 
-_STRINGS = ("Level", "Label", "Description", "Parent", "SpecimenType", "Units", "LOINC", "CFStandardName", "Group")
+_STRINGS = ("Level", "Label", "Description", "Parent", "SpecimenType", "Units", "CFStandardName", "Group")
 _STRING_LISTS = ("Aliases", "AlternativeUnits", "Equivalents")
 _NUMBERS = ("MinValue", "WarnMaxValue")
 
@@ -51,28 +50,13 @@ def type_problems(term: dict, where: str) -> list[str]:
         and all(isinstance(k, str) and isinstance(v, str) for k, v in term["Levels"].items())
     ):
         problems.append(f"{where}: Levels must be an object of strings")
-    if "TermURL" in term:
-        problems.append(f"{where}: TermURL is not a term field; links to other vocabularies belong in mappings/")
+    for key in ("TermURL", "LOINC"):
+        if key in term:
+            problems.append(f"{where}: {key} is not a term field; links to other vocabularies (a LOINC code is the `loinc` link) belong in mappings/")
     for key in _NUMBERS:
         if key in term and (isinstance(term[key], bool) or not isinstance(term[key], (int, float))):
             problems.append(f"{where}: {key} must be a number")
     return problems
-
-
-def mapped_loinc_links(repo: Path, modality: str) -> dict[str, str]:
-    """TermID -> `loinc` SameAs URL found in REPO/mappings/MODALITY (unreadable or odd files are skipped here;
-    check_mappings.py reports them)."""
-    links = {}
-    for path in sorted((Path(repo) / "mappings" / modality).glob("*.json")):
-        try:
-            data = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, ValueError):
-            continue
-        for key, entry in (data.items() if isinstance(data, dict) else ()):
-            same = entry.get("SameAs") if isinstance(entry, dict) else None
-            if isinstance(same, dict) and isinstance(same.get("loinc"), str):
-                links[key] = same["loinc"]
-    return links
 
 
 def load_terms(folder: Path) -> tuple[dict[str, dict], list[str]]:
@@ -92,13 +76,11 @@ def load_terms(folder: Path) -> tuple[dict[str, dict], list[str]]:
     return registry, problems
 
 
-def check_registry(registry: dict[str, dict], specimen_types: list[str] | None,
-                   loinc_links: dict[str, str] | None = None) -> list[str]:
+def check_registry(registry: dict[str, dict], specimen_types: list[str] | None) -> list[str]:
     """Return human-readable problems of a registry (empty list = valid).
 
     specimen_types None = a one-level registry (only Level 'variable'); a list, even an
-    empty one, = the two-level biosample rules. loinc_links maps a TermID to the `loinc` URL of its
-    mapping (mappings/), when it has one; it must agree with the term's LOINC field.
+    empty one, = the two-level biosample rules.
     """
     problems: list[str] = []
     one_level = specimen_types is None
@@ -130,13 +112,6 @@ def check_registry(registry: dict[str, dict], specimen_types: list[str] | None,
                 problems.append(f"{key}: deprecated term needs ReplacedBy")
             elif replaced not in full_ids:
                 problems.append(f"{key}: ReplacedBy {replaced!r} is not a term of this registry")
-        if "LOINC" in term and not _LOINC.fullmatch(str(term["LOINC"])):
-            problems.append(f"{key}: LOINC {term['LOINC']!r} does not look like 2143-6")
-
-        loinc_url = (loinc_links or {}).get(tid)
-        if loinc_url and "LOINC" in term and loinc_url.rpartition("/")[2] != str(term["LOINC"]):
-            problems.append(f"{key}: mapped LOINC link {loinc_url!r} disagrees with LOINC {term['LOINC']!r}")
-
         if "CFStandardName" in term and not _CF_NAME.fullmatch(term["CFStandardName"]):
             problems.append(f"{key}: CFStandardName {term['CFStandardName']!r} must match {_CF_NAME.pattern}")
 
@@ -281,18 +256,17 @@ def main(argv: list[str] | None = None) -> int:
                 ap.error(f"{name!r} does not declare terms in entities.schema.json")
             schema = args.repo / "schemas" / "stable" / f"{name}.schema.json"
             prefix = f"{name}/" if args.all else ""
-            jobs.append((prefix, args.repo / "terms" / name, context_values(schema, declared[name].get("contextField")),
-                         mapped_loinc_links(args.repo, name)))
+            jobs.append((prefix, args.repo / "terms" / name, context_values(schema, declared[name].get("contextField"))))
     elif args.terms and args.schema:
-        jobs = [("", args.terms, specimen_types(args.schema), {})]
+        jobs = [("", args.terms, specimen_types(args.schema))]
     else:
         ap.error("give --all, --modality NAME, or --terms DIR and --schema FILE")
     problems = []
     registries = {}
-    for prefix, terms, context, loinc in jobs:
+    for prefix, terms, context in jobs:
         registry, found = load_terms(terms)
         registries[terms.name] = registry
-        problems += [prefix + p for p in found + check_registry(registry, context, loinc)]
+        problems += [prefix + p for p in found + check_registry(registry, context)]
     if args.all:
         registries["survey"], found = survey_registry(args.repo)
         problems += found

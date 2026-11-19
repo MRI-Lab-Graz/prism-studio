@@ -42,7 +42,7 @@ MAX_PROBLEMS = 50
 MAX_LINE = 300  # characters per problem line in the log
 ALLOWED_FIELDS = frozenset(
     "TermID Level Label Aliases Description Parent SpecimenType Units AlternativeUnits "
-    "MinValue WarnMaxValue LOINC Equivalents Levels CFStandardName Group".split()
+    "MinValue WarnMaxValue Equivalents Levels CFStandardName Group".split()
 )
 REPO = Path(__file__).resolve().parents[1]
 # The term modalities before they were declared in entities.schema.json. PRISM Studio vendors these scripts
@@ -425,7 +425,7 @@ Contents: the proposed files (terms under `terms/`{", links under `mappings/`" i
 Maintainer checklist:
 - [ ] The ID is sensible and final (IDs are frozen once released); change it before merging if not
 - [ ] The contributor's own column name is in `Aliases`
-- [ ] Units are UCUM; ranges and LOINC codes are cited or left out (none were invented)
+- [ ] Units are UCUM; ranges are cited or left out (none were invented)
 {LINKS_CHECK if links else ""}- [ ] CI is green (the bot commit does not start it; push or approve the run)
 """
 

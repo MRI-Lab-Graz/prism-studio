@@ -204,7 +204,7 @@
 
     async function add(metric, label) {
         clearMessage();
-        const body = { data_file: metric.data_file, column: metric.column };
+        const body = { data_file: metric.data_file, column: metric.column, links: readLinks() };
         if (label) body.label = label;
         const { ok, data } = await call(urls.add, body);
         if (!ok) { say(data.error || "Could not add the measurement", "danger"); return; }

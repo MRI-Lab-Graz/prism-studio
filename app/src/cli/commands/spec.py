@@ -68,9 +68,9 @@ def cmd_spec_local_add_term(args) -> None:
     try:
         result = add_local_term(
             args.project, column=args.column, data_file=args.data, sidecar_file=args.sidecar,
-            label=args.label, modality=args.modality,
+            label=args.label, modality=args.modality, links=parse_links(args.link),
         )
-    except OverlayError as exc:
+    except (OverlayError, ProposalError) as exc:
         _fail(args, str(exc))
     ids = [term["TermID"] for term in result["proposal"]["terms"]]
     written = [str(path) for path in result["written"]]

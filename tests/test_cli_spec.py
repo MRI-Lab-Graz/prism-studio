@@ -514,3 +514,14 @@ def test_spec_check_kind_name():
     assert code == 0 and json.loads(text)["success"]
     code, text = _run("spec", "check-kind-name", "func", "--json")
     assert code == 1 and "already taken" in json.loads(text)["error"]
+
+
+def test_add_term_link_writes_the_project_mapping_and_shares_it(tmp_path):
+    project = _project(tmp_path / "p")
+    code, out = _run("spec", "local", "add-term", "--project", str(project), "--data", _tsv(project), "--column", "dhea_s",
+                     "--link", "loinc=https://loinc.org/2191-5", "--json")
+    assert code == 0, out
+    mapping = project / "code" / "specification" / "mappings" / "biosample" / "dhea-s.json"
+    assert json.loads(mapping.read_text(encoding="utf-8")) == {"local:dhea-s.saliva": {"SameAs": {"loinc": "https://loinc.org/2191-5"}}}
+    code, out = _run("spec", "propose", "--project", str(project), "--all", "--json")
+    assert code == 0 and "mappings/biosample/dhea-s.json" in json.loads(out)["document"]["files"]

@@ -303,3 +303,11 @@ def test_recipe_schema_is_vendored_but_legacy_copies_stay_studio_owned(tmp_path)
     legacy = _source(tmp_path / "src2", {"schemas/v0.2/recipe.survey.schema.json": "{}\n"})
     with pytest.raises(ValueError):
         sync_mod.sync(legacy, _studio(tmp_path / "studio2"), "v1.0.0")
+
+
+def test_os_junk_in_the_source_is_never_vendored_or_locked(tmp_path):
+    src = _source(tmp_path / "src", {"terms/.DS_Store": "junk", "schemas/.DS_Store": "junk", "terms/biosample/._cortisol.json": "junk"})
+    studio = _studio(tmp_path / "studio")
+    lock = sync_mod.sync(src, studio, "v1.0.0")
+    assert not [k for k in lock["files"] if ".DS_Store" in k or "/._" in k]
+    assert not list(studio.rglob(".DS_Store")) and not list(studio.rglob("._*"))

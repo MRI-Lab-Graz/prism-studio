@@ -118,12 +118,17 @@ def _is_vendored(rel: str) -> bool:
     return any(rel.startswith(t) if t.endswith("/") else rel == t for t in MAPPING.values())
 
 
+def _is_os_junk(name: str) -> bool:
+    """Finder, Explorer and AppleDouble files are no part of the specification (the lock check ignores them too)."""
+    return name in {".DS_Store", "Thumbs.db", "desktop.ini"} or name.startswith("._")
+
+
 def _wanted(source: Path) -> dict[str, bytes]:
     """Studio path -> content for every file of the source that is part of the specification."""
     out: dict[str, bytes] = {}
     for path in sorted(source.rglob("*")):
         rel = path.relative_to(source).as_posix()
-        if not path.is_file() or "__pycache__" in path.parts or path.suffix == ".pyc":
+        if not path.is_file() or "__pycache__" in path.parts or path.suffix == ".pyc" or any(_is_os_junk(p) for p in path.parts):
             continue
         target = _destination(rel)
         if target is None:
