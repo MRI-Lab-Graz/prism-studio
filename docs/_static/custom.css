@@ -778,3 +778,7 @@ html[data-color-mode="dark"] .prism-persona-note-badge {
     font-size: 0.78rem;
     margin-left: 0.4rem;
 }
+
+a.prism-pill {
+    text-decoration: none;
+}

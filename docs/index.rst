@@ -20,6 +20,7 @@ PRISM Studio Documentation
          <span class="prism-pill">Privacy-safe export</span>
          <span class="prism-pill">Local-first</span>
          <span class="prism-pill">Community modalities</span>
+         <a class="prism-pill" href="ONTOLOGY_READY.html">Ontology-ready</a>
        </div>
        <a href="INSTALLATION.html" class="prism-cta">Install PRISM Studio</a>
        <a href="TUTORIAL_BEGINNER.html" class="prism-cta prism-cta--secondary">Start the Tutorial</a>
@@ -264,6 +265,7 @@ in the repository root for the full citation, including all authors.
    specs/events
    specs/environment
    specs/physio
+   ONTOLOGY_READY
    specs/mappings
    specs/instrument-ids
    specs/project
