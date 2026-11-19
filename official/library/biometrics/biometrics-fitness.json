@@ -3,7 +3,6 @@
     "Type": "FitnessTest",
     "FileFormat": "tsv",
     "Equipment": {
-      "de": "Stoppuhr, Maßband, Herzfrequenzmesser, Dynamometer",
       "en": "Stopwatch, Measuring Tape, Heart Rate Monitor, Dynamometer"
     },
     "Respondent": "self",
@@ -23,7 +22,6 @@
     "Category": "cardiorespiratory",
     "Protocol": "Standard Fitness Test Protocol v1.0",
     "Description": {
-      "de": "Eine umfassende Fitnessbewertung mit Ausdauer-, Kraft- und Flexibilitätsmessungen",
       "en": "A comprehensive fitness assessment including cardiorespiratory, strength, and flexibility measures"
     },
     "Instructions": {
@@ -32,15 +30,12 @@
     },
     "Author": "PRISM Demo",
     "EstimatedDuration": {
-      "de": "30 Minuten",
       "en": "30 minutes"
     },
     "TargetPopulation": {
-      "de": "Erwachsene 18-65 Jahre",
       "en": "Adults 18-65 years"
     },
     "ExclusionCriteria": {
-      "de": "Akute Erkrankung, Herz-Kreislauf-Erkrankungen, kürzliche Verletzungen",
       "en": "Acute illness, cardiovascular conditions, recent injuries"
     }
   },
@@ -53,7 +48,6 @@
   },
   "resting_hr": {
     "Description": {
-      "de": "Ruheherzfrequenz gemessen nach 5 Minuten sitzender Ruhe",
       "en": "Resting heart rate measured after 5 minutes of seated rest"
     },
     "Units": "bpm",
@@ -64,7 +58,6 @@
   },
   "plank_duration": {
     "Description": {
-      "de": "Maximale Dauer im Standard-Unterarmstütz",
       "en": "Maximum duration holding a standard plank position"
     },
     "Units": "seconds",
@@ -75,7 +68,6 @@
   },
   "sit_and_reach": {
     "Description": {
-      "de": "Flexibilitätsmessung mittels Sit-and-Reach-Test",
       "en": "Flexibility measure using sit-and-reach test"
     },
     "Units": "cm",
@@ -86,35 +78,30 @@
   },
   "step_test_hr": {
     "Description": {
-      "de": "Herzfrequenz unmittelbar nach dem 3-Minuten-Stufentest",
       "en": "Heart rate immediately after 3-minute step test"
     },
     "Units": "bpm"
   },
   "grip_strength_left": {
     "Description": {
-      "de": "Maximale Griffstärke mit der linken Hand mittels Dynamometer",
       "en": "Maximum grip strength with left hand using dynamometer"
     },
     "Units": "kg"
   },
   "grip_strength_right": {
     "Description": {
-      "de": "Maximale Griffstärke mit der rechten Hand mittels Dynamometer",
       "en": "Maximum grip strength with right hand using dynamometer"
     },
     "Units": "kg"
   },
   "vo2_max_estimated": {
     "Description": {
-      "de": "Geschätzter maximaler Sauerstoffverbrauch basierend auf Stufentest",
       "en": "Estimated maximum oxygen uptake based on step test performance"
     },
     "Units": "ml/kg/min"
   },
   "bmi": {
     "Description": {
-      "de": "Body Mass Index",
       "en": "Body Mass Index"
     },
     "Units": "kg/m²"

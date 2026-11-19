@@ -162,6 +162,16 @@ describe('offersMultilingual (descriptive header fields are English only)', () =
     for (const f of ['ReferencePopulation', 'ReferenceSource']) expect(StudioTheme.offersMultilingual('Normative', f)).toBe(false);
   });
 
+  it('makes the item-level Description English only outside surveys (a column description is metadata; a survey item is the instrument text)', () => {
+    for (const m of ['biometrics', 'biosample', 'environment']) expect(StudioTheme.offersMultilingual('ITEM', 'Description', m)).toBe(false);
+    expect(StudioTheme.offersMultilingual('ITEM', 'Description', 'survey')).toBe(true);
+    expect(StudioTheme.offersMultilingual('ITEM', 'Description')).toBe(true);
+  });
+
+  it('includes RecallPeriod, as the library check does', () => {
+    expect(StudioTheme.offersMultilingual('Study', 'RecallPeriod')).toBe(false);
+  });
+
   it('keeps it for fields where any language is allowed', () => {
     for (const f of ['Instructions', 'OriginalName', 'Levels', 'Text']) expect(StudioTheme.offersMultilingual('Study', f)).toBe(true);
   });
