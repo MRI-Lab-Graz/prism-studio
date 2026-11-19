@@ -1,6 +1,6 @@
 """The validator page, checked against the WCAG 2.2 AA points axe cannot decide on its own."""
 
-from tests.e2e.test_accessibility import AXE
+from tests.e2e.test_accessibility_states import AXE
 
 URL = "/validate"
 
