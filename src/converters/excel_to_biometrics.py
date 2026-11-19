@@ -586,67 +586,67 @@ def process_excel_biometrics(
                         if isinstance(v, str):
                             all_texts.append(v)
 
-            default_lang = detect_language(all_texts)
+        default_lang = detect_language(all_texts)
 
-            # Convert to i18n format
-            i18n_variables = {}
-            for var_name, var_def in variables.items():
-                new_def = copy.deepcopy(var_def)
-                if isinstance(new_def.get("Description"), str):
-                    new_def["Description"] = {default_lang: new_def["Description"]}
-                if isinstance(new_def.get("Levels"), dict):
-                    new_levels = {}
-                    for k, v in new_def["Levels"].items():
-                        if isinstance(v, str):
-                            new_levels[k] = {default_lang: v}
-                        else:
-                            new_levels[k] = v
-                    new_def["Levels"] = new_levels
-                i18n_variables[var_name] = new_def
+        # Convert to i18n format
+        i18n_variables = {}
+        for var_name, var_def in variables.items():
+            new_def = copy.deepcopy(var_def)
+            if isinstance(new_def.get("Description"), str):
+                new_def["Description"] = {default_lang: new_def["Description"]}
+            if isinstance(new_def.get("Levels"), dict):
+                new_levels = {}
+                for k, v in new_def["Levels"].items():
+                    if isinstance(v, str):
+                        new_levels[k] = {default_lang: v}
+                    else:
+                        new_levels[k] = v
+                new_def["Levels"] = new_levels
+            i18n_variables[var_name] = new_def
 
-            sidecar = {
-                "Technical": {
-                    "Type": "Biometrics",
-                    "FileFormat": "tsv",
-                    "Equipment": equipment_value,
-                    "Supervisor": supervisor_value,
-                },
-                "I18n": {
-                    "Languages": [default_lang],
-                    "DefaultLanguage": default_lang,
-                },
-                "Study": {
-                    "BiometricName": group,
-                    "OriginalName": original_name,
-                    "Protocol": meta.get("Protocol") or "",
-                    "Description": {default_lang: study_description},
-                },
-                "Metadata": {
-                    "SchemaVersion": "1.1.1",
-                    "CreationDate": pd.Timestamp.now().strftime("%Y-%m-%d"),
-                    "Creator": "excel_to_biometrics_library.py",
-                },
-            }
+        sidecar = {
+            "Technical": {
+                "Type": "Biometrics",
+                "FileFormat": "tsv",
+                "Equipment": equipment_value,
+                "Supervisor": supervisor_value,
+            },
+            "I18n": {
+                "Languages": [default_lang],
+                "DefaultLanguage": default_lang,
+            },
+            "Study": {
+                "BiometricName": group,
+                "OriginalName": original_name,
+                "Protocol": meta.get("Protocol") or "",
+                "Description": {default_lang: study_description},
+            },
+            "Metadata": {
+                "SchemaVersion": "1.1.1",
+                "CreationDate": pd.Timestamp.now().strftime("%Y-%m-%d"),
+                "Creator": "excel_to_biometrics_library.py",
+            },
+        }
 
-            if meta.get("Instructions"):
-                sidecar["Study"]["Instructions"] = {default_lang: meta["Instructions"]}
-            else:
-                instr = {k.split("_", 1)[1]: v for k, v in meta.items() if k.startswith("Instructions_") and v}
-                if instr:
-                    sidecar["Study"]["Instructions"] = instr
-                    for lang in instr:
-                        if lang not in sidecar["I18n"]["Languages"]:
-                            sidecar["I18n"]["Languages"].append(lang)
+        if meta.get("Instructions"):
+            sidecar["Study"]["Instructions"] = {default_lang: meta["Instructions"]}
+        else:
+            instr = {k.split("_", 1)[1]: v for k, v in meta.items() if k.startswith("Instructions_") and v}
+            if instr:
+                sidecar["Study"]["Instructions"] = instr
+                for lang in instr:
+                    if lang not in sidecar["I18n"]["Languages"]:
+                        sidecar["I18n"]["Languages"].append(lang)
 
-            if meta.get("Reference"):
-                sidecar["Study"]["Reference"] = meta["Reference"]
-            if meta.get("EstimatedDuration"):
-                sidecar["Study"]["EstimatedDuration"] = meta["EstimatedDuration"]
+        if meta.get("Reference"):
+            sidecar["Study"]["Reference"] = meta["Reference"]
+        if meta.get("EstimatedDuration"):
+            sidecar["Study"]["EstimatedDuration"] = meta["EstimatedDuration"]
 
-            sidecar.update(i18n_variables)
+        sidecar.update(i18n_variables)
 
-            json_filename = f"biometrics-{group}.json"
-            json_path = os.path.join(output_dir, json_filename)
+        json_filename = f"biometrics-{group}.json"
+        json_path = os.path.join(output_dir, json_filename)
         with open(json_path, "w", encoding="utf-8") as f:
             json.dump(sidecar, f, indent=2, ensure_ascii=False)
         print(f"  - Created {json_path}")

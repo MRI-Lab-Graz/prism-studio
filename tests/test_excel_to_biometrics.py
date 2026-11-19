@@ -296,3 +296,22 @@ def test_instructions_in_any_language_column_reach_the_sidecar(tmp_path) -> None
         "en": "Jump as high as you can",
     }
     assert "fr" in sidecar["I18n"]["Languages"]
+
+
+def test_the_sidecar_is_built_once_per_group_not_once_per_variable(monkeypatch, tmp_path) -> None:
+    src = tmp_path / "b.xlsx"
+    pd.DataFrame(
+        [
+            ["variable", "description", "group"],
+            ["cmj_a", "Jump height", "cmj"],
+            ["cmj_b", "Flight time", "cmj"],
+            ["cmj_c", "Contact time", "cmj"],
+        ]
+    ).to_excel(src, index=False, header=False)
+    calls = []
+    real = converter.detect_language
+    monkeypatch.setattr(converter, "detect_language", lambda texts: calls.append(1) or real(texts))
+
+    converter.process_excel_biometrics(str(src), str(tmp_path / "out"))
+
+    assert len(calls) == 1
