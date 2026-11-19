@@ -14,7 +14,7 @@ import tempfile
 from pathlib import Path
 
 from src.schema_manager import DEFAULT_SCHEMA_DIR
-from src.spec_overlay import OVERLAY_PARTS, OverlayError, _local_part, _vendored_or_error, load_local_terms
+from src.spec_overlay import OverlayError, _local_part, _real_overlay_folder, _vendored_or_error, load_local_terms
 from src.term_registry import mappings_root, terms_root
 
 
@@ -43,7 +43,7 @@ def check_links(mappings: Path | None = None, *, project=None) -> list[str]:
     A project's links (`code/specification/mappings`) are checked against the official IDs and its own local terms.
     The files are project data and untrusted: a symbolic link is reported and never read."""
     if project is not None:
-        mappings = Path(project).joinpath(*OVERLAY_PARTS, "mappings")
+        mappings = _real_overlay_folder(project, "mappings")  # refuses a symbolic link on the way
     if mappings is None:
         raise OverlayError("give a mappings folder or a project")
     mappings = Path(mappings)

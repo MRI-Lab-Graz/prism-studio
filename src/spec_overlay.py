@@ -277,6 +277,8 @@ def write_local_links(project_root, modality: str, links: dict[str, dict]) -> li
     folder = _real_overlay_folder(project_root, "mappings", _checked_modality(modality))
     by_family: dict[str, dict] = {}
     for term_id, same in links.items():
+        if _local_part(term_id) is None:
+            raise OverlayError(f"{term_id!r} is not a valid local term ID")
         by_family.setdefault(_family(term_id), {})[f"local:{term_id.partition(':')[2]}"] = {"SameAs": same}
     written = []
     for family, entries in by_family.items():
