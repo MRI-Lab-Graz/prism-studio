@@ -10,6 +10,7 @@
 	<img src="https://img.shields.io/badge/python-3.10--3.12-blue" alt="Python 3.10-3.12">
 	<img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="Platform">
 	<img src="https://img.shields.io/badge/BIDS-compatible-green" alt="BIDS compatible">
+	<a href="https://prism-studio.readthedocs.io/en/latest/ONTOLOGY_READY.html"><img src="https://img.shields.io/badge/ontology-ready-blueviolet" alt="Ontology-ready"></a>
 	<a href="https://doi.org/10.5281/zenodo.22809100"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.22809100.svg" alt="DOI"></a>
 </p>
 
