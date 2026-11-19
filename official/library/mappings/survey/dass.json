@@ -1,0 +1,506 @@
+{
+  "prism:dass.dass01": {
+    "Measures": [
+      {
+        "URL": "https://snomed.info/id/416767005",
+        "Match": "related",
+        "Higher": "more",
+        "Source": "DASS authors' scoring template (www2.psy.unsw.edu.au/dass); SNOMED code looked up on tx.fhir.org, edition 2026-07-01",
+        "Checked": "2026-11-19",
+        "Status": "unreviewed"
+      }
+    ]
+  },
+  "prism:dass.dass02": {
+    "Measures": [
+      {
+        "URL": "https://snomed.info/id/416619008",
+        "Match": "related",
+        "Higher": "more",
+        "Source": "DASS authors' scoring template (www2.psy.unsw.edu.au/dass); SNOMED code looked up on tx.fhir.org, edition 2026-07-01",
+        "Checked": "2026-11-19",
+        "Status": "unreviewed"
+      }
+    ]
+  },
+  "prism:dass.dass03": {
+    "Measures": [
+      {
+        "URL": "https://snomed.info/id/416954004",
+        "Match": "related",
+        "Higher": "more",
+        "Source": "DASS authors' scoring template (www2.psy.unsw.edu.au/dass); SNOMED code looked up on tx.fhir.org, edition 2026-07-01",
+        "Checked": "2026-11-19",
+        "Status": "unreviewed"
+      }
+    ]
+  },
+  "prism:dass.dass04": {
+    "Measures": [
+      {
+        "URL": "https://snomed.info/id/416619008",
+        "Match": "related",
+        "Higher": "more",
+        "Source": "DASS authors' scoring template (www2.psy.unsw.edu.au/dass); SNOMED code looked up on tx.fhir.org, edition 2026-07-01",
+        "Checked": "2026-11-19",
+        "Status": "unreviewed"
+      }
+    ]
+  },
+  "prism:dass.dass05": {
+    "Measures": [
+      {
+        "URL": "https://snomed.info/id/416954004",
+        "Match": "related",
+        "Higher": "more",
+        "Source": "DASS authors' scoring template (www2.psy.unsw.edu.au/dass); SNOMED code looked up on tx.fhir.org, edition 2026-07-01",
+        "Checked": "2026-11-19",
+        "Status": "unreviewed"
+      }
+    ]
+  },
+  "prism:dass.dass06": {
+    "Measures": [
+      {
+        "URL": "https://snomed.info/id/416767005",
+        "Match": "related",
+        "Higher": "more",
+        "Source": "DASS authors' scoring template (www2.psy.unsw.edu.au/dass); SNOMED code looked up on tx.fhir.org, edition 2026-07-01",
+        "Checked": "2026-11-19",
+        "Status": "unreviewed"
+      }
+    ]
+  },
+  "prism:dass.dass07": {
+    "Measures": [
+      {
+        "URL": "https://snomed.info/id/416619008",
+        "Match": "related",
+        "Higher": "more",
+        "Source": "DASS authors' scoring template (www2.psy.unsw.edu.au/dass); SNOMED code looked up on tx.fhir.org, edition 2026-07-01",
+        "Checked": "2026-11-19",
+        "Status": "unreviewed"
+      }
+    ]
+  },
+  "prism:dass.dass08": {
+    "Measures": [
+      {
+        "URL": "https://snomed.info/id/416767005",
+        "Match": "related",
+        "Higher": "more",
+        "Source": "DASS authors' scoring template (www2.psy.unsw.edu.au/dass); SNOMED code looked up on tx.fhir.org, edition 2026-07-01",
+        "Checked": "2026-11-19",
+        "Status": "unreviewed"
+      }
+    ]
+  },
+  "prism:dass.dass09": {
+    "Measures": [
+      {
+        "URL": "https://snomed.info/id/416619008",
+        "Match": "related",
+        "Higher": "more",
+        "Source": "DASS authors' scoring template (www2.psy.unsw.edu.au/dass); SNOMED code looked up on tx.fhir.org, edition 2026-07-01",
+        "Checked": "2026-11-19",
+        "Status": "unreviewed"
+      }
+    ]
+  },
+  "prism:dass.dass10": {
+    "Measures": [
+      {
+        "URL": "https://snomed.info/id/416954004",
+        "Match": "related",
+        "Higher": "more",
+        "Source": "DASS authors' scoring template (www2.psy.unsw.edu.au/dass); SNOMED code looked up on tx.fhir.org, edition 2026-07-01",
+        "Checked": "2026-11-19",
+        "Status": "unreviewed"
+      }
+    ]
+  },
+  "prism:dass.dass11": {
+    "Measures": [
+      {
+        "URL": "https://snomed.info/id/416767005",
+        "Match": "related",
+        "Higher": "more",
+        "Source": "DASS authors' scoring template (www2.psy.unsw.edu.au/dass); SNOMED code looked up on tx.fhir.org, edition 2026-07-01",
+        "Checked": "2026-11-19",
+        "Status": "unreviewed"
+      }
+    ]
+  },
+  "prism:dass.dass12": {
+    "Measures": [
+      {
+        "URL": "https://snomed.info/id/416767005",
+        "Match": "related",
+        "Higher": "more",
+        "Source": "DASS authors' scoring template (www2.psy.unsw.edu.au/dass); SNOMED code looked up on tx.fhir.org, edition 2026-07-01",
+        "Checked": "2026-11-19",
+        "Status": "unreviewed"
+      }
+    ]
+  },
+  "prism:dass.dass13": {
+    "Measures": [
+      {
+        "URL": "https://snomed.info/id/416954004",
+        "Match": "related",
+        "Higher": "more",
+        "Source": "DASS authors' scoring template (www2.psy.unsw.edu.au/dass); SNOMED code looked up on tx.fhir.org, edition 2026-07-01",
+        "Checked": "2026-11-19",
+        "Status": "unreviewed"
+      }
+    ]
+  },
+  "prism:dass.dass14": {
+    "Measures": [
+      {
+        "URL": "https://snomed.info/id/416767005",
+        "Match": "related",
+        "Higher": "more",
+        "Source": "DASS authors' scoring template (www2.psy.unsw.edu.au/dass); SNOMED code looked up on tx.fhir.org, edition 2026-07-01",
+        "Checked": "2026-11-19",
+        "Status": "unreviewed"
+      }
+    ]
+  },
+  "prism:dass.dass15": {
+    "Measures": [
+      {
+        "URL": "https://snomed.info/id/416619008",
+        "Match": "related",
+        "Higher": "more",
+        "Source": "DASS authors' scoring template (www2.psy.unsw.edu.au/dass); SNOMED code looked up on tx.fhir.org, edition 2026-07-01",
+        "Checked": "2026-11-19",
+        "Status": "unreviewed"
+      }
+    ]
+  },
+  "prism:dass.dass16": {
+    "Measures": [
+      {
+        "URL": "https://snomed.info/id/416954004",
+        "Match": "related",
+        "Higher": "more",
+        "Source": "DASS authors' scoring template (www2.psy.unsw.edu.au/dass); SNOMED code looked up on tx.fhir.org, edition 2026-07-01",
+        "Checked": "2026-11-19",
+        "Status": "unreviewed"
+      }
+    ]
+  },
+  "prism:dass.dass17": {
+    "Measures": [
+      {
+        "URL": "https://snomed.info/id/416954004",
+        "Match": "related",
+        "Higher": "more",
+        "Source": "DASS authors' scoring template (www2.psy.unsw.edu.au/dass); SNOMED code looked up on tx.fhir.org, edition 2026-07-01",
+        "Checked": "2026-11-19",
+        "Status": "unreviewed"
+      }
+    ]
+  },
+  "prism:dass.dass18": {
+    "Measures": [
+      {
+        "URL": "https://snomed.info/id/416767005",
+        "Match": "related",
+        "Higher": "more",
+        "Source": "DASS authors' scoring template (www2.psy.unsw.edu.au/dass); SNOMED code looked up on tx.fhir.org, edition 2026-07-01",
+        "Checked": "2026-11-19",
+        "Status": "unreviewed"
+      }
+    ]
+  },
+  "prism:dass.dass19": {
+    "Measures": [
+      {
+        "URL": "https://snomed.info/id/416619008",
+        "Match": "related",
+        "Higher": "more",
+        "Source": "DASS authors' scoring template (www2.psy.unsw.edu.au/dass); SNOMED code looked up on tx.fhir.org, edition 2026-07-01",
+        "Checked": "2026-11-19",
+        "Status": "unreviewed"
+      }
+    ]
+  },
+  "prism:dass.dass20": {
+    "Measures": [
+      {
+        "URL": "https://snomed.info/id/416619008",
+        "Match": "related",
+        "Higher": "more",
+        "Source": "DASS authors' scoring template (www2.psy.unsw.edu.au/dass); SNOMED code looked up on tx.fhir.org, edition 2026-07-01",
+        "Checked": "2026-11-19",
+        "Status": "unreviewed"
+      }
+    ]
+  },
+  "prism:dass.dass21": {
+    "Measures": [
+      {
+        "URL": "https://snomed.info/id/416954004",
+        "Match": "related",
+        "Higher": "more",
+        "Source": "DASS authors' scoring template (www2.psy.unsw.edu.au/dass); SNOMED code looked up on tx.fhir.org, edition 2026-07-01",
+        "Checked": "2026-11-19",
+        "Status": "unreviewed"
+      }
+    ]
+  },
+  "prism:dass.dass22": {
+    "Measures": [
+      {
+        "URL": "https://snomed.info/id/416767005",
+        "Match": "related",
+        "Higher": "more",
+        "Source": "DASS authors' scoring template (www2.psy.unsw.edu.au/dass); SNOMED code looked up on tx.fhir.org, edition 2026-07-01",
+        "Checked": "2026-11-19",
+        "Status": "unreviewed"
+      }
+    ]
+  },
+  "prism:dass.dass23": {
+    "Measures": [
+      {
+        "URL": "https://snomed.info/id/416619008",
+        "Match": "related",
+        "Higher": "more",
+        "Source": "DASS authors' scoring template (www2.psy.unsw.edu.au/dass); SNOMED code looked up on tx.fhir.org, edition 2026-07-01",
+        "Checked": "2026-11-19",
+        "Status": "unreviewed"
+      }
+    ]
+  },
+  "prism:dass.dass24": {
+    "Measures": [
+      {
+        "URL": "https://snomed.info/id/416954004",
+        "Match": "related",
+        "Higher": "more",
+        "Source": "DASS authors' scoring template (www2.psy.unsw.edu.au/dass); SNOMED code looked up on tx.fhir.org, edition 2026-07-01",
+        "Checked": "2026-11-19",
+        "Status": "unreviewed"
+      }
+    ]
+  },
+  "prism:dass.dass25": {
+    "Measures": [
+      {
+        "URL": "https://snomed.info/id/416619008",
+        "Match": "related",
+        "Higher": "more",
+        "Source": "DASS authors' scoring template (www2.psy.unsw.edu.au/dass); SNOMED code looked up on tx.fhir.org, edition 2026-07-01",
+        "Checked": "2026-11-19",
+        "Status": "unreviewed"
+      }
+    ]
+  },
+  "prism:dass.dass26": {
+    "Measures": [
+      {
+        "URL": "https://snomed.info/id/416954004",
+        "Match": "related",
+        "Higher": "more",
+        "Source": "DASS authors' scoring template (www2.psy.unsw.edu.au/dass); SNOMED code looked up on tx.fhir.org, edition 2026-07-01",
+        "Checked": "2026-11-19",
+        "Status": "unreviewed"
+      }
+    ]
+  },
+  "prism:dass.dass27": {
+    "Measures": [
+      {
+        "URL": "https://snomed.info/id/416767005",
+        "Match": "related",
+        "Higher": "more",
+        "Source": "DASS authors' scoring template (www2.psy.unsw.edu.au/dass); SNOMED code looked up on tx.fhir.org, edition 2026-07-01",
+        "Checked": "2026-11-19",
+        "Status": "unreviewed"
+      }
+    ]
+  },
+  "prism:dass.dass28": {
+    "Measures": [
+      {
+        "URL": "https://snomed.info/id/416619008",
+        "Match": "related",
+        "Higher": "more",
+        "Source": "DASS authors' scoring template (www2.psy.unsw.edu.au/dass); SNOMED code looked up on tx.fhir.org, edition 2026-07-01",
+        "Checked": "2026-11-19",
+        "Status": "unreviewed"
+      }
+    ]
+  },
+  "prism:dass.dass29": {
+    "Measures": [
+      {
+        "URL": "https://snomed.info/id/416767005",
+        "Match": "related",
+        "Higher": "more",
+        "Source": "DASS authors' scoring template (www2.psy.unsw.edu.au/dass); SNOMED code looked up on tx.fhir.org, edition 2026-07-01",
+        "Checked": "2026-11-19",
+        "Status": "unreviewed"
+      }
+    ]
+  },
+  "prism:dass.dass30": {
+    "Measures": [
+      {
+        "URL": "https://snomed.info/id/416619008",
+        "Match": "related",
+        "Higher": "more",
+        "Source": "DASS authors' scoring template (www2.psy.unsw.edu.au/dass); SNOMED code looked up on tx.fhir.org, edition 2026-07-01",
+        "Checked": "2026-11-19",
+        "Status": "unreviewed"
+      }
+    ]
+  },
+  "prism:dass.dass31": {
+    "Measures": [
+      {
+        "URL": "https://snomed.info/id/416954004",
+        "Match": "related",
+        "Higher": "more",
+        "Source": "DASS authors' scoring template (www2.psy.unsw.edu.au/dass); SNOMED code looked up on tx.fhir.org, edition 2026-07-01",
+        "Checked": "2026-11-19",
+        "Status": "unreviewed"
+      }
+    ]
+  },
+  "prism:dass.dass32": {
+    "Measures": [
+      {
+        "URL": "https://snomed.info/id/416767005",
+        "Match": "related",
+        "Higher": "more",
+        "Source": "DASS authors' scoring template (www2.psy.unsw.edu.au/dass); SNOMED code looked up on tx.fhir.org, edition 2026-07-01",
+        "Checked": "2026-11-19",
+        "Status": "unreviewed"
+      }
+    ]
+  },
+  "prism:dass.dass33": {
+    "Measures": [
+      {
+        "URL": "https://snomed.info/id/416767005",
+        "Match": "related",
+        "Higher": "more",
+        "Source": "DASS authors' scoring template (www2.psy.unsw.edu.au/dass); SNOMED code looked up on tx.fhir.org, edition 2026-07-01",
+        "Checked": "2026-11-19",
+        "Status": "unreviewed"
+      }
+    ]
+  },
+  "prism:dass.dass34": {
+    "Measures": [
+      {
+        "URL": "https://snomed.info/id/416954004",
+        "Match": "related",
+        "Higher": "more",
+        "Source": "DASS authors' scoring template (www2.psy.unsw.edu.au/dass); SNOMED code looked up on tx.fhir.org, edition 2026-07-01",
+        "Checked": "2026-11-19",
+        "Status": "unreviewed"
+      }
+    ]
+  },
+  "prism:dass.dass35": {
+    "Measures": [
+      {
+        "URL": "https://snomed.info/id/416767005",
+        "Match": "related",
+        "Higher": "more",
+        "Source": "DASS authors' scoring template (www2.psy.unsw.edu.au/dass); SNOMED code looked up on tx.fhir.org, edition 2026-07-01",
+        "Checked": "2026-11-19",
+        "Status": "unreviewed"
+      }
+    ]
+  },
+  "prism:dass.dass36": {
+    "Measures": [
+      {
+        "URL": "https://snomed.info/id/416619008",
+        "Match": "related",
+        "Higher": "more",
+        "Source": "DASS authors' scoring template (www2.psy.unsw.edu.au/dass); SNOMED code looked up on tx.fhir.org, edition 2026-07-01",
+        "Checked": "2026-11-19",
+        "Status": "unreviewed"
+      }
+    ]
+  },
+  "prism:dass.dass37": {
+    "Measures": [
+      {
+        "URL": "https://snomed.info/id/416954004",
+        "Match": "related",
+        "Higher": "more",
+        "Source": "DASS authors' scoring template (www2.psy.unsw.edu.au/dass); SNOMED code looked up on tx.fhir.org, edition 2026-07-01",
+        "Checked": "2026-11-19",
+        "Status": "unreviewed"
+      }
+    ]
+  },
+  "prism:dass.dass38": {
+    "Measures": [
+      {
+        "URL": "https://snomed.info/id/416954004",
+        "Match": "related",
+        "Higher": "more",
+        "Source": "DASS authors' scoring template (www2.psy.unsw.edu.au/dass); SNOMED code looked up on tx.fhir.org, edition 2026-07-01",
+        "Checked": "2026-11-19",
+        "Status": "unreviewed"
+      }
+    ]
+  },
+  "prism:dass.dass39": {
+    "Measures": [
+      {
+        "URL": "https://snomed.info/id/416767005",
+        "Match": "related",
+        "Higher": "more",
+        "Source": "DASS authors' scoring template (www2.psy.unsw.edu.au/dass); SNOMED code looked up on tx.fhir.org, edition 2026-07-01",
+        "Checked": "2026-11-19",
+        "Status": "unreviewed"
+      }
+    ]
+  },
+  "prism:dass.dass40": {
+    "Measures": [
+      {
+        "URL": "https://snomed.info/id/416619008",
+        "Match": "related",
+        "Higher": "more",
+        "Source": "DASS authors' scoring template (www2.psy.unsw.edu.au/dass); SNOMED code looked up on tx.fhir.org, edition 2026-07-01",
+        "Checked": "2026-11-19",
+        "Status": "unreviewed"
+      }
+    ]
+  },
+  "prism:dass.dass41": {
+    "Measures": [
+      {
+        "URL": "https://snomed.info/id/416619008",
+        "Match": "related",
+        "Higher": "more",
+        "Source": "DASS authors' scoring template (www2.psy.unsw.edu.au/dass); SNOMED code looked up on tx.fhir.org, edition 2026-07-01",
+        "Checked": "2026-11-19",
+        "Status": "unreviewed"
+      }
+    ]
+  },
+  "prism:dass.dass42": {
+    "Measures": [
+      {
+        "URL": "https://snomed.info/id/416954004",
+        "Match": "related",
+        "Higher": "more",
+        "Source": "DASS authors' scoring template (www2.psy.unsw.edu.au/dass); SNOMED code looked up on tx.fhir.org, edition 2026-07-01",
+        "Checked": "2026-11-19",
+        "Status": "unreviewed"
+      }
+    ]
+  }
+}
