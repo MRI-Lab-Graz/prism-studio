@@ -48,7 +48,7 @@
     "docs/specs/environment.md": "de9c3ebd7fcd7a67316cf434ab2a0e464f31a9ac44b7f96063c0642d7f9cc839",
     "docs/specs/events.md": "6d82bf192ce2d86c823c54f0f500fed61601a1946219452c95dd5093927c4702",
     "docs/specs/instrument-ids.md": "488b646b081c9e11a2db3641b7d9688d0874eb7409b86ec095bb06310e1da059",
-    "docs/specs/mappings.md": "341e13f0bb3d3712dd50634cfe9ef1db7872d93b6b9d50265878987e7ac30f46",
+    "docs/specs/mappings.md": "c7cb7a01537de06fbb3e21eda53b2cff19f2127b1106a0e1aebb0471ff8e1295",
     "docs/specs/physio.md": "b9a08f26b9d73c94e1bb513b82248493236da9bef98c9ae19a35035a0f83e9fd",
     "docs/specs/survey.md": "79a5ababd396dea762c7a8871e2e42ea63eb2905322053356aeb2baff0e53ae2",
     "official/library/NOTICE_SPECIFICATION.md": "dd5ef3377b16d4d4a6c1aa220778950c77ba421acc529e431ba36a15956060b8",
@@ -60,7 +60,10 @@
     "official/library/mappings/biosample/prolactin.json": "31d7c1a09a724930f00a2b40fee742d5f5b5c5a980a809f21ca14f6d9eb3666d",
     "official/library/mappings/biosample/shbg.json": "17b43fd3ed0e6d565b40f460a937e467f38f1b550965159e5102cbff569c8e13",
     "official/library/mappings/biosample/testosterone.json": "b881fb153589735a538c7a567d5b9f28a0343d3d306b9db0d4b4095ba7b1743e",
-    "official/library/mappings/vocabularies.json": "07bf6cee52036cad0fae22d5b0160b14553489c935b0010510178802cdc732a3",
+    "official/library/mappings/survey/dass.json": "b1d73a5abbd2a012a56ff7af4886911efb2989cae422bb64c57d2ad1f32dce6f",
+    "official/library/mappings/survey/dass21.json": "c94cf43a85e317b012ee5738cffd2bf07a1fff7b203732d8eb5c4b9da42198c9",
+    "official/library/mappings/survey/demo.json": "27d654660fcb2b5e5845540bdb319e101d13eb45d7cac1effa6602738ef03015",
+    "official/library/mappings/vocabularies.json": "b0d00b56e5ebb4671bd6d4b1763b67172f9ac850617759a58caf233e1d89fb80",
     "official/library/survey/.gitkeep": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "official/library/survey/survey-bfas-g.json": "2690534dbec2882ab9f53620ad95d61823563bf3eeb78c2ab634c970087cdf54",
     "official/library/survey/survey-cpaq-d.json": "e9c99e64569a3173b1087c1ac7fe4f5a4ce92d07f7d5193650505ce8101bb27b",
@@ -272,5 +275,5 @@
     "scripts/specification/term_proposal.py": "cf007ffb6031a4b3410e5636704f863ad889d49eecc6a37b598d6b4ec1005482"
   },
   "repository": "MRI-Lab-Graz/prism-specification",
-  "tag": "v1.5.18"
+  "tag": "v1.5.20"
 }

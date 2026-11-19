@@ -4,7 +4,7 @@
     "label": "SNOMED CT"
   },
   "loinc": {
-    "pattern": "^https://loinc\\.org/\\d+-\\d$",
+    "pattern": "^https://loinc\\.org/(\\d+-\\d|L[APLG]\\d+-\\d)$",
     "label": "LOINC"
   },
   "chebi": {
@@ -14,5 +14,105 @@
   "ncit": {
     "pattern": "^https?://purl\\.obolibrary\\.org/obo/NCIT_C\\d+$",
     "label": "NCI Thesaurus"
+  },
+  "hpo": {
+    "pattern": "^https?://purl\\.obolibrary\\.org/obo/HP_\\d{7}$",
+    "label": "Human Phenotype Ontology"
+  },
+  "mondo": {
+    "pattern": "^https?://purl\\.obolibrary\\.org/obo/MONDO_\\d{7}$",
+    "label": "Mondo Disease Ontology"
+  },
+  "doid": {
+    "pattern": "^https?://purl\\.obolibrary\\.org/obo/DOID_\\d+$",
+    "label": "Human Disease Ontology"
+  },
+  "mfoem": {
+    "pattern": "^https?://purl\\.obolibrary\\.org/obo/MFOEM_\\d{6}$",
+    "label": "Emotion Ontology"
+  },
+  "mfomd": {
+    "pattern": "^https?://purl\\.obolibrary\\.org/obo/MFOMD_\\d{7}$",
+    "label": "Mental Disease Ontology"
+  },
+  "uberon": {
+    "pattern": "^https?://purl\\.obolibrary\\.org/obo/UBERON_\\d{7}$",
+    "label": "Uberon anatomy ontology"
+  },
+  "pato": {
+    "pattern": "^https?://purl\\.obolibrary\\.org/obo/PATO_\\d{7}$",
+    "label": "Phenotype And Trait Ontology"
+  },
+  "cmo": {
+    "pattern": "^https?://purl\\.obolibrary\\.org/obo/CMO_\\d{7}$",
+    "label": "Clinical Measurement Ontology"
+  },
+  "oba": {
+    "pattern": "^https?://purl\\.obolibrary\\.org/obo/OBA_(VT)?\\d{7}$",
+    "label": "Ontology of Biological Attributes"
+  },
+  "efo": {
+    "pattern": "^https?://www\\.ebi\\.ac\\.uk/efo/EFO_\\d{7}$",
+    "label": "Experimental Factor Ontology"
+  },
+  "icd11": {
+    "pattern": "^https?://id\\.who\\.int/icd/(entity/\\d+|release/11/\\d{4}-\\d{2}/mms/\\d+)$",
+    "label": "ICD-11 (WHO foundation entity or MMS)"
+  },
+  "icd10": {
+    "pattern": "^https://icd\\.who\\.int/browse10/\\d{4}/en#/[A-Z]\\d{2}(\\.\\d{1,2})?(-[A-Z]\\d{2})?$",
+    "label": "ICD-10 (WHO)"
+  },
+  "mesh": {
+    "pattern": "^https://id\\.nlm\\.nih\\.gov/mesh/[DCQ]\\d{6,9}$",
+    "label": "MeSH"
+  },
+  "umls": {
+    "pattern": "^https://uts\\.nlm\\.nih\\.gov/uts/umls/concept/C\\d{7}$",
+    "label": "UMLS Metathesaurus"
+  },
+  "wikidata": {
+    "pattern": "^https?://www\\.wikidata\\.org/entity/Q\\d+$",
+    "label": "Wikidata"
+  },
+  "cogatlas": {
+    "pattern": "^https://www\\.cognitiveatlas\\.org/(concept/id/trm|task/id/tsk)_[A-Za-z0-9]+/?$",
+    "label": "Cognitive Atlas"
+  },
+  "cde": {
+    "pattern": "^https://cde\\.nlm\\.nih\\.gov/(deView|formView)\\?tinyId=[A-Za-z0-9_-]+$",
+    "label": "NIH Common Data Elements Repository"
+  },
+  "pubchem": {
+    "pattern": "^https://pubchem\\.ncbi\\.nlm\\.nih\\.gov/compound/\\d+$",
+    "label": "PubChem compound"
+  },
+  "uniprot": {
+    "pattern": "^https://www\\.uniprot\\.org/uniprotkb/[A-Z0-9]{6,10}$",
+    "label": "UniProt"
+  },
+  "atc": {
+    "pattern": "^https://atcddd\\.fhi\\.no/atc_ddd_index/\\?code=[A-Z](\\d{2}([A-Z]([A-Z](\\d{2})?)?)?)?$",
+    "label": "ATC (WHO drug classification)"
+  },
+  "orphanet": {
+    "pattern": "^https?://www\\.orpha\\.net/ORDO/Orphanet_\\d+$",
+    "label": "Orphanet"
+  },
+  "omim": {
+    "pattern": "^https://omim\\.org/entry/\\d{6}$",
+    "label": "OMIM"
+  },
+  "hmdb": {
+    "pattern": "^https://hmdb\\.ca/metabolites/HMDB\\d{7}$",
+    "label": "Human Metabolome Database"
+  },
+  "drugbank": {
+    "pattern": "^https://go\\.drugbank\\.com/drugs/DB\\d{5}$",
+    "label": "DrugBank"
+  },
+  "rxnorm": {
+    "pattern": "^http://purl\\.bioontology\\.org/ontology/RXNORM/\\d+$",
+    "label": "RxNorm"
   }
 }

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Ontology links for surveys: `terms show` reads them, and 29 vocabularies are known.** Synced from prism-specification
+  v1.5.20. `mappings/survey/dass.json` and `dass21.json` link every DASS item to the SNOMED CT score of its subscale
+  (`prism_tools.py terms show prism:dass21.dass2101 --modality survey` prints it under `Measures`); the demo has a
+  `ValueRules` example. `mappings/vocabularies.json` now accepts links to SNOMED CT, LOINC, ChEBI, NCIT, HPO, MONDO,
+  DOID, MFOEM, MFOMD, Uberon, PATO, CMO, OBA, EFO, ICD-11, ICD-10, MeSH, UMLS, Wikidata, Cognitive Atlas, NIH CDE,
+  PubChem, UniProt, ATC, Orphanet, OMIM, HMDB, DrugBank and RxNorm. Links are `unreviewed` until a maintainer checks them.
+
 ### Changed
 - **Documentation and examples no longer depend on third-party instruments.** The workshop and the beginner tutorials
   (`TUTORIAL_BEGINNER*`, `WORKSHOP`, `EXAMPLES`) are built on the demonstration questionnaire (`demo`, items
