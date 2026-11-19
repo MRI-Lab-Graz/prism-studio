@@ -25,7 +25,7 @@ ISSUE_REPO = "MRI-Lab-Graz/prism-specification"
 ISSUE_TEMPLATE = "propose-metric.yml"
 ISSUE_NEW_KIND_TEMPLATE = "propose-new-kind-of-data.yml"
 URL_LIMIT = 6000
-_OPTIONAL_CHILD_FIELDS = ("MinValue", "WarnMaxValue")  # a LOINC code is a link (mappings/), not a field of the term
+_OPTIONAL_CHILD_FIELDS = ("MinValue", "WarnMaxValue")
 
 
 class ProposalError(ValueError):
@@ -144,12 +144,7 @@ def build_proposal(
         "SpecimenType": specimen, "Units": col_def["Units"],
     }
     child.update({f: col_def[f] for f in _OPTIONAL_CHILD_FIELDS if col_def.get(f) is not None})
-    proposal = {"modality": modality, "terms": ([new_parent] if new_parent else []) + [child]}
-    if col_def.get("LOINC"):
-        if not re.fullmatch(r"\d+-\d", str(col_def["LOINC"])):
-            raise ProposalError(f"column {column!r}: LOINC {col_def['LOINC']!r} does not look like 2276-4")
-        attach_links(proposal, {"loinc": f"https://loinc.org/{col_def['LOINC']}"})
-    return proposal
+    return {"modality": modality, "terms": ([new_parent] if new_parent else []) + [child]}
 
 
 def parse_links(items) -> dict[str, str]:

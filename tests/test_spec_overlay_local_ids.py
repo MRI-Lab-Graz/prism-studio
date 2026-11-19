@@ -86,9 +86,43 @@ def test_a_new_specimen_of_an_existing_local_analyte_is_added(tmp_path):
     assert _file(project, "dhea-s.plasma.json")["Parent"] == "local:dhea-s"
 
 
-def test_a_local_term_keeps_the_loinc_code_of_its_column(tmp_path):
-    sidecar = tmp_path / "sidecar.json"
+LINK = {"loinc": "https://loinc.org/2191-5"}
+
+
+def _sidecar(tmp_path):
+    path = tmp_path / "sidecar.json"
+    path.write_text(json.dumps({"Technical": {"SpecimenType": "saliva"},
+                                "dhea_s": {"Description": "DHEA-S", "Units": "ug/dL"}}), encoding="utf-8")
+    return path
+
+
+def test_a_local_term_can_carry_links_to_any_vocabulary(tmp_path):
+    project = tmp_path / "p"
+    add_local_term(project, column="dhea_s", sidecar_file=str(_sidecar(tmp_path)), label="DHEA-S", links=LINK)
+    mapping = project / "code" / "specification" / "mappings" / "biosample" / "dhea-s.json"
+    assert json.loads(mapping.read_text(encoding="utf-8")) == {"local:dhea-s.saliva": {"SameAs": LINK}}
+    assert "LOINC" not in _file(project, "dhea-s.saliva.json")
+
+
+def test_sharing_a_local_term_shares_its_links(tmp_path):
+    project = tmp_path / "p"
+    add_local_term(project, column="dhea_s", sidecar_file=str(_sidecar(tmp_path)), label="DHEA-S", links=LINK)
+    result = proposal_for_local_terms(project, None)
+    assert result["problems"] == []
+    assert result["document"]["files"]["mappings/biosample/dhea-s.json"] == {"prism:dhea-s.saliva": {"SameAs": LINK}}
+
+
+def test_removing_a_local_term_removes_its_links(tmp_path):
+    project = tmp_path / "p"
+    add_local_term(project, column="dhea_s", sidecar_file=str(_sidecar(tmp_path)), label="DHEA-S", links=LINK)
+    remove_local_terms(project, "biosample", "local:dhea-s")
+    assert not (project / "code" / "specification" / "mappings" / "biosample" / "dhea-s.json").exists()
+
+
+def test_the_sidecar_loinc_field_is_not_read(tmp_path):
+    sidecar = tmp_path / "s.json"
     sidecar.write_text(json.dumps({"Technical": {"SpecimenType": "saliva"},
-                                   "dhea_s": {"Description": "DHEA-S", "Units": "ug/dL", "LOINC": "2191-5"}}), encoding="utf-8")
+                                   "dhea_s": {"Description": "d", "Units": "ug/dL", "LOINC": "2191-5"}}), encoding="utf-8")
     add_local_term(tmp_path / "p", column="dhea_s", sidecar_file=str(sidecar), label="DHEA-S")
-    assert _file(tmp_path / "p", "dhea-s.saliva.json")["LOINC"] == "2191-5"
+    assert "LOINC" not in _file(tmp_path / "p", "dhea-s.saliva.json")
+    assert not (tmp_path / "p" / "code" / "specification" / "mappings").exists()
