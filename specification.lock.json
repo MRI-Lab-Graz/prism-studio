@@ -1,6 +1,5 @@
 {
   "files": {
-    "app/schemas/.DS_Store": "9e71ca3ac57a752bd93240b002ef0ab3ba22ed70798310903fe1e0eb03bc08a3",
     "app/schemas/PRISM_SPECIFICATION_LICENSE": "f8853e8faf16ff3b4371deb5ead924e8b06ab7f9a28638ed3981224f1a75d6ea",
     "app/schemas/archive/biometrics/1.1.1.schema.json": "0cc1bb62ac743817929500baf30154240861111a3948de94dddae1ab2b18f632",
     "app/schemas/archive/biometrics/1.1.2.schema.json": "33e9ddcddc943792a7b190d1ea73ef0216afe0a9bf0c484414f0f2639bbf3dea",
@@ -93,7 +92,6 @@
     "official/library/survey/survey-tsi-ger-13.json": "1dfa4c85d7fede746fe054b1d3ac0e8cee0169ffd9aecaf890eaf18bb1e4b46c",
     "official/library/survey/survey-tsi-ger-4.json": "b8b66d11d0d357936218dade4d3ac642164f704e2ce82440a82add862803cbbb",
     "official/library/survey/term-ids.txt": "2cdfebf2228bc3b2d847c2a76433589424d23c71cafc934c8b177889024f7547",
-    "official/library/terms/.DS_Store": "72de6eab31f340a54b1bb6eb7fdb985711b32912a0fcbad01ed47e0bb3d6c4db",
     "official/library/terms/biosample/alpha-amylase.json": "c462439429983971303d497f4f0e58ceccb9254f766b5d251253cda35d295021",
     "official/library/terms/biosample/alpha-amylase.saliva.json": "21e0747cb45b93decf735d518ca53a4168829778fc860ecb30324a2b66f08646",
     "official/library/terms/biosample/cortisol.json": "70535dda6ccc2b0b287680e31e015d885a435b7c1c7c4ddacdff7acbdc5d1d0c",
