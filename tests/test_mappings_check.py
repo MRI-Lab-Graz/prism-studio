@@ -79,3 +79,37 @@ def test_the_command_needs_exactly_one_of_dir_and_project(tmp_path):
     assert _run("terms", "check-links", "--dir", str(tmp_path), "--project", str(tmp_path))[0] == 2
     code, out = _run("terms", "check-links", "--dir", str(tmp_path / "nope"), "--json")
     assert code == 1 and not json.loads(out)["success"]
+
+
+def test_a_project_without_local_links_has_no_problems(tmp_path):
+    assert check_links(project=tmp_path) == []
+
+
+def test_a_folder_that_is_no_modality_is_reported_not_a_crash(tmp_path):
+    project = tmp_path / "p"
+    _put(project / "code" / "specification" / "mappings", "nosuchkind", "x", {"prism:x": {"SameAs": {"snomed": SNOMED}}})
+    assert any("nosuchkind" in p for p in check_links(project=project))
+
+
+def test_a_symlinked_mapping_file_is_never_read(tmp_path):
+    secret = tmp_path / "secret.txt"
+    secret.write_text("TOP-SECRET-CONTENT", encoding="utf-8")
+    folder = tmp_path / "m" / "biosample"
+    folder.mkdir(parents=True)
+    (folder / "fsh.json").symlink_to(secret)
+    problems = " | ".join(check_links(tmp_path / "m"))
+    assert "symbolic link" in problems and "TOP-SECRET" not in problems
+
+
+def test_problems_name_the_ids_as_the_user_wrote_them(tmp_path):
+    project = tmp_path / "p"
+    _put(project / "code" / "specification" / "mappings", "biosample", "ghost", {"local:ghost": {"SameAs": {"snomed": SNOMED}}})
+    problems = " | ".join(check_links(project=project))
+    assert "local:ghost" in problems and "prism:ghost" not in problems
+
+
+def test_a_broken_file_in_the_folder_is_a_failure_message_not_a_traceback(tmp_path):
+    _put(tmp_path, "biosample", "fsh", {"prism:fsh": {"SameAs": {"snomed": SNOMED}}})
+    (tmp_path / "biosample" / "bad.json").write_bytes(b"\xff\xfe not json")
+    code, out = _run("terms", "check-links", "--dir", str(tmp_path), "--json")
+    assert code == 1 and "bad.json" in out and not json.loads(out)["success"]

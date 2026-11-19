@@ -147,8 +147,8 @@ def cmd_terms_check_links(args) -> None:
 
     try:
         problems = check_links(Path(args.dir) if args.dir else None, project=args.project)
-    except OverlayError as exc:
-        _fail(args, str(exc))
+    except (OverlayError, OSError, ValueError, RecursionError) as exc:
+        _fail(args, str(exc) or type(exc).__name__)
     _emit(args, {"success": not problems, "problems": problems},
           "\n".join(problems) if problems else "No problems: every link is a known vocabulary, a real ID and a well-formed address.")
     if problems:
