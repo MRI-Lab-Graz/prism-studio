@@ -2,6 +2,7 @@
 readiness bars follow live, and the numbers are the backend's."""
 
 import json
+from pathlib import Path
 
 from tests.template_fixtures import bilingual, project_template
 
@@ -259,3 +260,33 @@ def test_a_library_template_shows_its_project_fields_as_open_not_green_or_red(pa
 
     administration.locator("#field_Technical_Respondent").select_option("self")
     _wait_for_badge(page, "Technical/Respondent", "bg-success")
+
+
+
+def _open_biometrics_template(page, project, studio_url):
+    library = project / "code" / "library" / "biometrics"
+    library.mkdir(parents=True)
+    official = Path(__file__).resolve().parents[2] / "official" / "library" / "biometrics" / "biometrics-fitness.json"
+    (library / "biometrics-fitness.json").write_text(official.read_text(encoding="utf-8"), encoding="utf-8")
+    page.goto(f"{studio_url}/template-editor", wait_until="networkidle")
+    page.select_option("#modality", "biometrics")
+    page.select_option("#projectTemplateSelect", "biometrics-fitness.json")
+    page.wait_for_selector("#field_Study_BiometricName", state="attached")
+    page.evaluate("document.querySelectorAll('details').forEach((d) => { d.open = true; })")
+
+
+def test_biometrics_required_badges_follow_the_value_and_descriptive_fields_are_english_only(page, project, studio_url):
+    _open_biometrics_template(page, project, studio_url)
+    required = page.locator("div[data-field-path='Study/BiometricName'] > .studio-field-label > .badge")
+
+    assert required.inner_text() == "REQUIRED" and "bg-success" in required.get_attribute("class")
+    page.locator("#field_Study_BiometricName").fill("")
+    assert "bg-danger" in required.get_attribute("class")
+    page.locator("#field_Study_BiometricName").fill("fitness")
+    assert "bg-success" in required.get_attribute("class")
+
+    # no offer to add a language to a descriptive field; a free-text field (Instructions) keeps it
+    description = page.locator("[data-field-path='Study/Description']").first
+    instructions = page.locator("[data-field-path='Study/Instructions']").first
+    assert description.get_by_text("Add language").count() == 0
+    assert instructions.get_by_text("Add language").count() == 1
