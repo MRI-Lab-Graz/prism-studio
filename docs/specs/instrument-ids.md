@@ -1,6 +1,6 @@
 # Instrument IDs: who gets one, and what stays private
 
-Design note. Status: agreed, not yet implemented (IRIs and `local:` IDs: last section).
+Status: the IDs and the term IRIs are live; the schema `$id` change and `local:` IDs in Studio follow (last section).
 
 ## The ID
 
@@ -73,9 +73,17 @@ A hash only confirms text someone already has; it is not a secret and gives away
 
 ## IRIs and `local:` IDs
 
-Design note, status: agreed, not yet implemented. The w3id.org base `https://w3id.org/prism-specification/` is
-registered and redirects (302) to this repository, but **deeper paths all land on the front page**. Until the per-term
-redirect below is live, nothing may link to a term IRI.
+Status: the redirect is live (perma-id/w3id.org, checked 2026-11-19). `https://w3id.org/prism-specification/`
+redirects (302) to this repository; below it, one rule per modality redirects a term IRI to the file that defines it:
+
+| IRI | Redirects to |
+|---|---|
+| `.../terms/biosample/<id>`, `.../terms/environment/<id>` | `terms/<modality>/<id>.json` (raw file) |
+| `.../terms/survey/<slug>` and `.../terms/survey/<slug>.<item>` | `library/survey/survey-<slug>.json` (the instrument's template) |
+| anything else | this repository's front page |
+
+A survey ID that is released but has no template in `library/survey/` yet redirects to a file that does not exist
+(404) until its stub is added; `scripts/check_mappings.py` lists those IDs as a warning. A new modality adds one rule.
 
 `prism:<slug>` only means something inside PRISM. An IRI gives outside tools a unique, persistent, resolvable identity
 (mappings, citations, FAIR). The base stays fixed while the redirect target can move.
@@ -131,12 +139,13 @@ All modalities are treated alike. Survey is only the first one to be built.
 
 External vocabularies (SNOMED, LOINC, ...) are linked in `mappings/<modality>/*.json` as full IRIs under `SameAs`,
 keyed by PRISM ID, checked against `mappings/vocabularies.json`. That is the one style to build on. The bare
-`"LOINC": "30522-7"` field in `terms/biosample/` and the short `snomed:123` IDs of `participants.json` (which uses two
-different SNOMED bases, probably a bug) move to `mappings/` once the prefix map exists.
+`"LOINC"` field of `terms/biosample/` has moved to `mappings/` (and is no longer a term field, nor a sidecar column
+field). The short `snomed:123` IDs of `participants.json` (which uses two different SNOMED bases, probably a bug)
+still have to move.
 
 ### Order
 
-1. This note, plus the prefix definition.
-2. Redirect pull request to perma-id (one rule per modality).
+1. This note, plus the prefix definition. (done)
+2. Redirect pull request to perma-id (one rule per modality). (done, live)
 3. Schema `$id` change together with the next schema change (a version bump per modality).
 4. Only then IRIs in mappings, exports and Studio.
