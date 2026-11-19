@@ -7,8 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.26.0] - 2026-11-19
+
 ### Added
 
+- **Ontology-ready.** PRISM IDs are stable and resolvable (`https://w3id.org/prism-specification/...`); links from IDs to external vocabularies live in a separate, checked `mappings/` layer; PRISM never changes data to carry meaning. New page `docs/ONTOLOGY_READY.md`, README badge and landing pill. No ontology tool is included.
 - `terms check-links (--dir <folder> | --project <project>)`: a lab checks its own mapping files (links from PRISM IDs to external vocabularies) with the specification's own checker. Read-only, exit 1 on problems.
 - `spec local add-term --link VOCABULARY=URL`: a local term can carry links to any vocabulary, stored in the project's `code/specification/mappings/` and shared by `spec propose`. The LOINC special cases are gone: the sidecar column field `LOINC` (biosample schema 1.1.3; synced prism-specification v1.5.22; the biosample-inflammation template lost its two `LOINC` fields, the codes live in `mappings/biosample/`), its conversion in the proposal builder, and its inheritance in the validator.
 - Proposals can carry links to external vocabularies: `terms propose --link` and `spec propose-metric --link VOCABULARY=URL` (and a field on the Propose-changes page) add a `mappings/` file to the proposal; a `LOINC` term field is refused (it is a link). Synced prism-specification v1.5.21.

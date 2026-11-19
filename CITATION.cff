@@ -5,7 +5,7 @@ abstract: "A BIDS-compatible validator and metadata framework for psychological 
 type: software
 license: "AGPL-3.0"
 version: "1.26.0"
-date-released: "2026-11-12"
+date-released: "2026-11-19"
 repository-code: "https://github.com/MRI-Lab-Graz/prism-studio"
 url: "https://prism-studio.readthedocs.io/en/latest/"
 identifiers:
