@@ -2264,11 +2264,16 @@ def build_prism_tools_parsers(
         ("freeze", "Add new survey IDs to the released list (survey only; refuses when a released ID is gone)"),
         ("resolve", "Give a project's survey sidecar columns their official item IDs (or the reason for none)"),
         ("suggest", "Relate a column name to the registry (similar official terms)"),
+        ("check-links", "Check your own mapping files (links from PRISM IDs to external vocabularies) with the specification's checker"),
         ("propose", "Build a proposal for a new metric from a sidecar column (sends nothing unless --open)"),
     ):
         _p = terms_subparsers.add_parser(_name, help=_help)
         if _name == "show":
             _p.add_argument("term", help="Term ID, e.g. prism:cortisol, or a local name")
+        if _name == "check-links":
+            _where = _p.add_mutually_exclusive_group(required=True)
+            _where.add_argument("--dir", help="A folder of mapping files: <modality>/<family>.json")
+            _where.add_argument("--project", help="A PRISM project: its local links (code/specification/mappings) are checked")
         if _name == "resolve":
             _p.add_argument("--sidecar", required=True, help="The survey sidecar .json")
         if _name == "suggest":
