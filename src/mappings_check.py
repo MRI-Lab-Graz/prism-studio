@@ -7,23 +7,14 @@ one implementation, no copy of its rules.
 
 from __future__ import annotations
 
-import importlib.util
 import json
 import shutil
 import tempfile
 from pathlib import Path
 
 from src.schema_manager import DEFAULT_SCHEMA_DIR
-from src.spec_overlay import OVERLAY_PARTS, OverlayError, _local_part, load_local_terms
-from src.term_proposal import specification_scripts_dir
+from src.spec_overlay import OVERLAY_PARTS, OverlayError, _local_part, _vendored_or_error, load_local_terms
 from src.term_registry import mappings_root, terms_root
-
-
-def _checker():
-    spec = importlib.util.spec_from_file_location("specification_check_mappings", specification_scripts_dir() / "check_mappings.py")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
 
 
 def _official_view(view: Path) -> None:
@@ -79,4 +70,4 @@ def check_links(mappings: Path | None = None, *, project=None) -> list[str]:
                     out.write_text(json.dumps({**term, "TermID": f"prism:{stem}", "Status": "official",
                                                **({"Parent": f"prism:{term['Parent'].partition(':')[2]}"} if term.get("Parent") else {})}),
                                    encoding="utf-8")
-        return _checker().check(view)
+        return _vendored_or_error("check_mappings").check(view)
