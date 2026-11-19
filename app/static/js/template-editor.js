@@ -2686,6 +2686,7 @@
 
     const input = createInput(fieldSchema, targetObj[name], (v) => {
       targetObj[name] = v;
+      StudioTheme.paintRequired(col, v);  // green once filled, also for modalities without the survey completeness call
       // Auto-scaffold VariantDefinitions when Study.Versions changes
       if (sectionKey === 'Study' && name === 'Versions' && Array.isArray(v)) {
         const existingDefs = Array.isArray(targetObj['VariantDefinitions']) ? targetObj['VariantDefinitions'] : [];
@@ -2742,6 +2743,7 @@
       if (isMissing && input.matches('input, select, textarea')) input.classList.add('is-invalid');
     }
 
+    StudioTheme.paintRequired(col, targetObj[name]);
     row.appendChild(col);
   }
 

@@ -92,6 +92,15 @@ SUPERVISOR_ALIASES = {"supervisor"}
 ACRONYMS = {"cmj", "hgs", "ads", "bdi", "stai", "psqi", "gad7", "phq9", "vo2max"}
 
 
+def _administration_time(text):
+    """'10', '10 min', '10-15 minutes' or '10 bis 15' -> {"min": 10, "max": 15} (the schema's AdministrationTime); None if not minutes."""
+    nums = re.findall(r"\d+(?:[.,]\d+)?", str(text))
+    if not 1 <= len(nums) <= 2:
+        return None
+    lo, hi = (float(n.replace(",", ".")) for n in (nums[0], nums[-1]))
+    return {"min": int(lo) if lo.is_integer() else lo, "max": int(hi) if hi.is_integer() else hi}
+
+
 def format_group_name(name):
     if name.lower() in ACRONYMS:
         return name.upper()
@@ -639,9 +648,13 @@ def process_excel_biometrics(
                         sidecar["I18n"]["Languages"].append(lang)
 
         if meta.get("Reference"):
-            sidecar["Study"]["Reference"] = meta["Reference"]
+            sidecar["Study"]["Citation"] = meta["Reference"]
         if meta.get("EstimatedDuration"):
-            sidecar["Study"]["EstimatedDuration"] = meta["EstimatedDuration"]
+            minutes = _administration_time(meta["EstimatedDuration"])
+            if minutes:
+                sidecar["Study"]["AdministrationTime"] = minutes
+            else:
+                print(f"Warning: duration '{meta['EstimatedDuration']}' of {group} is not minutes; AdministrationTime not set")
 
         sidecar.update(i18n_variables)
 

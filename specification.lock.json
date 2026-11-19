@@ -3,6 +3,7 @@
     "app/schemas/PRISM_SPECIFICATION_LICENSE": "f8853e8faf16ff3b4371deb5ead924e8b06ab7f9a28638ed3981224f1a75d6ea",
     "app/schemas/archive/biometrics/1.1.1.schema.json": "0cc1bb62ac743817929500baf30154240861111a3948de94dddae1ab2b18f632",
     "app/schemas/archive/biometrics/1.1.2.schema.json": "33e9ddcddc943792a7b190d1ea73ef0216afe0a9bf0c484414f0f2639bbf3dea",
+    "app/schemas/archive/biometrics/1.1.3.schema.json": "dc30f424b39e7d4724204e8ca7b5177e567a58256af3712553f30bdf449b9bba",
     "app/schemas/archive/biosample/1.0.0.schema.json": "aeabc7e6e2d70c216f7dee91e09225ac52c48a09f5f51f2a9f8e9d9c3678fe65",
     "app/schemas/archive/biosample/1.1.0.schema.json": "5a9419f426514ad0550f350f8043a18db74eed12fddf055386a2a3168b7a60ec",
     "app/schemas/archive/biosample/1.1.1.schema.json": "edd11d165e0fe27f769e32083199f61b89f251cea334419bf4b8838e3b60f0b7",
@@ -23,7 +24,7 @@
     "app/schemas/archive/survey/2.1.2.schema.json": "ba83886a2b3edd48a3f4caffa84d2e93e00f79c847a32c194165cc9a25276206",
     "app/schemas/archive/survey/2.1.3.schema.json": "4ac49e1b42c69bc945b11f3625fcd838a9ce8e87aea94925773b1e6683cd819e",
     "app/schemas/archive/survey/2.1.4.schema.json": "5b078e965b31e0da954993457ba7014ce3598093296722f3ab21b9666572e964",
-    "app/schemas/stable/biometrics.schema.json": "dc30f424b39e7d4724204e8ca7b5177e567a58256af3712553f30bdf449b9bba",
+    "app/schemas/stable/biometrics.schema.json": "720c48cc19a72ab83549caac88b8289e60917c4744970e931aa4fa975300dac3",
     "app/schemas/stable/biosample.schema.json": "4c0160a87cb4b4ef69774721aad63368e36acbf3ab528695c767b7b2860423bd",
     "app/schemas/stable/dataset_description.schema.json": "5e9eed8c5092cb4cf5e902d714d76e0db27f946330fe3254c724ca13cb249b22",
     "app/schemas/stable/entities.schema.json": "9c16a39c1c16056d20349aca20dcb7d3c9d0c1a588bf8be477bb4c27206fe8de",
@@ -40,7 +41,7 @@
     "app/schemas/v0.2/events.schema.json": "70a92270b1b4b503dd242bf297a10c5ceb3293e4974797659e01b279a55ff7bb",
     "app/schemas/v0.2/physio.schema.json": "16c7217c030766092a2d73cd79365579dc977952ffc45747f04273d0ac5fd312",
     "app/schemas/v0.2/survey.schema.json": "2ee7b7e611ff2c532e2b95b088e4d6503ba86320b60045671935763270e10222",
-    "docs/specs/biometrics.md": "7d6c0c970c65312b8370185dcabc83368d840dda0ba63cb4f6c7b307cc1dd55c",
+    "docs/specs/biometrics.md": "168c73423609650e1be1040b26a49e21d2bde461e94e88a0e4c93e76b4e24b2f",
     "docs/specs/biosample.md": "28a604e32c0df266cb38889bdaae60a28d6e1ee4310e736acd718620c0a826ba",
     "docs/specs/dataset_description.md": "66bc0b5806f9b21eadf707091b4ced42e7aebc128eabb55cd543b7aa1bd4bbe9",
     "docs/specs/entities.md": "99ed861be3c330b9e8d5353a5839e276da7b53505fa988171099205ab858cb91",
@@ -271,5 +272,5 @@
     "scripts/specification/term_proposal.py": "cf007ffb6031a4b3410e5636704f863ad889d49eecc6a37b598d6b4ec1005482"
   },
   "repository": "MRI-Lab-Graz/prism-specification",
-  "tag": "v1.5.17"
+  "tag": "v1.5.18"
 }
