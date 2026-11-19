@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `spec local add-term --link VOCABULARY=URL`: a local term can carry links to any vocabulary, stored in the project's `code/specification/mappings/` and shared by `spec propose`. The LOINC special cases are gone: the sidecar column field `LOINC` (biosample schema 1.1.3), its conversion in the proposal builder, and its inheritance in the validator.
+- `spec local add-term --link VOCABULARY=URL`: a local term can carry links to any vocabulary, stored in the project's `code/specification/mappings/` and shared by `spec propose`. The LOINC special cases are gone: the sidecar column field `LOINC` (biosample schema 1.1.3; synced prism-specification v1.5.22; the biosample-inflammation template lost its two `LOINC` columns fields, the codes live in `mappings/biosample/`), its conversion in the proposal builder, and its inheritance in the validator.
 - Proposals can carry links to external vocabularies: `terms propose --link` and `spec propose-metric --link VOCABULARY=URL` (and a field on the Propose-changes page) add a `mappings/` file to the proposal; a `LOINC` term field is refused (it is a link). Synced prism-specification v1.5.21.
 - **Ontology links for surveys: `terms show` reads them, and 29 vocabularies are known.** Synced from prism-specification
   v1.5.20. `mappings/survey/dass.json` and `dass21.json` link every DASS item to the SNOMED CT score of its subscale

@@ -78,17 +78,6 @@ def test_column_requires_description_and_units(schema, template):
             validate(instance=bad, schema=schema)
 
 
-@pytest.mark.parametrize("loinc,ok", [("30522-7", True), ("26881-3", True), ("abc", False), ("30522", False)])
-def test_loinc_pattern(schema, template, loinc, ok):
-    t = copy.deepcopy(template)
-    t["crp"]["LOINC"] = loinc
-    if ok:
-        validate(instance=t, schema=schema)
-    else:
-        with pytest.raises(ValidationError):
-            validate(instance=t, schema=schema)
-
-
 def test_new_column_fields_have_types(schema, template):
     t = copy.deepcopy(template)
     t["crp"]["LowerLimitOfQuantification"] = "high"

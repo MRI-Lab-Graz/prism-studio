@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://prism.org/schemas/biosample/v1.1.2",
-  "version": "1.1.2",
+  "$id": "https://prism.org/schemas/biosample/v1.1.3",
+  "version": "1.1.3",
   "title": "Biosample Metadata",
   "description": "Schema for assay results on biological specimens (blood, serum, plasma, saliva, urine, hair, stool, CSF). One TSV per subject/session/run, one row per sample, one column per analyte. Files are named: sub-<label>[_ses-<label>]_biosample-<label>[_run-<index>]_biosample.<tsv|json>. The <label> names the assay panel (e.g. inflammation), not the specimen. In numeric data columns the codes n/a, <LOD, <LLOQ and >ULOQ are accepted.",
   "type": "object",
@@ -91,7 +91,7 @@
     "type": "object",
     "description": "Column definition (one per TSV column)",
     "properties": {
-      "Term": {"type": "string", "description": "Term of the PRISM term registry (ID, local name, label or equivalent), for example prism:cortisol; Units, ranges and LOINC are then inherited and may be omitted"},
+      "Term": {"type": "string", "description": "Term of the PRISM term registry (ID, local name, label or equivalent), for example prism:cortisol; Units and ranges are then inherited and may be omitted"},
       "Description": {"type": ["string", "object"], "description": "Description of the column"},
       "Units": {"type": "string", "description": "Unit of measurement (e.g. mg/L, pg/mL); n/a for non-numeric columns"},
       "AliasOf": {"type": "string", "description": "Column name of the canonical definition this is an alias for"},
@@ -107,7 +107,6 @@
         "description": "Mapping of coded values to labels",
         "patternProperties": {"^.*$": {"type": ["string", "object"]}}
       },
-      "LOINC": {"type": "string", "pattern": "^\\d+-\\d$", "description": "LOINC code of the analyte (loinc.org)"},
       "LowerLimitOfDetection": {"type": "number", "description": "Limit of detection (LOD) in Units"},
       "LowerLimitOfQuantification": {"type": "number", "description": "Lower limit of quantification (LLOQ) in Units"},
       "UpperLimitOfQuantification": {"type": "number", "description": "Upper limit of quantification (ULOQ) in Units"},
