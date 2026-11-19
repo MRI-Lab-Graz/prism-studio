@@ -27,9 +27,10 @@ The address redirects to the file that defines the ID in the
 [prism-specification](https://github.com/MRI-Lab-Graz/prism-specification) repository: the term file for biosample
 and environment terms, the instrument's template for a survey ID (an item or a score lands on its instrument).
 
-**What resolves today:** all biosample and environment terms, and the 23 instruments of the shipped library with
-their items and scores. A survey ID that is released but has no template in the library yet (most of the released
-list is waiting for its template) does not resolve until the template is added. A project's own `local:` IDs are
+**What resolves today:** all biosample and environment terms, and every instrument of the shipped survey library
+(23 templates at this release) with its items and scores. A survey ID that is released but has no template in the
+library yet (most released instruments are still waiting for theirs) does not resolve until the template is
+added. A project's own `local:` IDs are
 yours alone and have no address.
 
 ## Links live in `mappings/`
@@ -52,11 +53,12 @@ ways of reading a value as a state). The format, with every field, is in the
 [mappings specification](specs/mappings.md). The same layout works for every kind of data and every vocabulary; PRISM
 keeps no list of symptoms or constructs of its own.
 
-PRISM knows 29 vocabularies today (SNOMED CT, LOINC, ChEBI, ICD-11, Wikidata, the Human Phenotype Ontology and others); the list, with the shape
+PRISM knows 29 vocabularies at this release (SNOMED CT, LOINC, ChEBI, ICD-11, Wikidata, the Human Phenotype Ontology and others); the list, with the shape
 of each vocabulary's addresses, is `official/library/mappings/vocabularies.json` and is data, so a vocabulary can be
-added without new code. The shipped links are a start, not a complete mapping: biosample hormones and markers, the
-two DASS instruments (every item linked to the SNOMED CT score of its subscale), and the demonstration
-questionnaire.
+added without new code. The shipped links are a start, not a complete mapping: ten biosample terms (sex hormones, prolactin, SHBG, CRP,
+IL-6), the two DASS instruments (every item linked to the SNOMED CT score of its subscale) and the demonstration
+questionnaire. Most terms, including `prism:cortisol`, have an address but no link yet, and no environment term has
+one.
 
 ## See the links of an ID
 

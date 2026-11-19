@@ -244,6 +244,7 @@ in the repository root for the full citation, including all authors.
    ERROR_CODES
    TEMPLATES
    SCHEMA_VERSIONING
+   ONTOLOGY_READY
 
 .. toctree::
    :maxdepth: 2
@@ -265,7 +266,6 @@ in the repository root for the full citation, including all authors.
    specs/events
    specs/environment
    specs/physio
-   ONTOLOGY_READY
    specs/mappings
    specs/instrument-ids
    specs/project
