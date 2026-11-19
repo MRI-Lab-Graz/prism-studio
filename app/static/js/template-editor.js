@@ -1129,6 +1129,7 @@
     StudioTheme.isLongText(path) ? StudioTheme.longText(text, onChange, '— Not set —', path) : plain());
 
   function createInput(fieldSchema, value, onChange, fieldName = '', path = '') {
+    const offersLanguages = StudioTheme.offersMultilingual(path.split('/')[0], fieldName, modalityEl.value);  // descriptive fields are English only
     // Special handling for Description and Instructions - use textarea for better UX
     if (['Description', 'Instructions'].includes(fieldName)) {
       const schemaTypes = Array.isArray(fieldSchema.type) ? fieldSchema.type : (fieldSchema.type ? [fieldSchema.type] : []);
@@ -1191,7 +1192,7 @@
         });
 
         container.appendChild(translationTable);
-        if (StudioTheme.offersMultilingual(path.split('/')[0], fieldName, modalityEl.value)) container.appendChild(addLangBtn);
+        if (offersLanguages) container.appendChild(addLangBtn);
         return container;
       }
 
@@ -1222,7 +1223,7 @@
           onChange(translationObj);
           rerenderQuestionnaireInfoFor(container);
         });
-        if (StudioTheme.offersMultilingual(path.split('/')[0], fieldName, modalityEl.value)) container.appendChild(toggleBtn);
+        if (offersLanguages) container.appendChild(toggleBtn);
         return container;
       }
     }
@@ -1785,7 +1786,7 @@
       addRowBtn.type = 'button';
       addRowBtn.className = 'btn btn-sm btn-outline-primary mt-1';
       addRowBtn.textContent = 'Add language';
-      if (StudioTheme.offersMultilingual(path.split('/')[0], fieldName, modalityEl.value)) container.appendChild(addRowBtn);
+      if (offersLanguages) container.appendChild(addRowBtn);
 
       // Internal state for table keys (fixed once added)
       let tableData = {};
@@ -2160,7 +2161,7 @@
         // Replace this container with the translation table
         rerenderQuestionnaireInfoFor(container);
       });
-      if (StudioTheme.offersMultilingual(path.split('/')[0], fieldName, modalityEl.value)) container.appendChild(toggleBtn);
+      if (offersLanguages) container.appendChild(toggleBtn);
       return container;
     }
 
