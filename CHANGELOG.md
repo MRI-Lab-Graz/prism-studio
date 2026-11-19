@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.26.0] - 2026-11-19
 
+### Fixed
+- **A project's link folder is never followed outside the project.** `terms check-links --project` refuses a symbolic `code/specification`, and writing local links rejects an ID that is not a valid local ID.
+- Dialogs of the converter, template editor and survey customizer carry `role="dialog"`, and the conversion log `role="log"` (HTML validity).
+
 ### Added
 
 - **Ontology-ready.** PRISM IDs are stable and resolvable (`https://w3id.org/prism-specification/...`); links from IDs to external vocabularies live in a separate, checked `mappings/` layer; PRISM never changes data to carry meaning. New page `docs/ONTOLOGY_READY.md`, README badge and landing pill. No ontology tool is included.

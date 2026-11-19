@@ -19,7 +19,7 @@ def open_customizer(page, studio_url, *searches):
     expect(page.locator("#libraryContent")).to_be_visible(timeout=30000)
     for search in searches:
         page.fill("#templateSearch", search)
-        page.locator(".tpl-row:visible").first.locator(".file-checkbox").check()
+        page.locator(".tpl-row:visible:has(.file-checkbox:not(:disabled))").first.locator(".file-checkbox").check()
     page.click("#customizeExportBtn")
     page.wait_for_url("**/survey-customizer", timeout=15000)
     expect(page.locator("#customizerMain")).to_be_visible(timeout=15000)

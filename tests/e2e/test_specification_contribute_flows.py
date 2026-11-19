@@ -26,7 +26,7 @@ def test_an_unknown_metric_is_added_shared_and_removed(app_page, studio_url, pro
     app_page.locator("#spec-m-found").get_by_role("button", name="dhea_s").click()
     app_page.locator("#spec-m-use").click()
     expect(app_page.locator("#spec-message")).to_contain_text("Added to this project")
-    expect(app_page.locator("#spec-local")).to_contain_text("prism:dhea-s.saliva")
+    expect(app_page.locator("#spec-local")).to_contain_text("local:dhea-s.saliva")
     expect(app_page.locator("#spec-m-found")).to_contain_text("Nothing")
     assert (project / "code" / "specification" / "terms" / "biosample" / "dhea-s.json").is_file()
 
