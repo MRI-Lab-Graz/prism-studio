@@ -5,10 +5,12 @@ import os
 import sys
 from pathlib import Path
 
+import pytest
+
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), "app", "src"))
 
 from src.spec_overlay import (  # noqa: E402
-    add_local_term, load_local_terms, merge_terms, merged_registry, proposal_for_local_terms, remove_local_terms,
+    OverlayError, add_local_term, load_local_terms, merge_terms, merged_registry, proposal_for_local_terms, remove_local_terms,
 )
 from src.term_registry import load_registry  # noqa: E402
 from tests.test_spec_overlay_ops import DHEA, _dataset  # noqa: E402
@@ -126,3 +128,36 @@ def test_the_sidecar_loinc_field_is_not_read(tmp_path):
     add_local_term(tmp_path / "p", column="dhea_s", sidecar_file=str(sidecar), label="DHEA-S")
     assert "LOINC" not in _file(tmp_path / "p", "dhea-s.saliva.json")
     assert not (tmp_path / "p" / "code" / "specification" / "mappings").exists()
+
+
+def test_a_failing_link_write_leaves_no_half_added_term(tmp_path):
+    project = tmp_path / "p"
+    broken = project / "code" / "specification" / "mappings" / "biosample"
+    broken.mkdir(parents=True)
+    (broken / "dhea-s.json").write_text("[]", encoding="utf-8")  # not an object: the links cannot be added
+    with pytest.raises(OverlayError):
+        add_local_term(project, column="dhea_s", sidecar_file=str(_sidecar(tmp_path)), label="DHEA-S", links=LINK)
+    assert not (project / "code" / "specification" / "terms" / "biosample").exists() or not list((project / "code" / "specification" / "terms" / "biosample").glob("*.json"))
+
+
+def test_adding_a_link_keeps_the_other_vocabularies_of_the_entry(tmp_path):
+    project = tmp_path / "p"
+    mapping = project / "code" / "specification" / "mappings" / "biosample" / "dhea-s.json"
+    mapping.parent.mkdir(parents=True)
+    mapping.write_text(json.dumps({"local:dhea-s.saliva": {"SameAs": {"snomed": "https://snomed.info/id/396820008"}}}), encoding="utf-8")
+    add_local_term(project, column="dhea_s", sidecar_file=str(_sidecar(tmp_path)), label="DHEA-S", links=LINK)
+    assert json.loads(mapping.read_text(encoding="utf-8"))["local:dhea-s.saliva"]["SameAs"] == {
+        "snomed": "https://snomed.info/id/396820008", **LINK}
+
+
+def test_removing_a_term_never_touches_a_mappings_folder_that_is_a_symlink(tmp_path):
+    project = tmp_path / "p"
+    add_local_term(project, column="dhea_s", sidecar_file=str(_sidecar(tmp_path)), label="DHEA-S")
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    victim = outside / "dhea-s.json"
+    victim.write_text(json.dumps({"local:dhea-s": {"SameAs": LINK}}), encoding="utf-8")
+    (project / "code" / "specification" / "mappings").symlink_to(outside)
+    with pytest.raises(OverlayError):
+        remove_local_terms(project, "biosample", "local:dhea-s")
+    assert victim.exists()

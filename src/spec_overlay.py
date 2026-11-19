@@ -290,14 +290,18 @@ def write_local_links(project_root, modality: str, links: dict[str, dict]) -> li
         if not isinstance(existing, dict):
             raise OverlayError(f"{path.name} must be a JSON object; fix or remove it first")
         folder.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps({**existing, **entries}, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        for key, entry in entries.items():  # an entry keeps its other vocabularies
+            old = existing.get(key)
+            old_same = old.get("SameAs") if isinstance(old, dict) and isinstance(old.get("SameAs"), dict) else {}
+            existing[key] = {**(old if isinstance(old, dict) else {}), "SameAs": {**old_same, **entry["SameAs"]}}
+        path.write_text(json.dumps(existing, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
         written.append(path)
     return written
 
 
 def _remove_local_links(project_root, modality: str, term_ids: list[str]) -> None:
     """Drop the links of removed local terms; a family file left empty is removed."""
-    folder = _links_folder(project_root, modality)
+    folder = _real_overlay_folder(project_root, "mappings", _checked_modality(modality))
     for path in sorted(folder.glob("*.json")) if folder.is_dir() else []:
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
@@ -327,9 +331,9 @@ def remove_local_terms(project_root, modality: str, term_id: str) -> list[Path]:
             continue
         if isinstance(data, dict) and data.get("Parent") in (f"prism:{stem}", f"local:{stem}") and path != target and not path.is_symlink():
             doomed.append(path)
+    _remove_local_links(project_root, modality, [p.stem for p in doomed])  # first: refuses a symlinked folder before anything is deleted
     for path in doomed:
         path.unlink()
-    _remove_local_links(project_root, modality, [p.stem for p in doomed])
     return doomed
 
 
@@ -393,8 +397,14 @@ def add_local_term(
     ]
     if problems:
         raise OverlayError("; ".join(problems))
-    written = write_local_terms(project_root, modality, proposal["terms"]) + write_local_links(project_root, modality, proposal.get("links", {}))
-    return {"proposal": proposal, "written": written}
+    terms = write_local_terms(project_root, modality, proposal["terms"])
+    try:
+        links = write_local_links(project_root, modality, proposal.get("links", {}))
+    except OverlayError:
+        for path in terms:  # no half-added term: a retry must not meet "already a local term"
+            path.unlink()
+        raise
+    return {"proposal": proposal, "written": terms + links}
 
 
 def list_local_items(project_root, modality: str = "biosample") -> list[dict]:

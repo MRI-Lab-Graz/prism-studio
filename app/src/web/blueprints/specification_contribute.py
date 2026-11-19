@@ -75,11 +75,15 @@ def add_term():
         return _error("A column and a data file are required")
     if not Path(data_file).resolve().is_relative_to(project.resolve()):
         return _error("The data file must be inside the project")
+    links = data.get("links") or []
+    if not _strings(links):
+        return _error('"links" must be a list of VOCABULARY=URL text')
     try:
         result = add_local_term(
-            project, column=column, data_file=data_file, label=label if isinstance(label, str) and label else None
+            project, column=column, data_file=data_file, label=label if isinstance(label, str) and label else None,
+            links=parse_links(links),
         )
-    except OverlayError as exc:
+    except (OverlayError, ProposalError) as exc:
         return _error(str(exc))
     return jsonify({"success": True, "proposal": result["proposal"], "written": [str(p) for p in result["written"]]})
 
