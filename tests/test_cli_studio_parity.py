@@ -694,3 +694,22 @@ def test_changing_a_template_language_gives_the_same_template_in_the_cli_and_in_
 
     command(SimpleNamespace(template=str(source), language=language, output=None))
     assert json.loads(capsys.readouterr().out) == studio["template"]
+
+
+def test_proposing_a_metric_with_links_gives_the_same_document_in_the_cli_and_in_studio(capsys):
+    """`spec propose-metric --link` and the Contribute page's propose-metric route build the same proposal."""
+    from app.src.cli.commands.spec import cmd_spec_propose_metric
+    from app.src.web.blueprints.specification_contribute import propose_metric
+
+    fields = {"name": "DHEA", "description": "Steroid hormone.", "units": "pg/mL", "specimen": "saliva"}
+    args = SimpleNamespace(**fields, alias=None, level=None, group=None, cf_standard_name=None, modality="biosample",
+                           project=None, not_sure=False, closest=None, entry=None, out=None, open=False, json=True,
+                           link=["loinc=https://loinc.org/2191-5", "snomed=https://snomed.info/id/396820008"])
+    cmd_spec_propose_metric(args)
+    cli = json.loads(capsys.readouterr().out)["document"]
+    body = {**fields, "links": {"loinc": "https://loinc.org/2191-5", "snomed": "https://snomed.info/id/396820008"}}
+    from flask import Flask
+
+    with Flask(__name__).test_request_context("/", method="POST", json=body):
+        studio = propose_metric().get_json()["document"]
+    assert cli == studio and "mappings/biosample/dhea.json" in cli["files"]

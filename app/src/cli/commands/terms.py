@@ -8,6 +8,8 @@ from pathlib import Path
 
 from src.term_proposal import (
     ProposalError,
+    attach_links,
+    parse_links,
     build_proposal,
     check_with_specification,
     deliver_proposal,
@@ -155,6 +157,7 @@ def cmd_terms_propose(args) -> None:
     registry = load_registry(args.modality)
     try:
         proposal = build_proposal(registry, sidecar, args.column, args.label, args.modality)
+        attach_links(proposal, parse_links(getattr(args, "link", None)))
     except ProposalError as exc:
         _fail(args, str(exc))
     problems = check_with_specification(proposal, registry)

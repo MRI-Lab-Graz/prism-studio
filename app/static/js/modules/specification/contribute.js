@@ -543,7 +543,7 @@
     });
 
     const m = {};
-    ["pick", "group", "group-box", "detail", "form-group", "form-group-box", "yes", "form", "name", "aliases", "description", "units", "units-box", "units-other", "kind-box", "kind-unit", "kind-levels", "specimen", "specimen-box", "levels", "levels-box", "cf", "cf-box", "share", "use", "use-hint", "project", "local"]
+    ["pick", "group", "group-box", "detail", "form-group", "form-group-box", "yes", "form", "name", "aliases", "description", "units", "units-box", "units-other", "kind-box", "kind-unit", "kind-levels", "specimen", "specimen-box", "levels", "levels-box", "cf", "cf-box", "links", "share", "use", "use-hint", "project", "local"]
         .forEach(function (key) { m[key] = document.getElementById("spec-m-" + key); });
 
     function choose(select) {
@@ -709,11 +709,20 @@
         });
         return Object.keys(levels).length ? levels : null;
     }
+    // "VOCABULARY=URL" lines as {vocabulary: url}; a line without "=" is sent with an empty address, the backend refuses it
+    function readLinks() {
+        const links = {};
+        m.links.value.split("\n").map(function (l) { return l.trim(); }).filter(Boolean).forEach(function (line) {
+            const at = line.indexOf("=");
+            links[at < 0 ? line : line.slice(0, at).trim()] = at < 0 ? "" : line.slice(at + 1).trim();
+        });
+        return Object.keys(links).length ? links : null;
+    }
     m.share.addEventListener("click", function () {
         const oneLevel = currentKind().specimen_level === false;
         const asLevels = oneLevel && m["kind-levels"].checked;
         propose({
-            levels: asLevels ? readLevels() : null, cf_standard_name: oneLevel ? m.cf.value.trim() || null : null,
+            links: readLinks(), levels: asLevels ? readLevels() : null, cf_standard_name: oneLevel ? m.cf.value.trim() || null : null,
             name: m.name.value, description: m.description.value,
             units: (asLevels ? "" : m.units.value === "other" ? m["units-other"].value : m.units.value) || null, specimen: oneLevel ? null : m.specimen.value,
             aliases: m.aliases.value.split(","), modality: kindSelect.value, group: m["form-group"].value || null,

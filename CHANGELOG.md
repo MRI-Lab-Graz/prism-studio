@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
+- Proposals can carry links to external vocabularies: `terms propose --link` and `spec propose-metric --link VOCABULARY=URL` (and a field on the Propose-changes page) add a `mappings/` file to the proposal; a `LOINC` code in a sidecar becomes a `loinc` link instead of a term field. Synced prism-specification v1.5.21.
 - **Ontology links for surveys: `terms show` reads them, and 29 vocabularies are known.** Synced from prism-specification
   v1.5.20. `mappings/survey/dass.json` and `dass21.json` link every DASS item to the SNOMED CT score of its subscale
   (`prism_tools.py terms show prism:dass21.dass2101 --modality survey` prints it under `Measures`); the demo has a

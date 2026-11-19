@@ -10,7 +10,7 @@ import pytest
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), "app", "src"))
 
 from src.term_proposal import (  # noqa: E402
-    ProposalError, as_v2, build_proposal, check_with_specification, issue_url, load_inherited_sidecar, slugify,
+    ProposalError, as_v2, attach_links, build_proposal, parse_links, check_with_specification, issue_url, load_inherited_sidecar, slugify,
 )
 from src.term_registry import load_registry  # noqa: E402
 
@@ -41,7 +41,9 @@ def test_unknown_metric_becomes_parent_and_child():
     assert parent == {"TermID": "prism:ferr-ugl", "Level": "analyte", "Label": "ferr_ugl",
                       "Aliases": ["ferr_ugl"], "Description": "Ferritin"}
     assert child == {"TermID": "prism:ferr-ugl.serum", "Level": "analyte-specimen", "Parent": "prism:ferr-ugl",
-                     "SpecimenType": "serum", "Units": "ug/L", "MinValue": 0, "LOINC": "2276-4"}
+                     "SpecimenType": "serum", "Units": "ug/L", "MinValue": 0}
+    # the LOINC code of the sidecar is a link in the mappings layer, not a field of the term
+    assert p["links"] == {"prism:ferr-ugl.serum": {"loinc": "https://loinc.org/2276-4"}}
 
 
 def test_known_analyte_new_specimen_becomes_child_only():
@@ -334,3 +336,36 @@ def test_propose_unknown_environment_column():
     assert term == {"TermID": "prism:noise-db", "Level": "variable", "Label": "noise_db", "Aliases": ["noise_db"],
                     "Description": "Noise level", "Units": "dB"}
     assert check_with_specification(p, {}) == []
+
+
+def test_links_become_a_mappings_file_of_the_family_in_the_v2_document():
+    p = build_proposal(REGISTRY, _sidecar("ferr", {"Description": "F", "Units": "ug/L"}, "serum"), "ferr")
+    attach_links(p, parse_links(["loinc=https://loinc.org/2276-4"]))
+    document = as_v2(p)
+    assert document["files"]["mappings/biosample/ferr.json"] == {
+        "prism:ferr.serum": {"SameAs": {"loinc": "https://loinc.org/2276-4"}}}
+
+
+def test_attach_links_goes_to_the_measured_term_and_none_means_unchanged():
+    p = build_proposal(REGISTRY, _sidecar("ferr", {"Description": "F", "Units": "ug/L"}, "serum"), "ferr")
+    attach_links(p, {})
+    assert "links" not in p and not any(f.startswith("mappings/") for f in as_v2(p)["files"])
+
+
+@pytest.mark.parametrize("bad", ["loinc", "=https://x", "loinc=", "loinc=a=b c"])
+def test_parse_links_names_the_bad_item(bad):
+    with pytest.raises(ProposalError, match="--link"):
+        parse_links([bad])
+
+
+def test_parse_links_refuses_a_vocabulary_given_twice():
+    with pytest.raises(ProposalError, match="twice"):
+        parse_links(["loinc=https://loinc.org/1-1", "loinc=https://loinc.org/2-2"])
+
+
+def test_the_specification_checks_the_links_of_a_proposal():
+    p = build_proposal(REGISTRY, _sidecar("ferr", {"Description": "F", "Units": "ug/L"}, "serum"), "ferr")
+    attach_links(p, {"loinc": "https://loinc.org/2276-4"})
+    assert check_with_specification(p, REGISTRY) == []
+    attach_links(p, {"loinc": "https://example.org/nope"})
+    assert any("loinc" in problem for problem in check_with_specification(p, REGISTRY))

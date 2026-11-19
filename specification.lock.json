@@ -260,7 +260,7 @@
     "official/recipe/survey/recipe-webexec.json": "06338fed8b25ce19d5c15b5e3a4858cb8a31acff66de35cfc1976a392166b1e8",
     "official/recipe/survey/recipe-who5.json": "301f6f1e25e4a1584e60fe1433a16a5beef264a3a4683bb9d27c8174106879d2",
     "official/recipe/survey/recipe-zkpq.json": "555ddd23e9200d5580cd000e040cda69176a2914ea06ad2aed36aa13e2ecdace",
-    "scripts/specification/check_library.py": "c3fe23464270f919f873d7d1a7ed63fcbc040119925abcee7aa571d45494914f",
+    "scripts/specification/check_library.py": "5500e638eae69ca5960d55e607ebf798a38a4ac4fa79ef3b71298f6fae65c226",
     "scripts/specification/check_mappings.py": "90cb30a99dfc561e3a84e697747b2ccdef5af5f0ae27a9b8aae33bf829abddde",
     "scripts/specification/check_modalities.py": "5608e6f3f19749eff0fcc4de27176f57ef9b615e07d39ff614c3760ef1a9ea5c",
     "scripts/specification/check_schema_versions.py": "f3e4f24182f0b199d8c4ba1157e5231dc6835407898324562437f328c375403a",
@@ -272,8 +272,8 @@
     "scripts/specification/release_patch.py": "adec4e3da4556f1896c1c3af9bca8935f0d3bbc3509bf447fb13804b2fdf40d5",
     "scripts/specification/schema_patch.py": "27844079759c20aaff0323607bacfa354d63eaf00389677c5ea120606150eded",
     "scripts/specification/survey_ids.py": "db01606824a236f30e13745bb14fd902328490a5c75118447f22eedc1fb1c714",
-    "scripts/specification/term_proposal.py": "cf007ffb6031a4b3410e5636704f863ad889d49eecc6a37b598d6b4ec1005482"
+    "scripts/specification/term_proposal.py": "049754dab993a47f6271129823e341c56d38e308f5d133e1657afef7bf7af6ad"
   },
   "repository": "MRI-Lab-Graz/prism-specification",
-  "tag": "v1.5.20"
+  "tag": "v1.5.21"
 }

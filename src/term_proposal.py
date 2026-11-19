@@ -25,7 +25,7 @@ ISSUE_REPO = "MRI-Lab-Graz/prism-specification"
 ISSUE_TEMPLATE = "propose-metric.yml"
 ISSUE_NEW_KIND_TEMPLATE = "propose-new-kind-of-data.yml"
 URL_LIMIT = 6000
-_OPTIONAL_CHILD_FIELDS = ("MinValue", "WarnMaxValue", "LOINC")
+_OPTIONAL_CHILD_FIELDS = ("MinValue", "WarnMaxValue")  # a LOINC code is a link (mappings/), not a field of the term
 
 
 class ProposalError(ValueError):
@@ -144,7 +144,35 @@ def build_proposal(
         "SpecimenType": specimen, "Units": col_def["Units"],
     }
     child.update({f: col_def[f] for f in _OPTIONAL_CHILD_FIELDS if col_def.get(f) is not None})
-    return {"modality": modality, "terms": ([new_parent] if new_parent else []) + [child]}
+    proposal = {"modality": modality, "terms": ([new_parent] if new_parent else []) + [child]}
+    if col_def.get("LOINC"):
+        attach_links(proposal, {"loinc": f"https://loinc.org/{col_def['LOINC']}"})
+    return proposal
+
+
+def parse_links(items) -> dict[str, str]:
+    """`--link VOCABULARY=URL` (repeatable) as {vocabulary: url}; split on the first `=`."""
+    links: dict[str, str] = {}
+    for item in items or []:
+        vocabulary, _, url = item.partition("=")
+        if not vocabulary or not url or re.search(r"\s", url) or "=" in url:
+            raise ProposalError(f"--link {item!r}: use VOCABULARY=URL (for example loinc=https://loinc.org/2276-4)")
+        if vocabulary in links:
+            raise ProposalError(f"--link {vocabulary!r} is given twice")
+        links[vocabulary] = url
+    return links
+
+
+def attach_links(proposal: dict, links: dict[str, str]) -> None:
+    """Link the measured term of a proposal (its last term) to external vocabularies; no links changes nothing.
+
+    Whether a vocabulary exists and the URL fits it is the specification's check (`check_with_specification`)."""
+    if not links:
+        return
+    for vocabulary, url in links.items():
+        if not (isinstance(vocabulary, str) and isinstance(url, str) and re.fullmatch(r"https://\S+", url)):
+            raise ProposalError(f"link {vocabulary!r}: the address must be an https:// URL without spaces")
+    proposal.setdefault("links", {}).setdefault(proposal["terms"][-1]["TermID"], {}).update(links)
 
 
 FORMAT_V2 = "prism-proposal/2"
@@ -161,6 +189,9 @@ def as_v2(proposal: dict) -> dict:
     files = {
         f"terms/{proposal['modality']}/{term['TermID'].partition(':')[2]}.json": term for term in proposal["terms"]
     }
+    for term_id, links in proposal.get("links", {}).items():  # links go to mappings/<modality>/<family>.json
+        family = term_id.partition(":")[2].partition(".")[0]
+        files.setdefault(f"mappings/{proposal['modality']}/{family}.json", {})[term_id] = {"SameAs": links}
     if proposal.get("patch"):  # a schema addition: the same file the project keeps in code/specification/patches/
         files[f"patches/{proposal['modality']}.json"] = proposal["patch"]
     return {"format": FORMAT_V2, "files": files}
@@ -235,8 +266,10 @@ def check_with_specification(proposal: dict, registry: dict[str, dict], specimen
     if specimens is None and "contextField" in modalities.get(term_modality, {}):
         specimens = module.check_terms.specimen_types(stable / f"{term_modality}.schema.json")
     # a one-level modality (no contextField) gets specimens=None, never [] (that would apply two-level rules)
+    from src.term_registry import mappings_root  # local, like the import above
+
     problems = module.check_proposal(
-        document, registry, specimens or None, schemas=schemas, modalities=modalities,
+        document, registry, specimens or None, schemas=schemas, modalities=modalities, mappings_dir=mappings_root(),
     )[1]
     # the form's size limit, on the indented text that is printed, shown and pasted (extract_proposal measures that)
     size = len(json.dumps(document, indent=2, ensure_ascii=False).encode("utf-8"))
