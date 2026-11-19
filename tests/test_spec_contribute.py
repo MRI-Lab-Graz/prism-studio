@@ -503,3 +503,12 @@ def test_the_issue_title_of_a_described_kind_has_no_field_label():
     r = proposal_for_new_kind(None, "t\tv\n0\t1\n", name="skintemp", parts=PARTS)
     title = parse_qs(urlparse(r["issue_url"]).query)["title"][0]
     assert title == "[New kind of data] skintemp: Skin temperature"
+
+
+def test_a_new_metric_proposal_can_carry_links():
+    r = proposal_for_new_metric("DHEA", "Steroid hormone.", "pg/mL", "saliva", links={"loinc": "https://loinc.org/2191-5"})
+    assert r["problems"] == []
+    assert r["document"]["files"]["mappings/biosample/dhea.json"] == {
+        "prism:dhea.saliva": {"SameAs": {"loinc": "https://loinc.org/2191-5"}}}
+    with pytest.raises(OverlayError, match="--link|link"):
+        proposal_for_new_metric("DHEA", "Steroid hormone.", "pg/mL", "saliva", links={"loinc": "not a url"})

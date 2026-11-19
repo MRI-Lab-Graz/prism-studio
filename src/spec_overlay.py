@@ -325,7 +325,10 @@ def add_local_term(
     ]
     if problems:
         raise OverlayError("; ".join(problems))
-    return {"proposal": proposal, "written": write_local_terms(project_root, modality, proposal["terms"])}
+    terms = proposal["terms"]
+    if code := sidecar[column].get("LOINC"):  # ponytail: a local term keeps its LOINC field; local links come with a local mappings layer
+        terms = [*terms[:-1], {**terms[-1], "LOINC": code}]
+    return {"proposal": proposal, "written": write_local_terms(project_root, modality, terms)}
 
 
 def list_local_items(project_root, modality: str = "biosample") -> list[dict]:

@@ -12,7 +12,7 @@ from src.spec_overlay import OverlayError, _enum_of, _value_at, _project_specime
 from src.specification import current_specification
 from src.term_proposal import (
     ISSUE_NEW_KIND_TEMPLATE, ISSUE_REPO, ProposalError, URL_LIMIT, as_v2, check_with_specification, issue_url,
-    slugify, vendored_term_proposal,
+    attach_links, slugify, vendored_term_proposal,
 )
 from src.term_registry import find_term, load_registry, terms_root
 
@@ -223,8 +223,11 @@ def proposal_for_new_metric(
     aliases: list[str] | None = None, modality: str = "biosample", project_root=None,
     entries: dict | None = None, not_sure: bool = False, closest: str | None = None,
     levels: dict[str, str] | None = None, cf_standard_name: str | None = None, group: str | None = None,
+    links: dict[str, str] | None = None,
 ) -> dict:
     """The proposal for one missing measurement; needs no project.
+
+    `links` ({vocabulary: URL}, optional) link the measured term to external vocabularies (a mappings file in the proposal).
 
     A two-level kind (biosample) gets its analyte term and the specimen-specific child (`units` and `specimen` needed).
     A one-level kind (environment) gets one `variable` term with exactly one of `units` / `levels` (CODE -> label)
@@ -284,10 +287,19 @@ def proposal_for_new_metric(
         extra: dict[str, Any] = {"Levels": {k.strip(): v.strip() for k, v in levels.items()}} if levels else {"Units": str(units).strip()}
         if cf_standard_name and cf_standard_name.strip():
             extra["CFStandardName"] = cf_standard_name.strip()
-        return _result({"modality": modality, "terms": [{**base, "Level": "variable", **extra}]}, registry, None, context=context)
+        proposal = {"modality": modality, "terms": [{**base, "Level": "variable", **extra}]}
+        return _result(_linked(proposal, links), registry, None, context=context)
     parent = {**base, "Level": "analyte"}
     child = {"TermID": f"{parent_id}.{specimen}", "Level": "analyte-specimen", "Parent": parent_id, "SpecimenType": specimen, "Units": units}
-    return _result({"modality": modality, "terms": [parent, child]}, registry, specimens, context=context)
+    return _result(_linked({"modality": modality, "terms": [parent, child]}, links), registry, specimens, context=context)
+
+
+def _linked(proposal: dict, links: dict[str, str] | None) -> dict:
+    try:
+        attach_links(proposal, links or {})
+    except ProposalError as exc:
+        raise OverlayError(str(exc)) from exc
+    return proposal
 
 
 @lru_cache(maxsize=1)

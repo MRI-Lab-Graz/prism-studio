@@ -1,4 +1,4 @@
-"""Check every instrument template under library/survey/.
+"""Check every template under library/survey/, and the descriptive metadata of library/biometrics, biosample and environment.
 
 Usage: python scripts/check_library.py [--repo DIR]
 Prints one line per problem (naming the file) and exits 1 when there is any.
@@ -99,10 +99,10 @@ def artefact_problems(value, path="") -> list[str]:
     return [line for k, v in items for line in artefact_problems(v, f"{path}.{k}" if path else str(k))]
 
 
-def english_problems(study: dict, prefix: str = "Study") -> list[str]:
+def english_problems(study: dict, prefix: str = "Study", fields=ENGLISH_FIELDS) -> list[str]:
     """Descriptive Study metadata must be English, except the ARCHIVE_TEXT_EXEMPT sections of ArchiveMetadata."""
     out = []
-    for field in ENGLISH_FIELDS:
+    for field in fields:
         value, label = study.get(field), f"{prefix}.{field}"
         if field == "ArchiveMetadata" and isinstance(value, dict) and isinstance(value.get("sections"), dict):
             value = {**value, "sections": {k: v for k, v in value["sections"].items() if k not in ARCHIVE_TEXT_EXEMPT}}
@@ -247,15 +247,39 @@ def stub_problems(data: dict) -> list[str]:
     return out
 
 
+# Other modalities: the descriptive header and every column Description are English (a column description is
+# metadata, not instrument text); OriginalName and Instructions may be in any language.
+OTHER_ENGLISH = {
+    "Study": ("ShortName", "Description", "Reliability", "Validity", "Notes", "TargetPopulation", "ExclusionCriteria", "WarmupProtocol"),
+    "Technical": ("Equipment",),
+    "Scoring": ("ScoringMethod", "CutoffsSource", "NormsSource"),
+    "Normative": ("ReferencePopulation", "ReferenceSource"),
+}
+OTHER_HEADER = {"I18n", "Metadata", *OTHER_ENGLISH}
+
+
+def modality_problems(data: dict) -> list[str]:
+    """Templates of biometrics, biosample and environment: English descriptive metadata, no text-extraction artefacts."""
+    out = []
+    for section, fields in OTHER_ENGLISH.items():
+        out += english_problems(data.get(section) or {}, section, fields)
+    for k, v in data.items():
+        if k not in OTHER_HEADER and isinstance(v, dict) and "Description" in v:
+            out += english_problems({"Description": v["Description"]}, k, ("Description",))
+    return out + artefact_problems(data)
+
+
 def check(repo: Path) -> list[str]:
     lines = []
-    for f in sorted((Path(repo) / "library" / "survey").glob("*.json")):
-        try:
-            data = json.loads(f.read_text(encoding="utf-8"))
-        except ValueError as exc:
-            lines.append(f"{f.name}: not valid JSON ({exc})")
-            continue
-        lines += [f"{f.name}: {p}" for p in template_problems(data)]
+    for modality in ("survey", "biometrics", "biosample", "environment"):
+        for f in sorted((Path(repo) / "library" / modality).glob("*.json")):
+            try:
+                data = json.loads(f.read_text(encoding="utf-8"))
+            except ValueError as exc:
+                lines.append(f"{f.name}: not valid JSON ({exc})")
+                continue
+            found = template_problems(data) if modality == "survey" else modality_problems(data)
+            lines += [f"{f.name}: {p}" for p in found]
     return lines
 
 

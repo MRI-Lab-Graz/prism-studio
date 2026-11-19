@@ -398,3 +398,15 @@ def test_terms_show_survey_item_carries_its_snomed_subscale_link():
     (link,) = json.loads(out)["measures"]
     assert code == 0
     assert link["URL"] == "https://snomed.info/id/416767005" and link["Match"] == "related" and link["Higher"] == "more"
+
+
+def test_propose_link_flag_puts_the_link_in_the_document(tmp_path):
+    code, out = _run("propose", "--sidecar", str(_sidecar(tmp_path)), "--column", "ferr_ugl", "--json",
+                     "--link", "loinc=https://loinc.org/2276-4")
+    document = json.loads(out)["proposal"]["links"]
+    assert code == 0 and document == {"prism:ferr-ugl.serum": {"loinc": "https://loinc.org/2276-4"}}
+
+
+def test_propose_bad_link_exits_1_naming_the_flag(tmp_path):
+    code, out = _run("propose", "--sidecar", str(_sidecar(tmp_path)), "--column", "ferr_ugl", "--json", "--link", "loinc")
+    assert code == 1 and "--link" in json.loads(out)["error"]

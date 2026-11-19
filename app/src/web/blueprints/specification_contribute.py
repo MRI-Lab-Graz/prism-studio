@@ -24,6 +24,7 @@ from src.spec_overlay import (
     remove_local_terms,
     remove_local_values,
 )
+from src.term_proposal import ProposalError, parse_links
 from src.spec_contribute import check_new_kind_name, example_entries, proposal_for_new_kind, proposal_for_new_metric, proposal_for_values, spec_catalog
 
 specification_contribute_bp = Blueprint("specification_contribute", __name__)
@@ -157,11 +158,11 @@ def propose_metric():
     texts = [body.get(k) for k in ("name", "description", "units", "specimen")]
     levels, cf = body.get("levels"), body.get("cf_standard_name")
     if not (isinstance(modality, str) and _strings(aliases) and all(isinstance(t, str) for t in texts[:2])
-            and all(t is None or isinstance(t, str) for t in texts[2:]) and isinstance(levels, (dict, type(None))) and isinstance(cf, (str, type(None)))):
+            and all(t is None or isinstance(t, str) for t in texts[2:]) and isinstance(levels, (dict, type(None))) and isinstance(cf, (str, type(None))) and _strings(body.get("links") or [])):
         return _error('Give "name" and "description" as text, "units" and "specimen" as text if used, "levels" as an object and "aliases" as a list of text')
     try:
-        result = proposal_for_new_metric(*texts, aliases=aliases, modality=modality, project_root=_project(), levels=levels or None, cf_standard_name=cf or None, group=body.get("group"), **_context_options(body))
-    except OverlayError as exc:
+        result = proposal_for_new_metric(*texts, aliases=aliases, modality=modality, project_root=_project(), levels=levels or None, cf_standard_name=cf or None, group=body.get("group"), links=parse_links(body.get("links")), **_context_options(body))
+    except (OverlayError, ProposalError) as exc:
         return _error(str(exc))
     return jsonify({"success": True, **result})
 

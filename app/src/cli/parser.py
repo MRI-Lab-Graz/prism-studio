@@ -8,6 +8,8 @@ from pathlib import Path
 from src.entity_rules import load_entity_rules
 
 
+_LINK_HELP = "Link the new term to an external vocabulary as VOCABULARY=URL, for example loinc=https://loinc.org/2276-4 (repeatable); the proposal then carries a mappings file"
+
 def add_export_filter_flags(parser) -> None:
     """The export's scope flags (what comes along, what is left out); `datalad get-data` takes the very same ones."""
     parser.add_argument("--include-sourcedata", action="store_true", help="Also export sourcedata/")
@@ -2282,6 +2284,7 @@ def build_prism_tools_parsers(
             )
             _p.add_argument("--column", required=True, help="The column to propose as a new metric")
             _p.add_argument("--label", help="Name for the new term (default: the column name)")
+            _p.add_argument("--link", action="append", help=_LINK_HELP)
             _p.add_argument("--open", action="store_true", help="Open the prefilled proposal form in the browser")
             _p.add_argument("--out", help="Also save the proposal to this file (to send it to a maintainer without GitHub)")
         _p.add_argument(
@@ -2328,6 +2331,7 @@ def build_prism_tools_parsers(
     parser_spec_metric.add_argument("--level", action="append", help="A level as CODE=LABEL instead of a unit (repeatable; kinds without sample type)")
     parser_spec_metric.add_argument("--group", help="Optional heading the measurement is listed under, for example 'Air quality' (1-60 characters)")
     parser_spec_metric.add_argument("--cf-standard-name", help="Optional CF standard name, for example air_temperature (kinds without sample type)")
+    parser_spec_metric.add_argument("--link", action="append", help=_LINK_HELP)
     parser_spec_metric.add_argument("--alias", action="append", help="Another name for it (repeatable)")
     parser_spec_metric.add_argument("--modality", default="biosample", help="The kind of data (default: biosample)")
     parser_spec_metric.add_argument("--project", help="A project whose own sample types are accepted too (optional)")

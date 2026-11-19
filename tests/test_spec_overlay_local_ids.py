@@ -84,3 +84,11 @@ def test_a_new_specimen_of_an_existing_local_analyte_is_added(tmp_path):
     sidecar.write_text(json.dumps(data), encoding="utf-8")
     add_local_term(project, column="dhea_p", sidecar_file=str(sidecar), label="DHEA-S")
     assert _file(project, "dhea-s.plasma.json")["Parent"] == "local:dhea-s"
+
+
+def test_a_local_term_keeps_the_loinc_code_of_its_column(tmp_path):
+    sidecar = tmp_path / "sidecar.json"
+    sidecar.write_text(json.dumps({"Technical": {"SpecimenType": "saliva"},
+                                   "dhea_s": {"Description": "DHEA-S", "Units": "ug/dL", "LOINC": "2191-5"}}), encoding="utf-8")
+    add_local_term(tmp_path / "p", column="dhea_s", sidecar_file=str(sidecar), label="DHEA-S")
+    assert _file(tmp_path / "p", "dhea-s.saliva.json")["LOINC"] == "2191-5"

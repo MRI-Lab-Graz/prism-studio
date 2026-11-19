@@ -191,6 +191,11 @@
                                 <label class="form-label small mb-0" for="spec-m-aliases">Other names, separated by commas</label>
                                 <input id="spec-m-aliases" type="text" class="form-control form-control-sm" autocomplete="off">
                             </div>
+                            <div class="col-12">
+                                <label class="form-label small mb-0" for="spec-m-links">Links to other databases: one VOCABULARY=URL per line</label>
+                                <textarea id="spec-m-links" class="form-control form-control-sm" rows="2" placeholder="loinc=https://loinc.org/2276-4"></textarea>
+                                <div class="form-text">For example loinc, snomed or chebi. The maintainers check each address against the vocabulary.</div>
+                            </div>
                             <div class="col-md-6" id="spec-m-cf-box" hidden>
                                 <label class="form-label small mb-0" for="spec-m-cf">CF standard name</label>
                                 <input id="spec-m-cf" type="text" class="form-control form-control-sm" autocomplete="off" placeholder="air_temperature">
