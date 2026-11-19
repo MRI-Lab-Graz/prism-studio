@@ -1,4 +1,4 @@
-"""Descriptive metadata of every official non-survey template is English; only OriginalName, ShortName and Instructions may carry other languages.
+"""Descriptive metadata of every official non-survey template is English; only OriginalName and Instructions may carry other languages.
 
 Same rule as the survey header (check_library in prism-specification) and the editor (StudioTheme.offersMultilingual).
 """
@@ -10,7 +10,7 @@ import pytest
 
 LIB = Path(__file__).resolve().parent.parent / "official" / "library"
 HEADER = {
-    "Study": ("Description", "Reliability", "Validity", "Citation", "TargetPopulation", "ExclusionCriteria",
+    "Study": ("ShortName", "Description", "Reliability", "Validity", "Citation", "TargetPopulation", "ExclusionCriteria",
               "WarmupProtocol", "EstimatedDuration"),
     "Technical": ("Equipment",),
     "Scoring": ("ScoringMethod", "CutoffsSource", "NormsSource"),

@@ -172,6 +172,10 @@ describe('offersMultilingual (descriptive header fields are English only)', () =
     expect(StudioTheme.offersMultilingual('Study', 'RecallPeriod')).toBe(false);
   });
 
+  it('refuses it for the abbreviation (ShortName): one short string, not translated', () => {
+    expect(StudioTheme.offersMultilingual('Study', 'ShortName')).toBe(false);
+  });
+
   it('keeps it for fields where any language is allowed', () => {
     for (const f of ['Instructions', 'OriginalName', 'Levels', 'Text']) expect(StudioTheme.offersMultilingual('Study', f)).toBe(true);
   });
