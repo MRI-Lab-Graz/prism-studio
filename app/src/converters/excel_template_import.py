@@ -15,6 +15,7 @@ import re
 import tempfile
 from pathlib import Path
 
+import openpyxl
 import pandas as pd
 
 from .excel_base import detect_language, read_excel_sheets
@@ -40,17 +41,16 @@ def _has_plain_unlabeled_description(header):
 
 
 def _autolabel_description_column(path: Path) -> None:
-    """For simple codebooks with only a plain 'Description' column (no _en/_de
+    """For simple codebooks with only a plain 'Description' column (no language
     suffix), rename it to Description_<lang> in place, using a whole-column
     language heuristic. A workbook that already has a language-suffixed Description
     column is left untouched. In a multi-sheet workbook (e.g. Template + Help)
     the first sheet with a plain Description is the one renamed.
     """
-    suffix = path.suffix.lower()
-    if suffix in (".csv", ".tsv"):
-        sep = "," if suffix == ".csv" else "\t"
-        df = pd.read_csv(path, sep=sep, header=None, dtype=str, keep_default_na=False)
-        sheets = {"": df}
+    is_text = path.suffix.lower() in (".csv", ".tsv")
+    sep = "\t" if path.suffix.lower() == ".tsv" else ","
+    if is_text:
+        sheets = {"": pd.read_csv(path, sep=sep, header=None, dtype=str, keep_default_na=False)}
     else:
         sheets = read_excel_sheets(path)
 
@@ -66,12 +66,10 @@ def _autolabel_description_column(path: Path) -> None:
     col_idx = next(i for i, h in enumerate(norm) if h in DESCRIPTION_ALIASES)
     lang = detect_language(df.iloc[1:, col_idx].tolist())
 
-    if suffix in (".csv", ".tsv"):
+    if is_text:
         df.iat[0, col_idx] = f"Description_{lang}"
         df.to_csv(path, index=False, header=False, sep=sep)
     else:
-        import openpyxl
-
         wb = openpyxl.load_workbook(path)
         wb[name].cell(row=1, column=col_idx + 1).value = f"Description_{lang}"
         wb.save(path)
