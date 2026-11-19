@@ -198,7 +198,8 @@ def test_process_excel_biometrics_writes_i18n_sidecar_with_header(monkeypatch, t
     assert sidecar["Technical"]["Supervisor"] == "trainer"
     assert sidecar["Study"]["OriginalName"] == "Countermovement Jump"
     assert sidecar["Study"]["Citation"] == "doi:123"
-    assert sidecar["Study"]["EstimatedDuration"] == "10 min"
+    assert sidecar["Study"]["AdministrationTime"] == {"min": 10, "max": 10}
+    assert "EstimatedDuration" not in sidecar["Study"]
     assert sidecar["Study"]["Instructions"] == {
         "en": "Do your best",
         "de": "Geben Sie Ihr Bestes",
@@ -315,3 +316,17 @@ def test_the_sidecar_is_built_once_per_group_not_once_per_variable(monkeypatch, 
     converter.process_excel_biometrics(str(src), str(tmp_path / "out"))
 
     assert len(calls) == 1
+
+
+@pytest.mark.parametrize(
+    "text, expected",
+    [
+        ("10 min", {"min": 10, "max": 10}),
+        ("10-15 minutes", {"min": 10, "max": 15}),
+        ("10 bis 15", {"min": 10, "max": 15}),
+        ("7,5", {"min": 7.5, "max": 7.5}),
+        ("a while", None),
+    ],
+)
+def test_administration_time_is_minutes_min_max(text, expected) -> None:
+    assert converter._administration_time(text) == expected
