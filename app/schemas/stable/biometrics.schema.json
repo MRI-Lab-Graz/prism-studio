@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://prism.org/schemas/biometrics/v1.1.3",
-  "version": "1.1.3",
+  "$id": "https://prism.org/schemas/biometrics/v1.1.4",
+  "version": "1.1.4",
   "title": "Biometrics Metadata",
   "description": "Schema for biometric and physical performance assessment data (e.g., VO2max, planks, balance, grip strength). Files should be named: sub-<label>[_ses-<label>]_biometrics-<label>[_run-<index>]_biometrics.<tsv|json>",
   "type": "object",
@@ -40,7 +40,7 @@
         },
         "Equipment": {
           "type": ["string", "object"],
-          "description": "Equipment used for measurement (e.g., Stopwatch, Cycle Ergometer, Dynamometer)"
+          "description": "Measuring hardware (e.g., Stopwatch, Cycle Ergometer, Dynamometer, Smartphone); software goes in SoftwarePlatform"
         },
         "EquipmentManufacturer": {
           "type": "string",
@@ -121,7 +121,7 @@
         },
         "Category": {
           "type": "string",
-          "enum": ["cardiorespiratory", "muscular-strength", "muscular-endurance", "flexibility", "balance", "body-composition", "anthropometry", ""],
+          "enum": ["cardiorespiratory", "muscular-strength", "muscular-endurance", "muscular-power", "flexibility", "balance", "body-composition", "anthropometry", ""],
           "description": "Category of fitness/biometric test"
         },
         "Protocol": {
@@ -148,14 +148,6 @@
         "Instructions": {
           "type": ["string", "object"],
           "description": "Instructions given to the participant"
-        },
-        "Instruction": {
-          "type": ["string", "object"],
-          "description": "Instructions given to the participant (alias for Instructions)"
-        },
-        "Reference": {
-          "type": "string",
-          "description": "Citation or reference for the test protocol"
         },
         "AdministrationTime": {
           "type": "object",
@@ -303,7 +295,7 @@
     "properties": {
       "Description": {
         "type": ["string", "object"],
-        "description": "Description of the metric"
+        "description": "Short description of the column (side, trial); no device or protocol, those belong in Study and Technical"
       },
       "AliasOf": {
         "type": "string",
@@ -363,7 +355,7 @@
       "RunHint": {
         "type": "string",
         "pattern": "^(run-[a-zA-Z0-9]+)?$",
-        "description": "Optional run hint for repeated assessments (e.g., 'run-2')"
+        "description": "Optional run of the data file for repeated assessments (e.g., 'run-2'); not a trial number, trials are separate columns"
       }
     },
     "required": ["Description", "Units"]
