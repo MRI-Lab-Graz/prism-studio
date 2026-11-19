@@ -25,54 +25,56 @@ RESERVED_TOPLEVEL = TEMPLATE_SECTIONS
 DESCRIPTION_ALIASES = {"description", "question", "item", "item text", "text", "label", "questiontext"}
 
 
+_LANG_SUFFIX = re.compile(r"[_-][a-z]{2,3}$")
+
+
+def _is_language_description(h):
+    """True for Description_<lang> style headers (any language, not just en/de)."""
+    return bool(_LANG_SUFFIX.search(h)) and _LANG_SUFFIX.sub("", h) in DESCRIPTION_ALIASES
+
+
 def _has_plain_unlabeled_description(header):
-    """True if header has a bare Description-like column with no _en/_de suffix."""
+    """True if header has a bare Description-like column with no language suffix."""
     norm = [str(h).strip().lower() for h in header]
-    has_plain = any(h in DESCRIPTION_ALIASES for h in norm)
-    has_suffixed = any(
-        re.sub(r"_(en|de)$", "", h) in DESCRIPTION_ALIASES and h.endswith(("_en", "_de"))
-        for h in norm
-    )
-    return has_plain and not has_suffixed
+    return any(h in DESCRIPTION_ALIASES for h in norm) and not any(_is_language_description(h) for h in norm)
 
 
 def _autolabel_description_column(path: Path) -> None:
-    """For simple single-sheet codebooks with only a plain 'Description' column
-    (no _en/_de suffix), rename it to Description_<lang> in place, using a
-    whole-file language heuristic. The official multi-sheet Items/General/
-    Variants format already uses explicit _en/_de columns, so multi-sheet
-    workbooks are left untouched.
+    """For simple codebooks with only a plain 'Description' column (no _en/_de
+    suffix), rename it to Description_<lang> in place, using a whole-column
+    language heuristic. A workbook that already has a language-suffixed Description
+    column is left untouched. In a multi-sheet workbook (e.g. Template + Help)
+    the first sheet with a plain Description is the one renamed.
     """
     suffix = path.suffix.lower()
-    if suffix == ".csv":
-        df = pd.read_csv(path, header=None, dtype=str, keep_default_na=False)
-    elif suffix == ".tsv":
-        df = pd.read_csv(path, sep="\t", header=None, dtype=str, keep_default_na=False)
+    if suffix in (".csv", ".tsv"):
+        sep = "," if suffix == ".csv" else "\t"
+        df = pd.read_csv(path, sep=sep, header=None, dtype=str, keep_default_na=False)
+        sheets = {"": df}
     else:
         sheets = read_excel_sheets(path)
-        if len(sheets) != 1:
-            return
-        df = next(iter(sheets.values()))
 
-    if df.empty:
+    headers = {n: [str(c) if c is not None else "" for c in df.iloc[0].tolist()] for n, df in sheets.items() if not df.empty}
+    if any(_is_language_description(x.strip().lower()) for h in headers.values() for x in h):
+        return
+    name = next((n for n, h in headers.items() if _has_plain_unlabeled_description(h)), None)
+    if name is None:
         return
 
-    header = [str(c) if c is not None else "" for c in df.iloc[0].tolist()]
-    if not _has_plain_unlabeled_description(header):
-        return
-
-    norm = [str(h).strip().lower() for h in header]
+    df = sheets[name]
+    norm = [h.strip().lower() for h in headers[name]]
     col_idx = next(i for i, h in enumerate(norm) if h in DESCRIPTION_ALIASES)
-    texts = df.iloc[1:, col_idx].tolist()
-    lang = detect_language(texts)
-    df.iat[0, col_idx] = f"Description_{lang}"
+    lang = detect_language(df.iloc[1:, col_idx].tolist())
 
-    if suffix == ".csv":
-        df.to_csv(path, index=False, header=False)
-    elif suffix == ".tsv":
-        df.to_csv(path, index=False, header=False, sep="\t")
+    if suffix in (".csv", ".tsv"):
+        df.iat[0, col_idx] = f"Description_{lang}"
+        df.to_csv(path, index=False, header=False, sep=sep)
     else:
-        df.to_excel(path, index=False, header=False)
+        import openpyxl
+
+        wb = openpyxl.load_workbook(path)
+        wb[name].cell(row=1, column=col_idx + 1).value = f"Description_{lang}"
+        wb.save(path)
 
 
 def parse_excel_groups(file_bytes: bytes, filename: str) -> dict:

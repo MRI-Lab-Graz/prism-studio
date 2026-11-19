@@ -54,7 +54,7 @@ def test_infer_units_covers_common_fallbacks(units_cell, scaling_cell, descripti
 
 
 def test_translation_and_scalar_parsers_cover_edge_cases() -> None:
-    assert converter.translate_text("Imported biometrics data") == "Importierte biometrische Daten"
+    assert not hasattr(converter, "translate_text")
     assert converter.format_group_name("cmj") == "CMJ"
     assert converter.format_group_name("balance") == "Balance"
     assert converter._clean_key(None) is None
@@ -210,10 +210,11 @@ def test_process_excel_biometrics_writes_i18n_sidecar_with_header(monkeypatch, t
     assert item["SessionHint"] == "ses-1"
     assert item["RunHint"] == "run-2"
     assert item["AllowedValues"] == [1, 5]
-    assert item["Levels"]["1"]["de"] == "sehr schlecht"
+    assert item["Levels"]["1"] == {"en": "very bad"}
     assert item["WarnMinValue"] == 0.0
     assert item["WarnMaxValue"] == 6.0
-    assert item["Description"]["de"] == "Wie gut haben Sie diese Aufgabe Ihrer Meinung nach ausgeführt?"
+    assert item["Description"] == {"en": "How well do you think you have performed this task?"}
+    assert sidecar["Study"]["Description"] == {"en": "Imported biometrics data"}
 
 
 def test_process_excel_biometrics_supports_positional_rows_and_inferred_hints(monkeypatch, tmp_path) -> None:
@@ -263,7 +264,7 @@ def test_process_excel_biometrics_supports_positional_rows_and_inferred_hints(mo
     assert post_item["Units"] == "n/a"
     assert post_item["DataType"] == "integer"
     assert sidecar["Study"]["OriginalName"] == "Balance assessment"
-    assert sidecar["Study"]["Description"]["de"] == "Importierte balance biometrische Daten"
+    assert sidecar["Study"]["Description"] == {"en": "Imported balance biometrics data"}
     assert mid_item["SessionHint"] == "ses-2"
 
 
@@ -277,3 +278,21 @@ def test_process_excel_biometrics_exits_on_read_error(monkeypatch, tmp_path) -> 
         converter.process_excel_biometrics("broken.xlsx", str(tmp_path))
 
     assert exc_info.value.code == 1
+
+def test_instructions_in_any_language_column_reach_the_sidecar(tmp_path) -> None:
+    src = tmp_path / "b.xlsx"
+    pd.DataFrame(
+        [
+            ["variable", "description", "group", "instructions_fr", "instructions_en"],
+            ["cmj_height", "Jump height", "cmj", "Sautez le plus haut possible", "Jump as high as you can"],
+        ]
+    ).to_excel(src, index=False, header=False)
+
+    converter.process_excel_biometrics(str(src), str(tmp_path / "out"))
+
+    sidecar = json.loads((tmp_path / "out" / "biometrics-cmj.json").read_text(encoding="utf-8"))
+    assert sidecar["Study"]["Instructions"] == {
+        "fr": "Sautez le plus haut possible",
+        "en": "Jump as high as you can",
+    }
+    assert "fr" in sidecar["I18n"]["Languages"]
