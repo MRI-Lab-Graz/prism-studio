@@ -639,7 +639,7 @@ def process_excel_biometrics(
                         sidecar["I18n"]["Languages"].append(lang)
 
         if meta.get("Reference"):
-            sidecar["Study"]["Reference"] = meta["Reference"]
+            sidecar["Study"]["Citation"] = meta["Reference"]
         if meta.get("EstimatedDuration"):
             sidecar["Study"]["EstimatedDuration"] = meta["EstimatedDuration"]
 

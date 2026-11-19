@@ -197,7 +197,7 @@ def test_process_excel_biometrics_writes_i18n_sidecar_with_header(monkeypatch, t
     assert sidecar["Technical"]["Equipment"] == "Force plate"
     assert sidecar["Technical"]["Supervisor"] == "trainer"
     assert sidecar["Study"]["OriginalName"] == "Countermovement Jump"
-    assert sidecar["Study"]["Reference"] == "doi:123"
+    assert sidecar["Study"]["Citation"] == "doi:123"
     assert sidecar["Study"]["EstimatedDuration"] == "10 min"
     assert sidecar["Study"]["Instructions"] == {
         "en": "Do your best",
