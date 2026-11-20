@@ -339,7 +339,7 @@ def handle_get_procedure_status(get_current_project, read_project_json):
                         continue
                     for f in mod_dir.iterdir():
                         if f.is_file() and "_task-" in f.name:
-                            m = re.search(r"_task-([a-zA-Z0-9]+)", f.name)
+                            m = re.search(r"_task-([^_.]+)", f.name)
                             if m:
                                 on_disk.add((ses_id, m.group(1)))
 

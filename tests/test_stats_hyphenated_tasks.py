@@ -19,3 +19,18 @@ def test_every_survey_task_reaches_the_stats():
         fname = f"sub-1_ses-2_task-{name}_survey.tsv"
         stats.add_file("sub-1", "ses-2", "survey", _extract_task_from_filename(fname), fname)
     assert stats.surveys == {"ads", "gold-dsi", "maia-2", "pss-10"}
+
+
+def test_other_task_readers_keep_the_hyphen(tmp_path):
+    from src.conversion_to_project import extract_tasks_from_output
+
+    (tmp_path / "sub-1_ses-2_task-gold-dsi_survey.tsv").write_text("x")
+    (tmp_path / "sub-1_ses-2_task-ads_survey.tsv").write_text("x")
+    assert extract_tasks_from_output(tmp_path) == ["ads", "gold-dsi"]
+
+
+def test_license_hint_names_a_hyphenated_survey():
+    from src.issues import get_fix_hint
+
+    hint = get_fix_hint("PRISM301", "task-gold-dsi_survey.json: 'LicenseID' is a required property")
+    assert "'gold-dsi'" in hint
