@@ -102,6 +102,27 @@ a check, and never switch models in the middle of a task, unless the user has ap
 overrides the model-selection advice of the superpowers skills (they suggest cheaper or more capable tiers). If a task
 seems to need a different model, ask the user and wait for the answer.
 
+## Token budget: work cheaper
+
+The model is not what burns the usage limit; context size and the number of agent runs are (one long session used a
+5-hour limit in about an hour: every tool call re-reads the whole conversation, and each subagent starts with its own
+100k-token context). So:
+
+- **One stream per chat.** Start a fresh chat for each stream (a batch PR, a Studio PR) and carry state in a handoff file
+  (`docs/handouts/`), not in a long conversation. Do not let one session run for hours across streams.
+- **Fewer, bigger agent runs.** One review per batch or PR, not one per template or per task. No new review round when
+  the last one was clean. A defect found by a review is fixed directly, or by resuming the agent that built it
+  (`SendMessage`), not by a new agent with a fresh context.
+- **Audits once per PR.** `ponytail:ponytail-audit` and `/code-review` run once on the finished branch, not per task.
+  (This narrows the per-task review of `superpowers:subagent-driven-development`; the user has asked for it.)
+- **No parallel fan-out** of many agents unless the user asks for it; no duplicate or polling agents (stop a duplicate
+  with `TaskStop`).
+- **Hand files, not text.** Give agents a file path to read and let them write their report to a file; keep pasted
+  output and reports short in the main chat.
+- **Short main context.** Read only the part of a file you need; redirect long command output to a file and read its
+  tail. Say once what was done; do not repeat summaries.
+- **Tell the user early** when a plan will be expensive (many agent runs) and offer the cheaper variant.
+
 ## One implementation: every command lives in the backend/CLI, the GUI only calls it
 
 (This is THE RULE above; the details follow.)
