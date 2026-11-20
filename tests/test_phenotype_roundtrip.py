@@ -27,7 +27,7 @@ def _write_source_dataset(base):
         "Technical": {"StimulusType": "Questionnaire", "FileFormat": "tsv"},
         "Metadata": {"SchemaVersion": "1.2.0", "CreationDate": "2026-01-01"},
         "Study": {
-            "TaskName": "wellbeing-multi",
+            "TaskName": "wellbeingmulti",
             "Versions": ["10-likert"],
             "VariantDefinitions": [
                 {"VariantID": "10-likert", "ItemCount": 2, "ScaleType": "likert"}
@@ -54,7 +54,7 @@ def _write_source_dataset(base):
             "MaxValue": 5,
         },
     }
-    (base / "task-wellbeing-multi_acq-10-likert_survey.json").write_text(
+    (base / "task-wellbeingmulti_acq-10-likert_survey.json").write_text(
         json.dumps(sidecar), encoding="utf-8"
     )
 
@@ -67,7 +67,7 @@ def _write_source_dataset(base):
         survey_dir = base / f"sub-{subject}" / f"ses-{session}" / "survey"
         survey_dir.mkdir(parents=True, exist_ok=True)
         filename = (
-            f"sub-{subject}_ses-{session}_task-wellbeing-multi_acq-10-likert_survey.tsv"
+            f"sub-{subject}_ses-{session}_task-wellbeingmulti_acq-10-likert_survey.tsv"
         )
         pd.DataFrame([values]).to_csv(
             survey_dir / filename, sep="\t", index=False, lineterminator="\n"
@@ -83,7 +83,7 @@ def _source_value_matrix(base, rows):
             / f"sub-{subject}"
             / f"ses-{session}"
             / "survey"
-            / f"sub-{subject}_ses-{session}_task-wellbeing-multi_acq-10-likert_survey.tsv"
+            / f"sub-{subject}_ses-{session}_task-wellbeingmulti_acq-10-likert_survey.tsv"
         )
         df = pd.read_csv(path, sep="\t", dtype=str)
         matrix[(subject, session)] = df.iloc[0].to_dict()
@@ -102,7 +102,7 @@ def test_survey_to_phenotype_to_survey_roundtrips_item_values(tmp_path):
     # Only one variant ("10-likert") is present in the source dataset, so the
     # variant suffix is omitted (it's only added to disambiguate when a task
     # has multiple variants - see test_collect_phenotype_bridge_files_separates_variants).
-    assert phenotype_file.name == "wellbeing-multi"
+    assert phenotype_file.name == "wellbeingmulti"
 
     phenotype_dir = tmp_path / "phenotype"
     phenotype_dir.mkdir()
@@ -122,7 +122,7 @@ def test_survey_to_phenotype_to_survey_roundtrips_item_values(tmp_path):
     assert import_summary.imported_task_count == 1
 
     # Data fidelity: every (subject, session, item) value must survive intact.
-    imported_task_name = "wellbeing-multi"
+    imported_task_name = "wellbeingmulti"
     for (subject, session), original_values in source_values.items():
         imported_path = (
             reimport_root
@@ -150,7 +150,7 @@ def test_survey_to_phenotype_to_survey_roundtrips_item_values(tmp_path):
             encoding="utf-8"
         )
     )
-    assert reimported_sidecar["Study"]["TaskName"] == "wellbeing-multi"
+    assert reimported_sidecar["Study"]["TaskName"] == "wellbeingmulti"
     assert (
         reimported_sidecar["Study"]["Citation"]
         != "Demo citation, expected to be lost on round-trip."
