@@ -1,6 +1,4 @@
 import json
-import os
-import sys
 from pathlib import Path
 
 from src.recent_projects import RECENT_MAX, record_recent
@@ -102,23 +100,10 @@ def _looks_like_wrong_delimiter(df, used_delimiter: str | None) -> bool:
     return any(delimiter in header for delimiter in suspicious_delimiters)
 
 
-def _get_user_config_dir() -> Path:
-    """Return a cross-platform per-user PRISM Studio config directory."""
-    if os.name == "nt":
-        base = os.environ.get("APPDATA") or str(Path.home() / "AppData" / "Roaming")
-        return Path(base) / "PRISM Studio"
-
-    if sys.platform == "darwin":
-        return Path.home() / "Library" / "Application Support" / "PRISM Studio"
-
-    xdg = os.environ.get("XDG_CONFIG_HOME")
-    if xdg:
-        return Path(xdg) / "prism-studio"
-    return Path.home() / ".config" / "prism-studio"
-
-
 def _recent_projects_file() -> Path:
-    cfg_dir = _get_user_config_dir()
+    import src.config  # the settings folder tests redirect
+
+    cfg_dir = src.config._get_user_app_settings_dir()
     cfg_dir.mkdir(parents=True, exist_ok=True)
     return cfg_dir / _RECENT_PROJECTS_FILENAME
 

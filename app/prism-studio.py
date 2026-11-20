@@ -207,6 +207,12 @@ def _build_parser():
         ),
     )
     parser.add_argument(
+        "-lp",
+        "--last-project",
+        action="store_true",
+        help="Open the project you worked on last (the first recent project); if there is none, start as usual",
+    )
+    parser.add_argument(
         "--force-clean-start",
         action="store_true",
         help="Force-stop any process using the selected port before launch",
@@ -1810,6 +1816,12 @@ def main():
 
     parser = _build_parser()
     args = parser.parse_args()
+
+    if args.last_project and not args.recent_project:
+        from src.recent_projects import last_recent_name
+        from src.web.blueprints.projects_helpers import _load_recent_projects
+
+        args.recent_project = last_recent_name(_load_recent_projects()) or None
 
     if args.recent_project == "" or args.browser_app == "":  # the flag without a name: list, then exit
         if args.recent_project == "":
