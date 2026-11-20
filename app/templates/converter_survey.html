@@ -126,19 +126,19 @@
                                 </div>
                             </div>
 
-                            <!-- Row 4: Session (required conversion setting) -->
+                            <!-- Row 4: Force session (optional; the session normally comes from the data) -->
                             <div class="row g-3 mb-3">
                                 <div class="col-md-6" id="convertSessionGroup">
-                                    <label for="convertSessionSelect" class="form-label fw-bold session-required-label">Session ID <span class="badge ms-1 session-required-badge" id="convertSessionBadge">REQUIRED</span></label>
+                                    <label for="convertSessionSelect" class="form-label fw-bold session-required-label">Force session <span class="badge ms-1 session-required-badge" id="convertSessionBadge">OPTIONAL</span></label>
                                     <div class="input-group">
-                                        <select class="form-select" id="convertSessionSelect" required>
+                                        <select class="form-select" id="convertSessionSelect">
                                             <option value="">Select session...</option>
                                         </select>
                                         <input type="text" class="form-control" id="convertSessionCustom"
                                                placeholder="or type: 1, baseline..." style="max-width: 35%;">
                                     </div>
                                     <div class="form-text text-warning d-flex align-items-center gap-1" id="convertSessionHint">
-                                        Creates 'ses-01', 'ses-02', etc.
+                                        Leave empty: the session comes from the file's session column or from the dates. Fill in only if this whole file is one fixed session.
                                         <i class="fas fa-circle-info" style="cursor: help;"
                                            title="This is the output session label, not a source column. If Session Column above is set, this picks which session's rows to extract from it; otherwise every row in this file is labeled with this one session.&#10;&#10;If your file contains multiple sessions, each Convert run only imports the ONE session selected here — pick a session, convert, then repeat this step for each remaining session."></i>
                                     </div>

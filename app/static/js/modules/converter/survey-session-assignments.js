@@ -72,7 +72,7 @@ export function createSurveySessionAssignmentsController({ getConvertServerFileP
             if (hint.dataset.original === undefined) hint.dataset.original = hint.firstChild?.textContent || '';
             if (hint.firstChild) hint.firstChild.textContent = derived ? DERIVED_HINT : single ? SINGLE_HINT : hint.dataset.original;
         }
-        if (badge) badge.textContent = derived ? 'FROM DATES' : single ? SINGLE_BADGE : 'REQUIRED';
+        if (badge) badge.textContent = derived ? 'FROM DATES' : single ? SINGLE_BADGE : 'OPTIONAL';
         document.getElementById('sessionAssignmentsCard')?.classList.toggle('d-none', !derived);
     }
 

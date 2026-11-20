@@ -480,12 +480,12 @@ td.prism-diff-conflict,
     border-radius: 4px;
 }
 
-/* Session ID is red while no session is chosen (dropdown or custom box), green once one is. */
-#convertSessionGroup { --session-required: var(--bs-danger); }
-#convertSessionGroup:has(#convertSessionSelect:valid, #convertSessionCustom:not(:placeholder-shown)) { --session-required: var(--bs-success); }
+/* Force session: neutral while empty (the session comes from the data), green once one is forced. */
+#convertSessionGroup { --session-required: var(--bs-secondary); }
+#convertSessionGroup:has(#convertSessionSelect option:checked:not([value=""]), #convertSessionCustom:not(:placeholder-shown)) { --session-required: var(--bs-success); }
 #convertSessionGroup .session-required-label { color: var(--session-required); }
 #convertSessionGroup .session-required-badge { background-color: var(--session-required); }
-/* Dates mode: the Session ID box is not used, so it is neutral instead of red/green. */
+/* Dates mode: the Force session box is not used, so it stays neutral. */
 #convertSessionGroup.session-derived { --session-required: var(--bs-secondary); }
 #convertSessionGroup.session-derived:has(#convertSessionSelect:valid, #convertSessionCustom:not(:placeholder-shown)) { --session-required: var(--bs-secondary); }
 

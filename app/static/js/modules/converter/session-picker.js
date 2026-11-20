@@ -1,34 +1,20 @@
 import { fetchWithApiFallback } from '../../shared/api.js';
 
-const CUSTOM_INPUT_IDS_BY_SELECT_ID = {
-    convertSessionSelect: 'convertSessionCustom',
-    biometricsSessionSelect: 'biometricsSessionCustom',
-};
-
 export function getSessionInputValue(selectEl, customEl) {
     const selectedValue = selectEl ? selectEl.value.trim() : '';
     const customValue = customEl ? customEl.value.trim() : '';
     return selectedValue || customValue;
 }
 
+/** Only what the user already picked comes back: a lone existing session is no reason to preselect it. */
+export function sessionToRestore(previousValue, optionValues) {
+    return previousValue && optionValues.includes(previousValue) ? previousValue : '';
+}
+
 export function createConverterSessionPickerController({
     resolveCurrentProjectPath,
 }) {
     let sessionPickerRequestToken = 0;
-
-    function hasManualCustomValue(selectEl) {
-        if (!selectEl) {
-            return false;
-        }
-
-        const customInputId = CUSTOM_INPUT_IDS_BY_SELECT_ID[selectEl.id] || '';
-        if (!customInputId) {
-            return false;
-        }
-
-        const customInput = document.getElementById(customInputId);
-        return Boolean(customInput && String(customInput.value || '').trim());
-    }
 
     function populateSessionPickers(projectPath = resolveCurrentProjectPath()) {
         const convertSessionSelect = document.getElementById('convertSessionSelect');
@@ -86,20 +72,10 @@ export function createConverterSessionPickerController({
                         selectEl.appendChild(option);
                     });
 
-                    const previousValue = previousSelections.get(selectEl) || '';
-                    const restoredPrevious = previousValue
-                        && Array.from(selectEl.options).some((option) => option.value === previousValue);
-                    if (restoredPrevious) {
-                        selectEl.value = previousValue;
-                        return;
-                    }
-
-                    if (sessions.length === 1 && !hasManualCustomValue(selectEl)) {
-                        const onlySessionValue = String((sessions[0] && sessions[0].id) || '').replace(/^ses-/, '');
-                        if (onlySessionValue && Array.from(selectEl.options).some((option) => option.value === onlySessionValue)) {
-                            selectEl.value = onlySessionValue;
-                        }
-                    }
+                    selectEl.value = sessionToRestore(
+                        previousSelections.get(selectEl) || '',
+                        Array.from(selectEl.options).map((option) => option.value)
+                    );
                 });
             })
             .catch(() => {});
