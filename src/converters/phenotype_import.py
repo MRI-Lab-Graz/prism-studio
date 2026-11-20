@@ -24,8 +24,6 @@ import pandas as pd
 
 from src.modality_versions import current_survey_schema_version
 
-_TASK_NAME_SANITIZE_PATTERN = re.compile(r"[^A-Za-z0-9-]+")
-_TASK_NAME_COLLAPSE_HYPHENS = re.compile(r"-{2,}")
 
 _STRUCTURAL_COLUMNS = ("participant_id", "session_id")
 
@@ -55,21 +53,11 @@ class PhenotypeImportSummary:
 
 
 def sanitize_task_name_from_phenotype_filename(stem: str) -> str:
-    """Derive a PRISM-valid TaskName from a phenotype/<stem>.tsv filename.
+    """Derive a PRISM-valid TaskName (letters and digits only, as BIDS requires) from a phenotype/<stem>.tsv name."""
+    from src.utils.naming import sanitize_task_name
 
-    TaskName allows internal hyphens (pattern ``^[a-zA-Z0-9][-a-zA-Z0-9]*$``),
-    so this is deliberately less aggressive than the physio-converter's
-    ``_sanitize_bids_label`` (which strips all non-alphanumerics including
-    hyphens): underscores/whitespace become hyphens instead of vanishing,
-    keeping multi-word measurement tool names readable.
-    """
     name = stem.split("_desc-", 1)[0]
-    name = name.strip().lower().replace("_", "-")
-    name = re.sub(r"\s+", "-", name)
-    name = _TASK_NAME_SANITIZE_PATTERN.sub("", name)
-    name = _TASK_NAME_COLLAPSE_HYPHENS.sub("-", name)
-    name = name.strip("-")
-    return name or "phenotype"
+    return sanitize_task_name(name) if re.search(r"[A-Za-z0-9]", name) else "phenotype"
 
 
 def flag_non_item_columns(columns: list[str]) -> list[str]:

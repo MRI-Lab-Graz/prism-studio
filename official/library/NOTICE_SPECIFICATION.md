@@ -38,7 +38,7 @@ uns durch die Rechteinhaber/-innen zur weiteren Nachnutzung zur Verfügung geste
 `Study.License`, `Study.Source` and `Study.LicenseChecked`. Tests under NC or ND licences are held for a
 decision. The licence of each test is always read from that test's page, never assumed.
 
-* `survey-sbi-d.json`: German Savoring Beliefs Inventory (SBI-d), CC BY-SA 4.0, the first one. Open point:
+* `survey-sbid.json`: German Savoring Beliefs Inventory (SBI-d), CC BY-SA 4.0, the first one. Open point:
   the form (PDF) says 1 = stimme gar nicht zu, 7 = stimme voll zu, while the Testarchiv page text reads
   (1) stimme voll und ganz zu ... (7) stimme überhaupt nicht zu; the template gives only the two anchors of
   the form (`Study.Notes`), no scoring and no recipe until the scoring documentation has been read.

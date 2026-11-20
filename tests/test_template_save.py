@@ -236,3 +236,13 @@ def test_every_missing_entry_has_a_severity_from_the_one_vocabulary(tmp_path):
     template[item]["Description"]["fr"] = "?"  # undeclared language
     saved = _project_save(tmp_path, template)
     assert {m["severity"] for m in saved.missing} == {SEVERITY_ERROR, SEVERITY_WARNING}
+
+
+def test_a_task_name_with_a_hyphen_is_refused(tmp_path):
+    """A task label is letters and digits only (BIDS): no separator can be part of it."""
+    template = _demo(project_copy=True)
+    template["Study"]["TaskName"] = "gold-dsi"
+    with pytest.raises(TemplateInvalid) as error:
+        save_template("survey", "survey-golddsi.json", template, target="project", project_root=tmp_path, app_root=APP)
+    assert any("TaskName" in str(e) for e in error.value.errors)
+    assert not (tmp_path / "code").exists()

@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://prism.org/schemas/survey/v2.1.5",
-  "version": "2.1.5",
+  "$id": "https://prism.org/schemas/survey/v2.1.6",
+  "version": "2.1.6",
   "x-prism": {
     "projectOnlyRequired": {
       "Technical": ["Respondent", "AdministrationMethod", "SoftwarePlatform"]
@@ -86,9 +86,9 @@
       "properties": {
         "TaskName": {
           "type": "string",
-          "pattern": "^[a-zA-Z0-9][-a-zA-Z0-9]*$",
+          "pattern": "^[a-zA-Z0-9]+$",
           "minLength": 1,
-          "description": "Short task identifier matching filename (e.g., bdi, phq9, bfi-s)"
+          "description": "Short task identifier matching filename, letters and digits only (e.g., bdi, phq9, bfis); the readable name (BFI-S) goes in ShortName"
         },
         "OriginalName": {
           "type": ["string", "object"],

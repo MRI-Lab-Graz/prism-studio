@@ -1,0 +1,102 @@
+{
+  "RecipeVersion": "1.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "TSI-GER-4",
+    "Reference": "survey-tsiger4.json",
+    "TaskName": "tsiger4"
+  },
+  "Scores": [
+    {
+      "Name": "Intrapreneur",
+      "Description": "Intrapreneur thinking style: mean of its 26 items",
+      "Items": [
+        "TSIGER402",
+        "TSIGER403",
+        "TSIGER404",
+        "TSIGER405",
+        "TSIGER406",
+        "TSIGER407",
+        "TSIGER411",
+        "TSIGER418",
+        "TSIGER419",
+        "TSIGER421",
+        "TSIGER423",
+        "TSIGER425",
+        "TSIGER426",
+        "TSIGER428",
+        "TSIGER429",
+        "TSIGER430",
+        "TSIGER431",
+        "TSIGER432",
+        "TSIGER433",
+        "TSIGER435",
+        "TSIGER436",
+        "TSIGER439",
+        "TSIGER440",
+        "TSIGER442",
+        "TSIGER445",
+        "TSIGER446"
+      ],
+      "Method": "mean",
+      "Range": {
+        "min": 1,
+        "max": 7
+      },
+      "Note": "The archive documentation states that no item needs reverse-coding."
+    },
+    {
+      "Name": "Traditionalist",
+      "Description": "Traditionalist thinking style: mean of its 10 items",
+      "Items": [
+        "TSIGER401",
+        "TSIGER408",
+        "TSIGER409",
+        "TSIGER410",
+        "TSIGER412",
+        "TSIGER414",
+        "TSIGER415",
+        "TSIGER417",
+        "TSIGER424",
+        "TSIGER434"
+      ],
+      "Method": "mean",
+      "Range": {
+        "min": 1,
+        "max": 7
+      }
+    },
+    {
+      "Name": "Conformist",
+      "Description": "Conformist thinking style: mean of its 6 items",
+      "Items": [
+        "TSIGER422",
+        "TSIGER427",
+        "TSIGER438",
+        "TSIGER441",
+        "TSIGER443",
+        "TSIGER444"
+      ],
+      "Method": "mean",
+      "Range": {
+        "min": 1,
+        "max": 7
+      }
+    },
+    {
+      "Name": "Team_Player",
+      "Description": "Team Player thinking style: mean of its 4 items",
+      "Items": [
+        "TSIGER413",
+        "TSIGER416",
+        "TSIGER420",
+        "TSIGER437"
+      ],
+      "Method": "mean",
+      "Range": {
+        "min": 1,
+        "max": 7
+      }
+    }
+  ]
+}

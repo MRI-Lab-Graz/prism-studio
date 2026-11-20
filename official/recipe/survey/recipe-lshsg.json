@@ -1,0 +1,36 @@
+{
+  "RecipeVersion": "1.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "LSHS-G",
+    "Reference": "survey-lshsg.json",
+    "TaskName": "lshsg"
+  },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Sum of all 12 items",
+      "Items": [
+        "LSHSG01",
+        "LSHSG02",
+        "LSHSG03",
+        "LSHSG04",
+        "LSHSG05",
+        "LSHSG06",
+        "LSHSG07",
+        "LSHSG08",
+        "LSHSG09",
+        "LSHSG10",
+        "LSHSG11",
+        "LSHSG12"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 0,
+        "max": 48
+      },
+      "HigherMeans": "higher expression of the measured trait",
+      "Note": "The archive documentation names no reverse-coded items, so none are applied here."
+    }
+  ]
+}

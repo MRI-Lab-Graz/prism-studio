@@ -1,0 +1,42 @@
+{
+  "RecipeVersion": "1.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "ICG-D",
+    "Reference": "survey-icgd.json",
+    "TaskName": "icgd"
+  },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Sum of all 19 items",
+      "Items": [
+        "ICGD01",
+        "ICGD02",
+        "ICGD03",
+        "ICGD04",
+        "ICGD05",
+        "ICGD06",
+        "ICGD07",
+        "ICGD08",
+        "ICGD09",
+        "ICGD10",
+        "ICGD11",
+        "ICGD12",
+        "ICGD13",
+        "ICGD14",
+        "ICGD15",
+        "ICGD16",
+        "ICGD17",
+        "ICGD18",
+        "ICGD19"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 0,
+        "max": 76
+      },
+      "Note": "The archive documentation names no reverse-coded items, so none are applied here."
+    }
+  ]
+}
