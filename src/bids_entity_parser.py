@@ -6,7 +6,7 @@ from pathlib import Path
 
 class BidsEntityParser:
     ENTITY_TOKEN_PATTERN = re.compile(
-        r"^(?P<key>[A-Za-z0-9]+)-(?P<value>[A-Za-z0-9]+)$"
+        r"^(?P<key>[A-Za-z0-9]+)-(?P<value>[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*)$"  # PRISM labels may hold hyphens (task-gold-dsi)
     )
     LABEL_PATTERN = re.compile(r"^[A-Za-z0-9]+$")
     SUBJECT_DIR_PATTERN = re.compile(r"^sub-[A-Za-z0-9]+$")
@@ -29,6 +29,11 @@ class BidsEntityParser:
     @classmethod
     def is_valid_label(cls, value: str | None) -> bool:
         return cls.LABEL_PATTERN.fullmatch(str(value or "").strip()) is not None
+
+    @classmethod
+    def is_existing_value(cls, value: str | None) -> bool:
+        """A value as found in a file name: letters and digits, hyphens between them (gold-dsi)."""
+        return re.fullmatch(r"[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*", str(value or "").strip()) is not None
 
     @classmethod
     def is_subject_dir(cls, value: str | None) -> bool:

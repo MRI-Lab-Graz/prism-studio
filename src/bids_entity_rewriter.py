@@ -31,7 +31,7 @@ _TEXT_SUFFIXES = {
 _TEXT_FILENAMES = {".bidsignore"}
 _DOUBLE_SUFFIXES = (".nii.gz", ".tsv.gz")
 _NON_EDITABLE_ENTITIES = {"sub"}
-_TASK_LABEL = re.compile(r"(?:^|_)task-([A-Za-z0-9]+)(?=_|\.|$)")
+_TASK_LABEL = re.compile(r"(?:^|_)task-([A-Za-z0-9]+(?:-[A-Za-z0-9]+)*)(?=_|\.|$)")
 # Sourced from app/schemas/stable/entities.schema.json (see src/entity_rules.py)
 # rather than hardcoded here, so adding/reordering an entity only requires a
 # rules-file edit.
@@ -395,9 +395,9 @@ class BidsEntityRewriter:
         normalized = str(current_value or "").strip()
         if not normalized:
             return None
-        if not BidsEntityParser.is_valid_label(normalized):
+        if not BidsEntityParser.is_existing_value(normalized):
             raise ValueError(
-                "Current value must contain only letters and numbers."
+                "Current value must contain only letters and numbers (hyphens between them are allowed)."
             )
         return normalized
 

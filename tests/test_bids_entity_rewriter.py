@@ -421,3 +421,24 @@ def test_task_still_cannot_be_removed_from_survey_files(tmp_path):
     rewriter = BidsEntityRewriter(tmp_path / "project")
     with pytest.raises(ValueError, match="cannot be removed"):
         rewriter.apply(modality="survey", entity="_task", operation="delete")
+
+
+def test_entity_values_list_hyphenated_survey_tasks(tmp_path):
+    survey_dir = tmp_path / "project" / "sub-001" / "ses-2" / "survey"
+    for task in ("ads", "gold-dsi", "maia-2", "pss-10"):
+        _touch_file(survey_dir / f"sub-001_ses-2_task-{task}_survey.tsv")
+
+    values = BidsEntityRewriter(tmp_path / "project").list_entity_values("survey")
+
+    assert values["_task"] == ["ads", "gold-dsi", "maia-2", "pss-10"]
+
+
+def test_a_hyphenated_task_can_be_renamed_to_a_plain_label(tmp_path):
+    survey_dir = tmp_path / "project" / "sub-001" / "ses-2" / "survey"
+    _touch_file(survey_dir / "sub-001_ses-2_task-gold-dsi_survey.tsv")
+
+    plan = BidsEntityRewriter(tmp_path / "project").preview(
+        "survey", "task", "rename", current_value="gold-dsi", replacement="golddsi"
+    )
+
+    assert any("task-golddsi" in str(value) for value in plan.values())
