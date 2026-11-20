@@ -24,6 +24,11 @@ def find_recent_project(projects: list[dict], query: str) -> dict | None:
     )
 
 
+def last_recent_name(projects: list[dict]) -> str | None:
+    """Name of the project worked on last (`prism-studio -lp`): the list is most recent first."""
+    return str(projects[0].get("name") or "") or None if projects else None
+
+
 def recent_project_notice(projects: list[dict], query: str) -> str:
     """The line the launcher prints: which project opens, or why none does and what the list holds."""
     project = find_recent_project(projects, query)
