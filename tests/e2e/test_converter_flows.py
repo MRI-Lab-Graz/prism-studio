@@ -116,16 +116,16 @@ def test_previewing_with_only_the_official_template_names_what_is_missing_and_le
 
 
 def _session_label_is_green(page):
-    """The Session ID label is green once a session is chosen, red while it is still missing."""
+    """The Force session label is green once a session is forced, neutral (never red) while it is empty."""
     r, g, _ = page.evaluate(
         "() => getComputedStyle(document.querySelector('#convertSessionGroup label'))"
         ".color.match(/\\d+/g).map(Number)"
     )
-    return g > r
+    return g - r > 50  # neutral grey is (108,117,125); success green is (25,135,84)
 
 
 @pytest.mark.usefixtures("longitudinal")
-def test_session_id_label_turns_green_once_a_session_is_chosen(app_page, studio_url):
+def test_force_session_label_turns_green_once_a_session_is_forced(app_page, studio_url):
     open_survey_tab(app_page, studio_url)
     assert not _session_label_is_green(app_page)
 
@@ -186,7 +186,7 @@ def test_dates_mode_disables_the_session_id_box_and_explains_why(app_page, studi
 
     app_page.select_option("#convertDuplicateHandling", "error")
     expect(app_page.locator("#convertSessionCustom")).to_be_enabled()
-    expect(app_page.locator("#convertSessionBadge")).to_have_text("REQUIRED")
+    expect(app_page.locator("#convertSessionBadge")).to_have_text("OPTIONAL")
     expect(app_page.locator("#convertSessionCustom")).to_have_value("")
 
 
