@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.26.1] - 2026-11-20
+
+### Fixed
+- **The packaged desktop app no longer crashes on the Converter page.** The biosample template read its schema from an `app/schemas` folder next to its source, which a packaged app does not have; it uses the folder Studio loads its schemas from. (1.26.0 was published to PyPI only; its desktop builds failed this smoke test.)
+
 ## [1.26.0] - 2026-11-20
 
 ### Changed
