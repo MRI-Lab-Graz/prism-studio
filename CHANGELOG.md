@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.26.2] - 2026-11-20
+
+### Fixed
+- **The packaged desktop app starts again.** The biosample template and import read their schema from an `app/schemas` folder next to the source, which a packaged app does not have, so the Converter page crashed in the 1.26.0 and 1.26.1 desktop builds (no desktop release was published for either). Both read it from the folder Studio loads its schemas from. The `prism-validator` wheels were not affected.
+
 ## [1.26.1] - 2026-11-20
 
 ### Fixed
