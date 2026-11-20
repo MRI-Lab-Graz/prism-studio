@@ -7,9 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.26.0] - 2026-11-19
+## [1.26.0] - 2026-11-20
+
+### Changed
+- **A task label is letters and digits only (BIDS), so no hyphen.** Synced from prism-specification v1.5.24 (survey schema 2.1.6): `Study.TaskName` and the survey `task` entity refuse a hyphen, and a template with one is refused on save. The 29 hyphenated library tasks are renamed (`ecr-g-10` is now `ecrg10`, `bfi-s` is `bfis`), and so are their IDs (`prism:ecrg10.ecrg1001`); the readable name stays in `ShortName`. The phenotype importer derives letters-and-digits task names. Existing projects: `dataset rewrite-entities --modality survey --entity task --current-value gold-dsi --replacement golddsi` renames the data files.
+- **Survey converter: "Force session" (optional) replaces the required "Session ID".** The session normally comes from the file's session column or from the dates; fill the box only if the whole file is one fixed session. The picker no longer preselects the only existing session.
 
 ### Fixed
+- **Surveys with a hyphen in the task name were missing from the validator's survey list, the filename-parts rename list and the task readers** (`gold-dsi`, `maia-2`, `pss-10`); they are listed and can be renamed now.
+- The footer shows the Zenodo DOI.
 - **A project's link folder is never followed outside the project.** `terms check-links --project` refuses a symbolic `code/specification`, and writing local links rejects an ID that is not a valid local ID.
 - Dialogs of the converter, template editor and survey customizer carry `role="dialog"`, and the conversion log `role="log"` (HTML validity).
 
