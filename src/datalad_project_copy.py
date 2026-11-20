@@ -19,6 +19,19 @@ from src.datalad_mutation_policy import run_tracked_mutation
 _SUBJECT_PART_PATTERN = re.compile(r"^sub-[A-Za-z0-9]+$")
 
 
+# Raw vendor formats are not PRISM data; a subject folder (sub-*/) must not receive them.
+_RAW_ONLY_SUFFIXES = (".vpd", ".raw")
+
+
+def _refuse_raw_in_subject_folder(rel_path: str) -> None:
+    parts = Path(rel_path).parts
+    if parts and _SUBJECT_PART_PATTERN.fullmatch(parts[0]) and rel_path.lower().endswith(_RAW_ONLY_SUFFIXES):
+        raise ValueError(
+            f"{Path(rel_path).name} is a raw recording, not PRISM data: copy it to sourcedata/ or rawdata/ "
+            "and convert it (Physio converter) to get valid files in the subject folder."
+        )
+
+
 def _relative_to_root(path: Path, root: Path) -> str:
     try:
         return path.resolve().relative_to(root.resolve()).as_posix()
@@ -69,6 +82,7 @@ def copy_files_into_project(
         if not src_path.exists() or not src_path.is_file():
             raise ValueError(f"Source file does not exist: {src_path}")
         rel_path = _relative_to_root(dst_path, root)
+        _refuse_raw_in_subject_folder(rel_path)
         pairs.append((src_path, dst_path, rel_path))
 
     if not pairs:

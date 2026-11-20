@@ -585,6 +585,32 @@ def _physio_report_name(converted: ConvertedFile) -> str:
     return "_".join(p for p in parts if p) + "_physio_report.html"
 
 
+def _physio_report_dir(output_folder: Path, converted) -> Path:
+    """The folder of one recording's report; the derivative it belongs to gets its own dataset_description.json."""
+    derivative = output_folder / "derivatives" / "physio"
+    derivative.mkdir(parents=True, exist_ok=True)
+    description = derivative / "dataset_description.json"
+    if not description.exists():
+        description.write_text(
+            json.dumps(
+                {
+                    "Name": "PRISM physio reports",
+                    "BIDSVersion": "1.9.0",
+                    "DatasetType": "derivative",
+                    "GeneratedBy": [{"Name": "PRISM Studio"}],
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+    report_dir = derivative / converted.subject
+    if converted.session:
+        report_dir = report_dir / converted.session
+    report_dir.mkdir(parents=True, exist_ok=True)
+    return report_dir
+
+
 def _generate_physio_html_report(
     *,
     converted: ConvertedFile,
@@ -599,10 +625,7 @@ def _generate_physio_html_report(
     try:
         import pyedflib
     except Exception:
-        report_dir = output_folder / "derivatives" / "physio" / converted.subject
-        if converted.session:
-            report_dir = report_dir / converted.session
-        report_dir.mkdir(parents=True, exist_ok=True)
+        report_dir = _physio_report_dir(output_folder, converted)
         report_path = report_dir / _physio_report_name(converted)
         report_path.write_text(
             "<html><body><h1>Physio report unavailable</h1><p>pyedflib is required to generate reports.</p></body></html>",
@@ -812,10 +835,7 @@ def _generate_physio_html_report(
         else None
     )
 
-    report_dir = output_folder / "derivatives" / "physio" / converted.subject
-    if converted.session:
-        report_dir = report_dir / converted.session
-    report_dir.mkdir(parents=True, exist_ok=True)
+    report_dir = _physio_report_dir(output_folder, converted)
 
     report_path = report_dir / _physio_report_name(converted)
     task = converted.task or ""
