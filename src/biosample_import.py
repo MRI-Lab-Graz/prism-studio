@@ -10,7 +10,7 @@ import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from src.biosample_template import _SCHEMA
+from src.biosample_template import load_biosample_schema
 from src.biosample_template_reader import _fmt, read_template
 from src.participant_ids import normalize_participant_id
 from src.session_map import SessionMapError, resolve_import_session
@@ -122,7 +122,7 @@ def import_biosample(input_path: Path, project: Path, specimen: str | None = Non
         res.errors = problems
         return res
 
-    schema = json.loads(_SCHEMA.read_text(encoding="utf-8"))
+    schema = load_biosample_schema()
     schema_tech = schema["properties"]["Technical"]["properties"]
     registry = load_registry("biosample")
     known = load_existing_participant_ids(project)

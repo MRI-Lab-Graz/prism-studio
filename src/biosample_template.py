@@ -17,10 +17,14 @@ PANEL_COLUMNS = ("panel", "SpecimenType", "CollectionMethod", "Anticoagulant",
 _ROWS = 1000  # pull-downs and text-format id cells cover this many rows
 
 
-def _technical() -> dict:
-    """The biosample schema's Technical properties, from the folder Studio loads its schemas from (also when packaged)."""
+def load_biosample_schema() -> dict:
+    """The biosample schema, from the folder Studio loads its schemas from (also when packaged)."""
     schema = Path(DEFAULT_SCHEMA_DIR) / "stable" / "biosample.schema.json"
-    return json.loads(schema.read_text(encoding="utf-8"))["properties"]["Technical"]["properties"]
+    return json.loads(schema.read_text(encoding="utf-8"))
+
+
+def _technical() -> dict:
+    return load_biosample_schema()["properties"]["Technical"]["properties"]
 
 
 def specimen_types() -> list[str]:
