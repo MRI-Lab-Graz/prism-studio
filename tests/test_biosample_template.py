@@ -41,3 +41,17 @@ def test_id_columns_are_text_so_01_stays_01(tmp_path):
         assert ws.cell(row=2, column=col).number_format == "@", name
         assert ws.cell(row=1000, column=col).number_format == "@", name
     assert ws.cell(row=2, column=DATA_COLUMNS.index("value") + 1).number_format != "@"
+
+
+def test_the_schema_is_read_from_the_schema_folder_not_from_a_path_next_to_the_source(tmp_path, monkeypatch):
+    """A packaged app keeps its schemas elsewhere (backend_bundle/ has no app/ folder): the folder Studio uses decides."""
+    from src import biosample_template
+
+    stable = tmp_path / "stable"
+    stable.mkdir()
+    (stable / "biosample.schema.json").write_text(
+        '{"properties": {"Technical": {"properties": {"SpecimenType": {"enum": ["", "plasma"]}}}}}', encoding="utf-8"
+    )
+    monkeypatch.setattr(biosample_template, "DEFAULT_SCHEMA_DIR", str(tmp_path))
+
+    assert biosample_template.specimen_types() == ["plasma"]
