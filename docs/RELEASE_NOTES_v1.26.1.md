@@ -6,7 +6,7 @@ orphan: true
 
 ## Highlights
 
-- **The packaged app starts again.** The Converter page of the 1.26.0 desktop builds crashed because the biosample template looked for its schema in a folder the packaged app does not have; it now reads it from the folder Studio loads its schemas from. The `prism-validator` wheel of 1.26.0 was not affected.
+- **The packaged app starts again.** The Converter page of the 1.26.0 desktop builds crashed because the biosample template and import looked for their schema in a folder the packaged app does not have; they now read it from the folder Studio loads its schemas from. The `prism-validator` wheel of 1.26.0 was not affected.
 
 See `CHANGELOG.md` for the full list of changes.
 
