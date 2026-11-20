@@ -118,6 +118,13 @@ def check_save(project_root) -> SaveCheck:
     if not ok:
         return SaveCheck(False, [f"Cannot determine repository state: {sup_out}"], "git_error")
     sup = Path(sup_out) if sup_out else None
+    if sup is None and root.name.startswith("sub-"):
+        # A subject rewrite moves the submodule before the superproject registers the new path:
+        # git then reports no superproject, but the parent folder is still the dataset.
+        parent = root.parent
+        ok, top = _git_ok(parent, "rev-parse", "--show-toplevel")
+        if ok and Path(top).resolve() == parent.resolve() and (parent / "dataset_description.json").is_file():
+            sup = parent
     nested_subject = sup is not None and root.name.startswith("sub-")
     # Only the first save of a top-level dataset is exempt (an empty scaffold cannot validate);
     # a nested sub-* dataset's first data save is exactly what must be checked.

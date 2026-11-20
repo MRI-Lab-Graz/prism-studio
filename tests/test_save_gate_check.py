@@ -158,3 +158,17 @@ def test_an_acknowledged_save_gets_through_when_the_validator_cannot_run(tmp_pat
     result = sg.check_save(repo(tmp_path / "p", commits=2))
     assert result.allowed and result.reason == "acknowledged"
     assert "kaput" in result.errors[0]
+
+
+def test_renamed_subject_dataset_not_yet_registered_is_still_nested(tmp_path, calls):
+    # A subject rewrite moves the submodule (sub-134001 -> sub-001) before the superproject
+    # knows the new path: git reports no superproject, but the parent is the dataset.
+    sup = repo(tmp_path / "proj", commits=1)
+    (sup / "dataset_description.json").write_text("{}")
+    sub = repo(sup / "sub-001", commits=1)
+    calls["subject_result"] = ["PRISM201 empty dir"]
+    result = sg.check_save(sub)
+    assert not result.allowed and result.errors == ["PRISM201 empty dir"]
+    assert calls["full"] == 0
+    [(got_root, got_sid)] = calls["subject"]
+    assert Path(got_root).resolve() == sup.resolve() and got_sid == "sub-001"
