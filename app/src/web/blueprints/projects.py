@@ -334,40 +334,13 @@ def share_page():
 def datalad_page():
     """Render the DataLad page: the one next step for the current project (from GET /api/projects/datalad/state),
     everything else under "More". Opens without a project ("Open from server...")."""
-    from src.datalad_get_data import filters_from_options
-
-    # Get data's scope starts at the CLI's defaults (`prism_tools datalad get-data` without options).
-    return render_template(
-        "datalad.html", current_project=get_current_project(), scope_defaults=filters_from_options({})
-    )
+    return render_template("datalad.html", current_project=get_current_project())
 
 
 @projects_bp.route("/api/projects/current", methods=["GET"])
 def get_current():
     """Get the current working project."""
     return jsonify(get_current_project())
-
-
-@projects_bp.route("/api/projects/datalad/status-deep", methods=["GET"])
-def get_datalad_status_deep():
-    """Run the full DataLad status scan for the current project.
-
-    Includes the per-subdataset ``git annex find`` scan for already-annexed
-    text files, which `get_current_project` skips for speed. Intended to be
-    called lazily by the frontend after the initial (fast) project load has
-    rendered, so loading a project with many nested subdatasets stays quick.
-    """
-    project_path = session.get("current_project_path")
-    if not project_path:
-        return jsonify({"success": False, "error": "No current project loaded."}), 400
-
-    datalad_status = _project_manager.get_datalad_status(project_path, fast=False)
-    datalad_status = datalad_status if isinstance(datalad_status, dict) else {}
-    datalad_status = {
-        **datalad_status,
-        **_get_datalad_setup_preferences(project_path),
-    }
-    return jsonify({"success": True, "datalad": datalad_status})
 
 
 @projects_bp.route("/api/projects/summary", methods=["GET"])
@@ -418,21 +391,6 @@ def save_datalad_snapshot():
     result = _project_manager.save_datalad_snapshot(
         project_path, message=message, allow_invalid=bool(data.get("allow_invalid"))
     )
-    result["current_project"] = get_current_project()
-    if result.get("success"):
-        return jsonify(result)
-    return jsonify(result), 400
-
-
-@projects_bp.route("/api/projects/datalad/update", methods=["POST"])
-def update_datalad_from_server():
-    """Get the latest saved changes from the server for the current project."""
-    project_path = str(get_current_project().get("path") or "").strip()
-    if not project_path:
-        return jsonify({"success": False, "error": "No current project loaded."}), 400
-
-    data = request.get_json(silent=True) or {}
-    result = _project_manager.update_datalad_from_server(project_path, sibling_name=data.get("sibling_name"))
     result["current_project"] = get_current_project()
     if result.get("success"):
         return jsonify(result)

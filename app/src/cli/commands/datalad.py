@@ -27,81 +27,6 @@ def _manager():
     return ProjectManager()
 
 
-def cmd_datalad_sync(args) -> None:
-    """Get the latest from the server, then publish: only a saved, valid dataset is sent (Studio's "Sync now")."""
-    from src.share_publish import parse_identity, sync_with_server
-
-    try:
-        identity = parse_identity(args.as_identity) if getattr(args, "as_identity", None) else None
-    except ValueError as exc:
-        print(f"Error: {exc}")
-        sys.exit(2)
-    result = sync_with_server(
-        args.project,
-        sibling_name=args.sibling_name,
-        identity=identity,
-        line_callback=None if args.json else print,
-        allow_invalid=bool(getattr(args, "allow_invalid", False)),
-    )
-    _print_push_result(args, result)
-
-
-def cmd_datalad_put_on_server(args) -> None:
-    """Create the project's dataset on the lab server, then send it if it validates (Studio's "Put on server")."""
-    from src.share_publish import parse_identity, put_on_server
-
-    try:
-        identity = parse_identity(args.as_identity) if getattr(args, "as_identity", None) else None
-    except ValueError as exc:
-        print(f"Error: {exc}")
-        sys.exit(2)
-    result = put_on_server(
-        args.project,
-        args.location,
-        sibling_name=args.sibling_name,
-        identity=identity,
-        line_callback=None if args.json else print,
-        allow_invalid=bool(getattr(args, "allow_invalid", False)),
-    )
-    _print_push_result(args, result)
-
-
-def cmd_datalad_open_from_server(args) -> None:
-    """Get your own copy of a project from the lab server into an empty or new folder (Studio's "Open from server")."""
-    from src.datalad_clone import open_from_server, target_problem
-
-    problem = target_problem(args.target)  # the check Studio's route makes before it starts a job
-    if problem:
-        _print_result(args, {"success": False, "reason": "bad_target", "path": str(args.target), "message": problem})
-    result = open_from_server(args.location, args.target, line_callback=None if args.json else print)
-    _print_result(args, result)
-
-
-def cmd_datalad_get_data(args) -> None:
-    """Fetch the data of your copy from the server, with the export's filters (Studio's "Get data")."""
-    from src.datalad_get_data import filters_from_options, get_data
-    from src.cli.services.export_args import export_data_from_args
-
-    result = get_data(
-        args.project,
-        sibling_name=getattr(args, "sibling_name", None),
-        line_callback=None if args.json else print,
-        **filters_from_options(export_data_from_args(args)),
-    )
-    _print_result(args, result)
-
-
-def _print_push_result(args, result: dict) -> None:
-    if args.json:
-        print(json.dumps(result, indent=2, ensure_ascii=False, default=str))
-    else:
-        print(result.get("message", ""))
-        for line in result.get("errors", [])[:20]:
-            print(f"  - {line}")
-    if not result["success"]:
-        sys.exit(1)
-
-
 def _print_result(args, result: dict) -> None:
     if getattr(args, "json", False):
         print(json.dumps(result, indent=2, ensure_ascii=False, default=str))
@@ -163,11 +88,6 @@ def cmd_datalad_status(args) -> None:
         print(f"Server found as '{name}'. Use --sibling-name {name}.")
     if "valid" in state:
         print("Valid." if state["valid"] else f"{state['error_count']} validation error(s).")
-
-
-def cmd_datalad_update(args) -> None:
-    """Get the latest saved changes from the server (Studio's "Get latest", and what it runs when a project opens)."""
-    _print_result(args, _manager().update_datalad_from_server(args.project, sibling_name=args.sibling_name))
 
 
 def cmd_datalad_identity(args) -> None:

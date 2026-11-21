@@ -922,46 +922,6 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
 
         self.assertEqual(calls, [True])
 
-    def test_projects_datalad_status_deep_route_requests_full_scan(self):
-        projects_module = importlib.import_module("src.web.blueprints.projects")
-
-        with self.app.test_request_context("/api/projects/datalad/status-deep"):
-            session["current_project_path"] = str(self.project_root)
-            session["current_project_name"] = "demo_project"
-            original_manager = projects_module._project_manager
-            calls = []
-
-            class _DataladManager:
-                def get_datalad_status(self, path, *, fast: bool = False):
-                    calls.append(fast)
-                    return {
-                        "enabled": True,
-                        "available": True,
-                        "can_save": True,
-                        "annexed_text_files_count": 0,
-                        "path": str(path),
-                    }
-
-            try:
-                projects_module._project_manager = _DataladManager()
-                response = projects_module.get_datalad_status_deep()
-            finally:
-                projects_module._project_manager = original_manager
-
-        body = response.get_json()
-        self.assertTrue(body["success"])
-        self.assertTrue(body["datalad"]["enabled"])
-        self.assertEqual(calls, [False])
-
-    def test_projects_datalad_status_deep_route_requires_current_project(self):
-        projects_module = importlib.import_module("src.web.blueprints.projects")
-
-        with self.app.test_request_context("/api/projects/datalad/status-deep"):
-            response, status_code = projects_module.get_datalad_status_deep()
-
-        self.assertEqual(status_code, 400)
-        body = response.get_json()
-        self.assertFalse(body["success"])
 
     def test_projects_save_datalad_snapshot_route_returns_current_project(self):
         projects_module = importlib.import_module("src.web.blueprints.projects")
