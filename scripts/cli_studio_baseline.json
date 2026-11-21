@@ -99,7 +99,6 @@
  "src.runtime_dependencies:inspect_pandas_support": "to review",
  "src.runtime_dependencies:inspect_pyreadstat_write_support": "to review",
  "src.session_map:unmapped_session_labels": "to review",
- "src.share_publish:can_publish": "to review",
  "src.spec_overlay:find_unknown_metrics": "to review",
  "src.spec_overlay:find_unknown_values": "to review",
  "src.spec_overlay:list_all_local_items": "to review",

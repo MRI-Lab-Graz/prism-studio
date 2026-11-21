@@ -184,3 +184,18 @@ plan file before starting PR 2.
 
 `/ponytail:ponytail-audit` and `/code-review` once on the branch, then `superpowers:finishing-a-development-branch`.
 Merge only after the Worldline release from PR 1 is out.
+
+---
+
+## Execution record (2026-11-21)
+
+PR 2 done on branch `refactor/datalad-to-worldline` (worktree `../prism-studio-worldline`), tasks 2-5 executed natively.
+
+Rulings:
+- `datalad status` (CLI) stays, with `src/datalad_state.py`: Studio's kept `/api/projects/datalad/state` (navbar count, page) runs it, and a route may not outlive its command. Cost if wrong: one extra command to delete later.
+- `share_publish.py` keeps `_hooks_dir`, `HookExistsError`, `NotAGitRepoError`, `_audit`, `_describe`, `_core_validation`, `validate_for_publish`, `has_sibling`, the identity helpers: `save_gate.py`, `datalad_state.py` and `project_manager.py` use them. Only the push, publish and pre-push-hook functions went.
+- The DataLad page keeps **Save** when the project has no server yet (`next_step == put_on_server`), otherwise a project without a server could not be saved from Studio.
+- The validator results page lost its Publish button and the `publish_capable`/`publishable` flags.
+- `project_manager.update_datalad_from_server` and the `run_datalad_*` push/clone/update helpers were deleted (no caller left).
+
+Checks: `vitest` 475/475; unit subset (`-k datalad|share|save_gate|...`) green except failures that also fail on `main` (`test_cli_studio_guard` `last_recent_name`, `test_converter_workflow_wiring`, `test_importers_use_session_policy`, 15 `test_save_gate_battery` errors); e2e `test_projects_datalad_flows` + `test_share_flows` 10/10. Not run: the full suite (nightly job).
