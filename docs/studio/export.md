@@ -82,15 +82,14 @@ Accordion section on the same page: copy the project to an SSH server or a local
 backup. Each sync is additive: local files are kept, and files already copied are not deleted from the
 destination. `sourcedata/` is part of the copy, so use the internal lab server only, never a public host.
 
-Snapshots shared with your team through the lab's DataLad server (Sync now, Put on server, Open from server,
-Get data, Check this computer) are on the [DataLad page](datalad.md).
+Snapshots are on the [DataLad page](datalad.md); sending them to the lab's DataLad server is done in
+[Worldline Desktop](https://worldline-desktop.readthedocs.io/).
 
 ## CLI equivalents
 
 ```bash
 python prism_tools.py anonymize --dataset /path/to/project --output /path/to/out --random --mask-questions
 python prism_tools.py template-export --project /path/to/project --output /path/to/out.zip
-python prism_tools.py publish --project /path/to/share/my-project --as "Name <mail@example.org>"
 python prism_tools.py recipes surveys --prism /path/to/project --format flat
 ```
 
