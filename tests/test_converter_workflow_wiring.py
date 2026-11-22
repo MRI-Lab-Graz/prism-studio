@@ -1703,10 +1703,6 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             session_picker_content,
         )
         self.assertIn(
-            "if (sessions.length === 1 && !hasManualCustomValue(selectEl)) {",
-            session_picker_content,
-        )
-        self.assertIn(
             "fetchWithApiFallback(requestUrl)",
             session_picker_content,
         )

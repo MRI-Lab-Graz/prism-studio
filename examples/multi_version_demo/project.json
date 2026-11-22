@@ -14,7 +14,7 @@
     "Timepoints": "multiple"
   },
   "survey_version_mapping": {
-    "demo-multi": {
+    "demomulti": {
       "default_version": "10-likert",
       "by_session": {},
       "by_run": {},
@@ -30,7 +30,7 @@
       "label": "ses-07",
       "tasks": [
         {
-          "task": "demo-multi",
+          "task": "demomulti",
           "source": {
             "file": "scenario1_single_version.tsv",
             "converter": "survey-xlsx",
@@ -41,7 +41,7 @@
     }
   ],
   "TaskDefinitions": {
-    "demo-multi": {
+    "demomulti": {
       "modality": "survey"
     }
   },
