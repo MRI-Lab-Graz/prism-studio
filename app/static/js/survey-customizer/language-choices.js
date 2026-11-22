@@ -34,9 +34,13 @@ export function resolveLanguages(groups, { base_language: wantedBase, languages:
 }
 
 // "German (DE)" for any language code the browser knows, the bare code otherwise.
+// One instance: building it loads ICU data, slow on a cold Windows runner (24s once in CI).
+let displayNames;
+
 export function languageLabel(code) {
     try {
-        const name = new Intl.DisplayNames(['en'], { type: 'language' }).of(code);
+        displayNames ??= new Intl.DisplayNames(['en'], { type: 'language' });
+        const name = displayNames.of(code);
         return name && name.toLowerCase() !== code.toLowerCase() ? `${name} (${code.toUpperCase()})` : code.toUpperCase();
     } catch (_error) {
         return code.toUpperCase();

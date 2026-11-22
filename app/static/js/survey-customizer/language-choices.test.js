@@ -80,7 +80,7 @@ describe('languageLabel', () => {
         expect(languageLabel('de')).toMatch(/German/);
         expect(languageLabel('es')).toMatch(/Spanish/);
         expect(languageLabel('es')).toMatch(/ES/);
-    });
+    }, 60000); // first Intl.DisplayNames call loads ICU data; slow on cold Windows runners
 
     it('falls back to the code for something that is not a language', () => {
         expect(languageLabel('zz-invalid-code!')).toBe('ZZ-INVALID-CODE!');
