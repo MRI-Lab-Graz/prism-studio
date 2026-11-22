@@ -2108,8 +2108,6 @@ class ProjectManager:
         result["error"] = save_result.get("message") or "DataLad save failed."
         return result
 
-
-
     def export_project_to_plain_folder(
         self,
         path: Union[str, Path],
@@ -5523,28 +5521,6 @@ git push -u origin main
 
         result["message"] = f"DataLad save failed: {detail or 'Unknown DataLad error.'}"
         return result
-
-    @classmethod
-    def _server_has_something_for(cls, dataset: Path, sibling: str) -> bool:
-        """False when `dataset` has no copy on the server yet, or an empty one; True when unsure (fail safe)."""
-        from src.share_publish import has_sibling
-
-        return has_sibling(dataset, sibling) and cls._server_has_saved_branch(dataset, sibling)
-
-    @staticmethod
-    def _server_has_saved_branch(project_path: Path, sibling: str) -> bool:
-        """Does the server itself have a branch besides git-annex? True when it cannot be asked (fail safe)."""
-        env = {**os.environ, "GIT_TERMINAL_PROMPT": "0", "GIT_SSH_COMMAND": os.environ.get("GIT_SSH_COMMAND", "ssh -o BatchMode=yes")}
-        try:
-            process = subprocess.run(
-                ["git", "ls-remote", "--heads", sibling],
-                cwd=str(project_path), capture_output=True, text=True, check=False, timeout=30, env=env,
-            )
-        except (subprocess.TimeoutExpired, OSError):
-            return True
-        if process.returncode != 0:
-            return True
-        return any(not line.endswith("refs/heads/git-annex") for line in process.stdout.splitlines() if line.strip())
 
     @staticmethod
     def _git_head(project_path: Path) -> Optional[str]:
