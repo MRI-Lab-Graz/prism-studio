@@ -75,3 +75,11 @@ def test_nothing_in_the_frontend_calls_a_deleted_route():
             if hits:
                 found[str(path.relative_to(ROOT))] = hits
     assert not found, found
+
+
+def test_the_datalad_page_renders_in_process_and_links_to_worldline(rules):
+    # In-process (the wiring test renders in a subprocess, which coverage does not see).
+    module = sys.modules["prism_studio_routes"]
+    response = module.app.test_client().get("/projects/datalad")
+    assert response.status_code == 200
+    assert b"use Worldline Desktop" in response.data
