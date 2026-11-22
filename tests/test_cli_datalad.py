@@ -40,7 +40,7 @@ def test_doctor_has_no_project_option():
         parser.parse_args(["datalad", "doctor", "--project", "/p"])
 
 
-# --- sync ------------------------------------------------------------------
+# --- helpers ---------------------------------------------------------------
 
 from src.cli.parser import build_prism_tools_parsers  # noqa: E402
 
@@ -48,54 +48,6 @@ from src.cli.parser import build_prism_tools_parsers  # noqa: E402
 def _args(**kw):
     base = dict(project="/p", sibling_name=None, as_identity=None, json=False)
     return SimpleNamespace(**{**base, **kw})
-
-
-def _fake_sync(monkeypatch, result):
-    calls = []
-
-    def fake(project, **kw):
-        calls.append((str(project), kw))
-        return result
-
-    monkeypatch.setattr("src.share_publish.sync_with_server", fake)
-    return calls
-
-
-def test_sync_runs_the_one_backend_function_and_prints_its_message(monkeypatch, capsys):
-    calls = _fake_sync(monkeypatch, {"success": True, "message": "Published to the server.", "errors": []})
-    cli.cmd_datalad_sync(_args(sibling_name="lab", as_identity="Ada <ada@example.org>"))
-    project, kw = calls[0]
-    assert project == "/p" and kw["sibling_name"] == "lab" and kw["identity"].email == "ada@example.org"
-    assert "Published to the server." in capsys.readouterr().out
-
-
-def test_sync_failure_lists_the_errors_and_exits_1(monkeypatch, capsys):
-    _fake_sync(monkeypatch, {"success": False, "message": "2 validation error(s).", "errors": ["bad name", "no sidecar"]})
-    with pytest.raises(SystemExit) as exc:
-        cli.cmd_datalad_sync(_args())
-    out = capsys.readouterr().out
-    assert exc.value.code == 1 and "bad name" in out and "no sidecar" in out
-
-
-def test_sync_rejects_a_malformed_identity(monkeypatch, capsys):
-    _fake_sync(monkeypatch, {"success": True, "message": "", "errors": []})
-    with pytest.raises(SystemExit) as exc:
-        cli.cmd_datalad_sync(_args(as_identity="nope"))
-    assert exc.value.code == 2
-
-
-def test_sync_json_emits_the_result(monkeypatch, capsys):
-    _fake_sync(monkeypatch, {"success": True, "message": "ok", "errors": []})
-    cli.cmd_datalad_sync(_args(json=True))
-    assert json.loads(capsys.readouterr().out)["message"] == "ok"
-
-
-def test_parser_has_sync_and_no_finalize():
-    parser, _ = build_prism_tools_parsers(ROOT)
-    a = parser.parse_args(["datalad", "sync", "--project", "/p", "--sibling-name", "lab", "--as", "A <a@b.org>"])
-    assert (a.command, a.action, a.sibling_name, a.as_identity) == ("datalad", "sync", "lab", "A <a@b.org>")
-    with pytest.raises(SystemExit):
-        parser.parse_args(["datalad", "finalize", "--project", "/p"])
 
 
 # --- save: validity gate override -------------------------------------------

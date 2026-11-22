@@ -853,13 +853,13 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
 
     def test_datalad_page_fills_itself_from_the_state_when_opened(self):
         # Opening /projects/datalad directly (project already in the session) must show the state without any
-        # project-page flow running first, then get the latest once in the background.
+        # project-page flow running first.
         content = (REPO_ROOT / "app" / "static" / "js" / "modules" / "datalad" / "page.js").read_text(encoding="utf-8")
         init_body = content[content.index("export async function initializeDataladPage()"):]
 
         self.assertIn("dataset.currentProjectPath", init_body)
-        self.assertIn("await loadState();", init_body)
-        self.assertIn("getLatestOnce(projectPath);", init_body)
+        self.assertIn("await loadState(STATE_AFTER_ACTION);", init_body)
+        self.assertNotIn("getLatestOnce", init_body)
 
     def test_projects_page_no_longer_owns_inline_validation_actions(self):
         content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")

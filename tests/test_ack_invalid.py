@@ -15,9 +15,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "app"))
 
 import src.save_gate as sg  # noqa: E402
-import src.share_publish as sp  # noqa: E402
 from tests.test_save_gate_check import calls, repo  # noqa: E402,F401
-from tests.test_share_publish_gate import ADA, audit_lines, pushes, share  # noqa: E402,F401
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -60,69 +58,6 @@ def test_an_acknowledged_save_hands_the_variable_to_its_datalad_save_only(tmp_pa
     monkeypatch.setattr(pm, "_run_datalad_save", fake_save)
     assert pm.save_datalad_snapshot(tmp_path, message="m", allow_invalid=True)["success"]
     assert seen == {"process": None, "child": "1"}
-
-
-def test_the_push_child_process_gets_the_given_environment(tmp_path, monkeypatch):
-    import src.datalad_execution as de
-
-    probe = [sys.executable, "-c", f"import os; print(os.environ.get({sg.ACK_INVALID_ENV!r}))"]
-    real, seen = de._run_streaming_command, []
-
-    def run(command, **kw):  # the probe instead of datalad, through the real streaming runner
-        return seen.append(real(probe, **kw)["output"].strip()) or {"returncode": 0, "output": ""}
-
-    monkeypatch.setattr(de, "_run_streaming_command", run)
-    de.run_datalad_push(tmp_path, sibling_name="origin", datalad_executable="datalad", env=sg.ack_env())
-    de.run_datalad_push(tmp_path, sibling_name="origin", datalad_executable="datalad")
-    assert seen == ["1", "None"]
-
-
-def test_publish_check_honours_the_acknowledgement_too(share, monkeypatch):  # noqa: F811
-    monkeypatch.setattr(sp, "validate_for_publish", lambda p: ["a", "b"])
-    assert sp.check_for_hook(share) == ["a", "b"]
-    monkeypatch.setenv(sg.ACK_INVALID_ENV, "1")
-    assert sp.check_for_hook(share) == []
-    last = audit_lines(share)[-1]
-    assert last["result"] == "hook_acknowledged" and last["error_count"] == 2
-
-
-def test_publish_with_allow_invalid_sends_and_audits_pushed_with_errors(share, pushes, monkeypatch):  # noqa: F811
-    monkeypatch.setattr(sp, "validate_for_publish", lambda p: ["a", "b"])
-    seen = []
-    monkeypatch.setattr(
-        sp, "run_datalad_push",
-        lambda root, **kw: seen.append((os.environ.get(sg.ACK_INVALID_ENV), (kw.get("env") or {}).get(sg.ACK_INVALID_ENV)))
-        or {"success": True, "message": "ok"},
-    )
-    result = sp.publish_to_server(share, identity=ADA, allow_invalid=True)
-    assert result["success"] and result["reason"] == "pushed_with_errors" and result["errors"] == ["a", "b"]
-    assert seen == [(None, "1")]  # the pre-push hook passes for this push only, not for the whole process
-    [line] = audit_lines(share)
-    assert line["result"] == "pushed_with_errors" and line["error_count"] == 2
-
-
-def test_a_failed_acknowledged_push_keeps_the_error_list(share, monkeypatch):  # noqa: F811
-    monkeypatch.setattr(sp, "validate_for_publish", lambda p: ["a", "b"])
-    monkeypatch.setattr(sp, "run_datalad_push", lambda root, **kw: {"success": False, "message": "no route"})
-    result = sp.publish_to_server(share, identity=ADA, allow_invalid=True)
-    assert result["reason"] == "push_failed" and result["errors"] == ["a", "b"]
-
-
-def test_publish_without_allow_invalid_still_refuses(share, pushes, monkeypatch):  # noqa: F811
-    monkeypatch.setattr(sp, "validate_for_publish", lambda p: ["a", "b"])
-    result = sp.publish_to_server(share, identity=ADA)
-    assert not result["success"] and result["reason"] == "validation_errors" and not pushes
-
-
-def test_a_validator_that_cannot_run_is_never_acknowledged_away(share, pushes, monkeypatch):  # noqa: F811
-    def crash(p):
-        raise RuntimeError("boom")
-
-    monkeypatch.setattr(sp, "validate_for_publish", crash)
-    result = sp.publish_to_server(share, identity=ADA, allow_invalid=True)
-    assert not result["success"] and result["reason"] == "validation_errors" and not pushes
-    monkeypatch.setenv(sg.ACK_INVALID_ENV, "1")
-    assert sp.check_for_hook(share) == ["Validation could not run: boom"]
 
 
 @pytest.mark.skipif(not shutil.which("datalad") or not shutil.which("git-annex"), reason="needs DataLad and git-annex")

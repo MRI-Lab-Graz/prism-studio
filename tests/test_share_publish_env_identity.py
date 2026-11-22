@@ -59,18 +59,16 @@ def test_cli_main_applies_env_identity(monkeypatch):
 
     calls = []
     monkeypatch.setattr(ep, "apply_env_identity", lambda: calls.append(1))
-    monkeypatch.setattr("sys.argv", ["prism_tools", "publish", "--help"])
+    monkeypatch.setattr("sys.argv", ["prism_tools", "datalad", "identity", "--help"])
     with pytest.raises(SystemExit):
         ep.main()
     assert calls == [1]
 
 
-def test_publish_button_lives_on_the_results_page_only():
-    # The Share page's "Publish (validated)" button went with the old DataLad panel ("Sync now" on the DataLad page
-    # sends a validated dataset); the projects page no longer carries a handler for a button it never had.
-    section = (REPO_ROOT / "app/templates/includes/projects/push_server_section.html").read_text()
-    page = (REPO_ROOT / "app/templates/projects.html").read_text()
+def test_no_publish_button_or_script_is_left(tmp_path):
+    # Publishing moved to Worldline Desktop: neither the results page nor the project page loads a publish script.
     results = (REPO_ROOT / "app/templates/results.html").read_text()
-    assert 'id="publishProjectBtn"' not in section
-    assert "publishProjectBtn" not in page and "js/publish.js" not in page
-    assert "js/publish.js" in results
+    page = (REPO_ROOT / "app/templates/projects.html").read_text()
+    assert "publish.js" not in results and "publishBtn" not in results
+    assert "publish.js" not in page and "publishProjectBtn" not in page
+    assert not (REPO_ROOT / "app/static/js/publish.js").exists()

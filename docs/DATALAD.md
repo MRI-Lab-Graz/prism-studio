@@ -105,90 +105,31 @@ save again. Text files (`.tsv`, `.json`, `.csv`, ...) are always kept in plain g
 ## Working with several people
 
 The intended setup for a lab: everybody has their own copy of the project and works with their own account;
-one shared DataLad server holds the newest valid state.
+one shared DataLad server holds the newest valid state. PRISM Studio makes the project DataLad-ready and edits it
+safely; **sending, getting the latest, opening a copy from the server and getting data are done in
+[Worldline Desktop](https://worldline-desktop.readthedocs.io/)**, which also checks the dataset with
+`prism-validator` before every save.
 
-1. **One person edits** in PRISM Studio and saves snapshots.
-2. **Only a valid dataset reaches the server.** Publishing (below) validates first and pushes nothing if there
-   are errors.
-3. Everybody else updates their copy from the server.
-
-**Getting the latest.** When you open a DataLad project, Studio asks the server for what others have saved and
-brings it in (CLI: `prism_tools.py datalad update --project <root>`). It is deliberately careful:
-
-- It only fast-forwards. It never merges, so it cannot mix two people's work. If you and someone else both
-  saved changes, it stops, changes nothing and tells you to ask your data steward.
-- It refuses while your project has unsaved changes. Save first, then get the latest.
-- A project with no server yet is simply skipped, and a server that cannot be reached shows a message and does not
-  stop you from working.
-
-The server can be an SSH location or a mounted network share. Each user's copy is a clone of the server's
-dataset, so the server is its `origin`; Studio's *Sync now* (`prism_tools.py datalad sync --project <root>`) is
-*get the latest, then publish*.
-
-**Putting a project on the server (the first person).** `prism_tools.py datalad put-on-server --project <root>
---location <folder | user@host:path | ssh://host/path>` creates the dataset on the server (subject datasets too) and
-sends the project, with the same checks as publishing: saved, valid (or acknowledged with `--allow-invalid`), and no
-public host while `sourcedata/` is tracked. All of them run before anything is created on the server. A location that is
-not empty is refused: if the project is already there, open it from the server instead. If the first send is
-interrupted, the server is already connected; *Sync now* finishes it.
-
-**Opening a project from the server (everybody else).** `prism_tools.py datalad open-from-server --location <folder |
-user@host:path | ssh://host/path> --target <empty or new folder>` gets your own copy: the server is its `origin`, the
-subject datasets are there without their data (Get data fetches what you need), and the save gate is installed in every
-dataset, since git does not copy hooks. Set your git name and email first; without them nothing is cloned. Nested
-datasets are only installed from inside the project on the server; if the server lists one elsewhere, the copy stops
-there (still gated) and the message says which folder to delete before trying again.
+- **`sourcedata/`** (raw data, possibly with names or emails) is tracked in plain git and travels with every
+  push: send it to the internal lab server only. Worldline Desktop refuses to send a project that tracks
+  `sourcedata/` to a public host (GitHub, GitLab, GIN, Bitbucket, Codeberg, OpenNeuro or any web address).
+- **Save gate.** Studio installs a pre-commit hook (`prism_tools.py save-gate`) in the project and its subject
+  datasets, so a commit from any tool is refused while the dataset has validation errors.
 
 **What to do next.** `prism_tools.py datalad status --project <root> [--check-server] [--validate] [--json]` tells
-what the [DataLad page](studio/datalad.md) offers next: enable DataLad, put the project on a server, save, or sync.
-With `--check-nested` it also counts the subject datasets that are not registered yet (as the page does); if some are
-left, the next step is to finish enabling (`datalad enable` registers them). A server that cannot be
-reached is shown as such and does not change that advice.
+what the [DataLad page](studio/datalad.md) offers next: enable DataLad or save. With `--check-nested` it also counts
+the subject datasets that are not registered yet (as the page does); if some are left, the next step is to finish
+enabling (`datalad enable` registers them).
 
 **Saving despite validation errors.** If the dataset has validation errors, Save refuses and lists them. You can
 save anyway (*Save anyway*, or `--allow-invalid`); the snapshot message then ends with
-`[saved with N validation error(s)]` so the history shows it. Publishing and *Sync now* also refuse while there
-are errors, unless you acknowledge them the same way (`--allow-invalid`); the push is then recorded in the audit log
-as `pushed_with_errors` with the error count.
+`[saved with N validation error(s)]` so the history shows it.
 
-The acknowledgement reaches the git hooks through one environment variable, `PRISM_ACK_INVALID=1`, which PRISM passes
-only to the one save or push you acknowledged (never to Studio itself, so its other saves stay gated). The save gate (pre-commit) and the publish
-gate (pre-push) let that one command through and log it (`save_acknowledged`, `hook_acknowledged`). Like the hooks
-themselves it is advisory: anyone can set it in a terminal, so the audit log is the record, not a lock. Unsaved
-changes and a validator that cannot run are never acknowledged away.
-
-## Publishing from a department share
-
-The rule: a dataset on the department share reaches the DataLad server only if it
-validates. `prism_tools.py publish --project <root>` validates and then pushes to the
-server sibling; if validation has errors, nothing is pushed.
-
-- **Who is publishing**: pass `--as "Name <email>"`, or set `PRISM_USER_NAME` and
-  `PRISM_USER_EMAIL`; otherwise git config is used. The publish is recorded in an audit log.
-- **Hook**: `prism_tools.py publish --install-hook --project <root>` installs a git
-  pre-push hook so a plain `git push` to the server is gated by the same check
-  (`publish --check`). It refuses to overwrite an existing hook.
-- **`PRISM_TOOLS`**: the hook finds the tool through the `PRISM_TOOLS` environment variable,
-  which must point to an executable file. A wrapper script that runs
-  `python /path/to/prism_tools.py "$@"` works. If the hook cannot find the tool it fails
-  closed: the push is blocked.
-- **Caveats**: `git push --no-verify` bypasses the hook. Nested `sub-*` datasets are not
-  covered by the superdataset's hook yet.
-- **Save first**: the push sends committed state only, so publishing (and the hook) is
-  refused while the dataset has uncommitted or untracked changes (including inside
-  subdatasets). Run `datalad save`, then publish.
-- **Audit log**: `<git-dir>/prism/publish.jsonl`, one JSON line per attempt (pushed, pushed_with_errors,
-  refused, hook allowed/refused/acknowledged). It lives in the git dir, so it never dirties the dataset.
-- **Studio**: *Sync now* and *Put on server...* on the DataLad page are gated the same way; Sync now also gets the
-  latest first. The validator results page keeps its *Publish* button.
-- **More caveats**:
-  - The gate validates with the stable schema and no library path, so the Studio validator
-    page can disagree if the project uses another schema or library. The backend is the authority.
-  - The hook only gates the sibling name it was installed with; a push by URL or after
-    renaming the sibling passes.
-  - `datalad push` copies annexed files to the server before `git push` runs the hook, so a
-    blocked push can still leave annexed content (no branch points to it) on the server.
-  - Pushing an arbitrary older commit by hand is not covered.
+The acknowledgement reaches the save gate through one environment variable, `PRISM_ACK_INVALID=1`, which PRISM passes
+only to the one save you acknowledged (never to Studio itself, so its other saves stay gated). The gate lets that one
+command through and logs it (`save_acknowledged`). Like the hook itself it is advisory: anyone can set it in a
+terminal, so the audit log is the record, not a lock. Unsaved changes and a validator that cannot run are never
+acknowledged away.
 
 ## What's next
 

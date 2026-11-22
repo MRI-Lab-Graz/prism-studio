@@ -210,9 +210,16 @@ def has_save_hook(root) -> bool:
     return _is_own_hook(hook)
 
 
+# The pre-push hook `prism_tools publish --install-hook` used to write; it calls a command that no longer exists.
+_OLD_PUBLISH_HOOK_MARKER = "# prism-publish-hook"
+
+
 def install_save_hook(root) -> Path:
     hooks = _hooks_dir(Path(root))  # raises NotAGitRepoError before anything is written
     hooks.mkdir(parents=True, exist_ok=True)
+    stale = hooks / "pre-push"
+    if _OLD_PUBLISH_HOOK_MARKER in (_read_hook(stale) or ""):
+        stale.unlink()  # it would block every push, also from Worldline Desktop
     hook = hooks / "pre-commit"
     existing = _read_hook(hook)
     chain = _is_standard_annex_hook(existing) or (

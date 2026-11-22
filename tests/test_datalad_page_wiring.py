@@ -47,30 +47,28 @@ def test_page_opens_without_a_project(rendered):
     assert "js/main.js" in html
 
 
-def test_page_has_the_step_card_more_and_the_shared_dialogs(rendered):
+WORLDLINE_URL = "https://worldline-desktop.readthedocs.io/"
+GONE_IDS = (
+    "dataladLocationForm", "dataladLocationStartBtn", "dataladLocationCancelBtn", "dataladTarget",
+    "dataladJobProgress", "dataladJobCancelBtn", "dataladGetDataForm", "dataladGetDataStartBtn",
+)
+
+
+def test_page_has_the_step_card_more_and_the_identity_dialog(rendered):
     _, html = rendered
     for element_id in (
-        "dataladStepTitle", "dataladStepText", "dataladPrimary", "dataladSecondary", "dataladMore", "dataladNotice",
-        "dataladJobProgress", "dataladJobProgressBar", "dataladJobCancelBtn", "dataladJobResult",
-        "dataladLocation", "dataladTarget", "dataladDoctorResult",
-        # shared parts, included once and reused
-        "remoteFolderBrowserModal", "gitIdentityModal",
-        # Get data uses the export's scope lists
-        "dataladGetDataForm", "exportSubjectList", "exportSessionList", "exportModalityList", "exportDerivatives",
-        "exportSourcedata",
+        "dataladStepTitle", "dataladStepText", "dataladPrimary", "dataladMore", "dataladNotice",
+        "dataladJobResult", "dataladDoctorResult", "gitIdentityModal",
     ):
         assert f'id="{element_id}"' in html, element_id
-    # the scope lists are the export's own partial, not a copy
-    assert "includes/projects/content_scope_filters.html" in _text(TEMPLATES / "datalad.html")
-    assert "includes/projects/content_scope_filters.html" in _text(TEMPLATES / "includes/projects/export_section.html")
 
 
-def test_get_data_scope_starts_at_the_cli_defaults(rendered):
+def test_page_has_no_server_or_get_data_parts_and_points_to_worldline(rendered):
     _, html = rendered
-    checked = lambda element_id: bool(re.search(rf'id="{element_id}"[^>]*\bchecked\b', html))  # noqa: E731
-    # src.datalad_get_data.filters_from_options({}): the same defaults as `prism_tools datalad get-data`
-    assert checked("exportDerivatives") and checked("exportCode")
-    assert not checked("exportSourcedata") and not checked("exportAnalysis")
+    for element_id in GONE_IDS:
+        assert f'id="{element_id}"' not in html, element_id
+    assert "Sync, server copies and getting data: use Worldline Desktop" in html
+    assert WORLDLINE_URL in html
 
 
 def test_the_project_guard_lets_the_page_open_without_a_project():
@@ -100,24 +98,18 @@ def test_main_initializes_the_datalad_page():
 
 def test_page_module_only_triggers_existing_routes():
     page = _text(PAGE_JS)
-    job = _text(PAGE_JS.with_name("job.js"))  # the job runner; its behaviour is tested in job.test.js
-    assert "from './render-state.js'" in page and "from './job.js'" in page
-    assert "saveDataladSnapshot" in page and "getLatestFromServer" in page and "enableDatalad" in page
+    assert "from './render-state.js'" in page
+    assert "saveDataladSnapshot" in page and "enableDatalad" in page
     assert "runDataladCheck" in page  # "Check this computer" is the existing doctor check
-    assert "openRemoteFolderPicker" in page  # the existing server folder picker
-    assert "readContentScope" in page and "renderScopeLists" in page  # Get data reads the export's lists
-    for route in (
-        "/api/projects/datalad/state",
-        "/api/projects/datalad-server/sync/start",
-        "/api/projects/datalad/put-on-server",
-        "/api/projects/datalad/get-data",
-    ):
-        assert route in page, route
-    for route in ("/api/projects/datalad/open-from-server", "/api/projects/datalad-server/sync", "/api/projects/current"):
-        assert route in job, route
+    assert "/api/projects/datalad/state" in page
+    for gone in ("job.js", "datalad-update", "getLatestFromServer", "datalad-server", "put-on-server", "get-data",
+                 "openRemoteFolderPicker", "readContentScope"):
+        assert gone not in page, gone
     assert "'prism-project-opened'" in page
     # the page's own state reads ask for the nested-dataset count; the navbar's does not
     assert "check_nested=1" in page and "check_nested" not in _text(TEMPLATES / "base.html")
+    assert not PAGE_JS.with_name("job.js").exists()
+    assert not (JS / "shared" / "datalad-update.js").exists()
 
 
 def test_page_sends_no_default_snapshot_message_of_its_own():

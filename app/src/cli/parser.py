@@ -11,7 +11,7 @@ from src.entity_rules import load_entity_rules
 _LINK_HELP = "Link the new term to an external vocabulary as VOCABULARY=URL, for example loinc=https://loinc.org/2276-4 (repeatable); the proposal then carries a mappings file"
 
 def add_export_filter_flags(parser) -> None:
-    """The export's scope flags (what comes along, what is left out); `datalad get-data` takes the very same ones."""
+    """The export's scope flags (what comes along, what is left out); the export commands share them."""
     parser.add_argument("--include-sourcedata", action="store_true", help="Also export sourcedata/")
     parser.add_argument("--no-derivatives", action="store_true", help="Leave out derivatives/")
     parser.add_argument("--no-code", action="store_true", help="Leave out code/")
@@ -848,23 +848,6 @@ def build_prism_tools_parsers(
         "--output", metavar="PATH", help="Write the merged template to this path instead of overwriting the original"
     )
 
-    parser_publish = subparsers.add_parser(
-        "publish",
-        help="Push a department-share dataset to the DataLad server (only if it validates)",
-    )
-    parser_publish.add_argument("--project", required=True, help="Dataset root on the share")
-    parser_publish.add_argument("--sibling", help="Server sibling name (default: project's configured sibling)")
-    parser_publish.add_argument(
-        "--as", dest="as_identity", help='Who is publishing: "Name <email>" (else PRISM_USER_NAME/EMAIL, else git config)'
-    )
-    parser_publish.add_argument(
-        "--allow-invalid", action="store_true",
-        help="Publish even if the dataset has PRISM validation errors (default: refuse)",
-    )
-    parser_publish.add_argument("--check", action="store_true", help="Validate only; exit 1 on errors (used by the pre-push hook)")
-    parser_publish.add_argument("--install-hook", action="store_true", help="Install the git pre-push hook that enforces the same rule")
-    parser_publish.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
-
     parser_save_gate = subparsers.add_parser(
         "save-gate",
         help="Save gate: commits are allowed only on valid datasets (git pre-commit hook)",
@@ -895,50 +878,6 @@ def build_prism_tools_parsers(
     parser_datalad_identity.add_argument("--email", help="Your email (sets git user.email)")
     parser_datalad_identity.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
 
-    parser_datalad_sync = datalad_subparsers.add_parser(
-        "sync", help="Get the latest from the server, then send your saved changes (only if the dataset validates)"
-    )
-    parser_datalad_sync.add_argument("--project", required=True, help="Project root")
-    parser_datalad_sync.add_argument("--sibling-name", help="Server name (default: origin)")
-    parser_datalad_sync.add_argument(
-        "--as", dest="as_identity", help='Who is syncing: "Name <email>" (else PRISM_USER_NAME/EMAIL, else git config)'
-    )
-    parser_datalad_sync.add_argument(
-        "--allow-invalid", action="store_true",
-        help="Send even if the dataset has PRISM validation errors (default: refuse)",
-    )
-    parser_datalad_sync.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
-
-    parser_datalad_put = datalad_subparsers.add_parser(
-        "put-on-server",
-        help="Create the project's dataset on the lab server, then send it (only if the dataset validates)",
-    )
-    parser_datalad_put.add_argument("--project", required=True, help="Project root")
-    parser_datalad_put.add_argument(
-        "--location", required=True,
-        help="Where the server keeps the project: a folder (local or network), user@host:path or ssh://host/path",
-    )
-    parser_datalad_put.add_argument("--sibling-name", help="Server name (default: origin)")
-    parser_datalad_put.add_argument(
-        "--as", dest="as_identity", help='Who is sending: "Name <email>" (else PRISM_USER_NAME/EMAIL, else git config)'
-    )
-    parser_datalad_put.add_argument(
-        "--allow-invalid", action="store_true",
-        help="Send even if the dataset has PRISM validation errors (default: refuse)",
-    )
-    parser_datalad_put.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
-
-    parser_datalad_open = datalad_subparsers.add_parser(
-        "open-from-server",
-        help="Get your own copy of a project from the lab server (nested datasets installed, no data yet)",
-    )
-    parser_datalad_open.add_argument(
-        "--location", required=True,
-        help="Where the server keeps the project: a folder (local or network), user@host:path or ssh://host/path",
-    )
-    parser_datalad_open.add_argument("--target", required=True, help="An empty or new folder for your copy")
-    parser_datalad_open.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
-
     parser_datalad_enable = datalad_subparsers.add_parser(
         "enable", help="Make the project a DataLad dataset and save a first snapshot"
     )
@@ -956,20 +895,6 @@ def build_prism_tools_parsers(
         help="Save even if the dataset has PRISM validation errors (default: refuse)",
     )
     parser_datalad_save.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
-    parser_datalad_update = datalad_subparsers.add_parser(
-        "update", help="Get the latest saved changes from the server (never merges; refuses unsaved changes)"
-    )
-    parser_datalad_update.add_argument("--project", required=True, help="Project root")
-    parser_datalad_update.add_argument("--sibling-name", help="Server name (default: origin)")
-    parser_datalad_update.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
-    parser_datalad_get_data = datalad_subparsers.add_parser(
-        "get-data",
-        help="Fetch the data (MRI, physio, ...) of your copy from the server; the export's filters choose what",
-    )
-    parser_datalad_get_data.add_argument("--project", required=True, help="Project root")
-    add_export_filter_flags(parser_datalad_get_data)
-    parser_datalad_get_data.add_argument("--sibling-name", help="Server name (default: origin)")
-    parser_datalad_get_data.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
     parser_datalad_status = datalad_subparsers.add_parser(
         "status", help="Show the DataLad state, the unsaved changes and the next step"
     )
@@ -3373,7 +3298,6 @@ def build_prism_tools_parsers(
         "rsync": parser_rsync,
         "methods": parser_methods,
         "sessions": parser_sessions,
-        "publish": parser_publish,
         "save-gate": parser_save_gate,
         "merge-versions": parser_merge_versions,
         "environment": parser_environment,
