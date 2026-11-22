@@ -29,6 +29,7 @@ EXEMPT = {  # writes ses- names, but not from the data being imported
     "app/src/web/validation.py": "statistics labels",
     "app/src/web/blueprints/conversion_biometrics_handlers.py": "passes sessions on to project_registration",
     "app/src/cli/commands/dataset.py": "smoketest dataset builder",
+    "src/conversion_to_project.py": "log label only; registers the sessions the converter already wrote",
 }
 
 KNOWN_GAPS: dict[str, str] = {}  # importers that still use their own session handling
