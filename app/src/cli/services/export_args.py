@@ -1,4 +1,4 @@
-"""The export's options dict built from command flags; shared by `export` and `datalad get-data`."""
+"""The export's options dict built from command flags; used by the `export` commands."""
 
 from __future__ import annotations
 

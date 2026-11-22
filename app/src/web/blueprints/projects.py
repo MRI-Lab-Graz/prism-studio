@@ -160,8 +160,7 @@ def get_current_project() -> dict:
     Uses the fast DataLad status path (skips the per-subdataset
     ``git annex find`` scan) since this is called on every page load and
     project switch; the full scan can take many seconds on datasets with
-    100+ nested subdatasets. See ``/api/projects/datalad/status-deep`` for
-    the on-demand full scan.
+    100+ nested subdatasets.
     """
     project_path = session.get("current_project_path")
     if project_path and not Path(str(project_path)).exists():

@@ -11,7 +11,7 @@ from src.entity_rules import load_entity_rules
 _LINK_HELP = "Link the new term to an external vocabulary as VOCABULARY=URL, for example loinc=https://loinc.org/2276-4 (repeatable); the proposal then carries a mappings file"
 
 def add_export_filter_flags(parser) -> None:
-    """The export's scope flags (what comes along, what is left out); `datalad get-data` takes the very same ones."""
+    """The export's scope flags (what comes along, what is left out); the export commands share them."""
     parser.add_argument("--include-sourcedata", action="store_true", help="Also export sourcedata/")
     parser.add_argument("--no-derivatives", action="store_true", help="Leave out derivatives/")
     parser.add_argument("--no-code", action="store_true", help="Leave out code/")
