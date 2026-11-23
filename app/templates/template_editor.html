@@ -17,7 +17,8 @@
     {% call help_panel('Quick Guide', 'info', true, 'fas fa-circle-info', 'py-2', 'mb-3') %}
     <div class="small">
         <p class="mb-2"><strong>What does a template do?</strong> It defines one questionnaire: items, answer options, valid ranges, translations. The validator uses it to catch bad values, e.g. a 7 on a 1&ndash;5 scale.</p>
-        <p class="mb-0"><strong>Global vs. project:</strong> start from a library template. Saving it to the project gives this study its own copy without touching the shared library.</p>
+        <p class="mb-2"><strong>Global vs. project:</strong> start from a library template. Saving it to the project gives this study its own copy without touching the shared library.</p>
+        <p class="mb-0"><strong>Which language?</strong> The template's own metadata (description, construct, license, reliability, validity, norming, notes) is written in <strong>English</strong>. The questionnaire itself stays in its <strong>original language</strong>, in any language: its name (<code>OriginalName</code>), the instructions participants read, and the items and answer options.</p>
     </div>
     {% endcall %}
 
