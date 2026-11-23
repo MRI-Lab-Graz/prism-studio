@@ -79,6 +79,8 @@ from .tools_recipe_builder_handlers import (
     handle_api_recipe_builder_items,
     handle_api_recipe_builder_load,
     handle_api_recipe_builder_save,
+    handle_api_recipe_builder_formula_check,
+    handle_api_recipe_builder_formula_latex,
 )
 from src.converters.wide_to_long import (
     detect_wide_session_prefixes,
@@ -1660,6 +1662,18 @@ def api_recipe_builder_load():
 def api_recipe_builder_save():
     """Save a recipe JSON to the project."""
     return handle_api_recipe_builder_save(data=request.get_json(silent=True) or {})
+
+
+@tools_bp.route("/api/recipe-builder/formula-check", methods=["POST"])
+def api_recipe_builder_formula_check():
+    """Evaluate a score formula on sample values."""
+    return handle_api_recipe_builder_formula_check(data=request.get_json(silent=True) or {})
+
+
+@tools_bp.route("/api/recipe-builder/formula-latex", methods=["POST"])
+def api_recipe_builder_formula_latex():
+    """Show a score formula as LaTeX."""
+    return handle_api_recipe_builder_formula_latex(data=request.get_json(silent=True) or {})
 
 
 @tools_bp.route("/api/recipes-surveys", methods=["POST"])

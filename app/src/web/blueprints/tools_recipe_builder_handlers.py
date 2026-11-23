@@ -130,3 +130,17 @@ def handle_api_recipe_builder_save(data: dict):
     except OSError as exc:
         return jsonify({"error": f"Failed to write recipe: {exc}"}), 500
     return jsonify(result), 200
+
+
+def handle_api_recipe_builder_formula_check(data: dict):
+    """Evaluate a score formula on sample values (same function as `recipes formula-check`)."""
+    from src.recipes_formula_tools import check_formula
+
+    return jsonify(check_formula(data.get("formula"), data.get("items") or [], data.get("values") or {}))
+
+
+def handle_api_recipe_builder_formula_latex(data: dict):
+    """A score formula as LaTeX (same function as `recipes formula-latex`)."""
+    from src.recipes_formula_tools import formula_to_latex
+
+    return jsonify(formula_to_latex(data.get("formula")))

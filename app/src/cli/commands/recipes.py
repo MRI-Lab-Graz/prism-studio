@@ -421,3 +421,25 @@ def cmd_recipes_load(args) -> None:
         print(f"❌ {exc}")
         sys.exit(1)
     _print_json({"recipe": found[0], "path": str(found[1])} if found else {"recipe": None})
+
+
+def cmd_recipes_formula_check(args) -> None:
+    """Evaluate a score formula on sample values (JSON: ok, result, message)."""
+    from src.recipes_formula_tools import check_formula
+
+    try:
+        values = json.loads(args.values or "{}")
+        if not isinstance(values, dict):
+            raise ValueError("--values must be a JSON object")
+    except ValueError as exc:
+        print(f"❌ Unreadable --values: {exc}")
+        sys.exit(1)
+    items = [i.strip() for i in (args.items or "").split(",") if i.strip()]
+    _print_json(check_formula(args.formula, items, values))
+
+
+def cmd_recipes_formula_latex(args) -> None:
+    """A score formula as LaTeX (JSON, as the Studio formula helper shows it)."""
+    from src.recipes_formula_tools import formula_to_latex
+
+    _print_json(formula_to_latex(args.formula))

@@ -352,6 +352,8 @@ def dispatch_prism_tools(
             handlers["recipes_save"](args)
         elif args.kind in {"templates", "draft", "load"}:
             handlers[f"recipes_{args.kind}"](args)
+        elif args.kind in {"formula-check", "formula-latex"}:
+            handlers[f"recipes_{args.kind.replace('-', '_')}"](args)
         else:
             parsers["recipes"].print_help()
     else:

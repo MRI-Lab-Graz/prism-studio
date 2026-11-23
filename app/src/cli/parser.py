@@ -1655,6 +1655,13 @@ def build_prism_tools_parsers(
         if _name != "load":
             _p.add_argument("--include-global", action="store_true", help="Also offer the global template library")
 
+    _p = recipes_subparsers.add_parser("formula-check", help="Evaluate a score formula on sample values (JSON)")
+    _p.add_argument("--formula", required=True, help="Formula, e.g. 'max({a}, {b}) + {c}'")
+    _p.add_argument("--items", default="", help="Comma-separated item names the score lists")
+    _p.add_argument("--values", default="{}", help='Sample values as a JSON object, e.g. \'{"a": "65"}\'')
+    _p = recipes_subparsers.add_parser("formula-latex", help="Show a score formula as LaTeX (JSON)")
+    _p.add_argument("--formula", required=True, help="Formula, e.g. '({a} + {b}) / 2'")
+
     parser_biometrics_excel = biometrics_subparsers.add_parser(
         "import-excel", help="Import biometrics templates/library from Excel"
     )

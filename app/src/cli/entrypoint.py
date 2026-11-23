@@ -131,6 +131,8 @@ from src.cli.commands.session_order import (
 from src.cli.commands.recipes import (
     cmd_recipes_biometrics,
     cmd_recipes_draft,
+    cmd_recipes_formula_check,
+    cmd_recipes_formula_latex,
     cmd_recipes_load,
     cmd_recipes_save,
     cmd_recipes_templates,
@@ -331,6 +333,8 @@ def main() -> None:
             "recipes_save": cmd_recipes_save,
             "recipes_draft": cmd_recipes_draft,
             "recipes_load": cmd_recipes_load,
+            "recipes_formula_check": cmd_recipes_formula_check,
+            "recipes_formula_latex": cmd_recipes_formula_latex,
             "recipes_templates": cmd_recipes_templates,
             "environment_preview": cmd_environment_preview,
             "environment_convert": cmd_environment_convert,
