@@ -63,35 +63,34 @@ def test_next_step_save_when_unsaved_changes_and_server(with_server):
     (with_server / "notes.txt").write_text("hello\n", encoding="utf-8")
     state = datalad_state(with_server)
     assert state["unsaved_count"] == 1 and state["next_step"] == "save"
-    assert state["server"]["name"] == "origin" and state["server"]["reachable"] is None  # not asked
+    assert state["server"]["name"] == "origin"
 
 
 def test_next_step_sync_when_clean_and_server(with_server):
-    state = datalad_state(with_server, check_server=True)
+    state = datalad_state(with_server)
     assert state["unsaved_count"] == 0 and state["next_step"] == "sync"
-    assert state["server"]["reachable"] is True
 
 
-def test_an_unreachable_server_is_reported_not_raised(with_server, tmp_path):
-    _run("git", "remote", "set-url", "origin", str(tmp_path / "gone"), cwd=with_server)
-    state = datalad_state(with_server, check_server=True)
-    assert state["server"]["reachable"] is False and state["next_step"] == "sync"
+def test_the_state_holds_only_what_the_page_and_navbar_use(with_server):
+    """Reachability and validation are `datalad doctor`; sending is Worldline Desktop's job."""
+    import pytest
+
+    state = datalad_state(with_server)
+    assert "reachable" not in state["server"] and "other_servers" not in state
+    for gone in ("check_server", "validate"):
+        with pytest.raises(TypeError):
+            datalad_state(with_server, **{gone: True})
 
 
-def test_a_server_not_called_origin_is_reported_with_its_name(dataset, tmp_path):
+
+
+def test_a_server_not_called_origin_is_no_server_here(dataset, tmp_path):
     _run("git", "remote", "add", "lab-server", str(tmp_path / "x"), cwd=dataset)
     state = datalad_state(dataset)
-    assert state["other_servers"] == ["lab-server"] and state["server"] is None
+    assert state["server"] is None
     assert state["next_step"] == "put_on_server"
 
 
-def test_validate_flag_adds_error_count(with_server, monkeypatch):
-    import src.datalad_state as mod
-
-    assert "valid" not in datalad_state(with_server)
-    monkeypatch.setattr(mod, "validate_for_publish", lambda root: ["a", "b"])
-    state = datalad_state(with_server, validate=True)
-    assert state["valid"] is False and state["error_count"] == 2
 
 
 def test_cli_json_and_the_route_answer_the_same(with_server, capsys, monkeypatch):
@@ -99,10 +98,10 @@ def test_cli_json_and_the_route_answer_the_same(with_server, capsys, monkeypatch
     from flask import Flask
     from src.cli.commands.datalad import cmd_datalad_status
 
-    cmd_datalad_status(SimpleNamespace(project=str(with_server), json=True, check_server=True, validate=False))
+    cmd_datalad_status(SimpleNamespace(project=str(with_server), json=True))
     cli = json.loads(capsys.readouterr().out)
     monkeypatch.setattr(projects, "get_current_project", lambda: {"path": str(with_server)})
-    with Flask(__name__).test_request_context("/api/projects/datalad/state?check_server=1"):
+    with Flask(__name__).test_request_context("/api/projects/datalad/state"):
         body = projects.datalad_state_route().get_json()
     assert body == cli
 
@@ -166,37 +165,10 @@ def test_cli_json_and_the_route_answer_the_same_with_the_nested_check(with_serve
 
     (with_server / "sub-01").mkdir()
     cmd_datalad_status(
-        SimpleNamespace(project=str(with_server), json=True, check_server=False, validate=False, check_nested=True)
+        SimpleNamespace(project=str(with_server), json=True, check_nested=True)
     )
     cli = json.loads(capsys.readouterr().out)
     monkeypatch.setattr(projects, "get_current_project", lambda: {"path": str(with_server)})
     with Flask(__name__).test_request_context("/api/projects/datalad/state?check_nested=1"):
         body = projects.datalad_state_route().get_json()
     assert body == cli and cli["enable_kind"] == "finish"
-
-
-def test_a_server_with_nothing_saved_yet_is_reachable(tmp_path):
-    """An empty dataset on the server (put-on-server was interrupted before the first push) still answers."""
-    import subprocess
-
-    from src.datalad_state import _reachable
-
-    server = tmp_path / "server.git"
-    subprocess.run(["git", "init", "-q", "--bare", str(server)], check=True)
-    project = tmp_path / "project"
-    subprocess.run(["git", "init", "-q", str(project)], check=True)
-    subprocess.run(["git", "-C", str(project), "remote", "add", "origin", str(server)], check=True)
-    assert _reachable(project) is True
-
-
-def test_the_reachability_check_keeps_the_users_own_ssh_command(tmp_path, monkeypatch):
-    monkeypatch.delenv("GIT_SSH_COMMAND", raising=False)
-    import subprocess
-
-    from src.datalad_state import _ssh_command
-
-    project = tmp_path / "project"
-    subprocess.run(["git", "init", "-q", str(project)], check=True)
-    assert _ssh_command(project) == "ssh -o BatchMode=yes"
-    subprocess.run(["git", "-C", str(project), "config", "core.sshCommand", "ssh -i /my/key"], check=True)
-    assert _ssh_command(project) == "ssh -i /my/key -o BatchMode=yes"

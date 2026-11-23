@@ -887,13 +887,11 @@ Sending your saves to a server, getting the latest, opening a copy from a server
 [Worldline Desktop](https://worldline-desktop.readthedocs.io/); `prism_tools.py` has no commands for them.
 
 `status` shows how many changes are unsaved and the one next step the DataLad page offers
-(`install_datalad`, `enable`, `put_on_server`, `save` or `sync`; `save` also when the unsaved changes cannot be counted, `checked: false`). `--check-server` asks the server whether it can be reached
-(10 s limit; an unreachable server is reported as `reachable: false`, never an error, and never changes
-the next step), `--validate` adds `valid` and `error_count`, `--json` prints what Studio's `GET /api/projects/datalad/state`
-returns. A server not called `origin` is listed in `other_servers`.
+(`install_datalad`, `enable`, `put_on_server`, `save` or `sync`; `save` also when the unsaved changes cannot be counted, `checked: false`). `--check-nested` also counts subject datasets not registered yet, `--json` prints what Studio's `GET /api/projects/datalad/state`
+returns. Whether the server can be reached and whether the dataset validates are `datalad doctor`'s job.
 
 ```bash
-python prism_tools.py datalad status --project /absolute/path/to/my-project --check-server --json
+python prism_tools.py datalad status --project /absolute/path/to/my-project --json
 ```
 
 On Windows the install hint is: install Git for Windows, then (without uv)

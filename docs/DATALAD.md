@@ -116,7 +116,7 @@ safely; **sending, getting the latest, opening a copy from the server and gettin
 - **Save gate.** Studio installs a pre-commit hook (`prism_tools.py save-gate`) in the project and its subject
   datasets, so a commit from any tool is refused while the dataset has validation errors.
 
-**What to do next.** `prism_tools.py datalad status --project <root> [--check-server] [--validate] [--json]` tells
+**What to do next.** `prism_tools.py datalad status --project <root> [--check-nested] [--json]` tells
 what the [DataLad page](studio/datalad.md) offers next: enable DataLad or save. With `--check-nested` it also counts
 the subject datasets that are not registered yet (as the page does); if some are left, the next step is to finish
 enabling (`datalad enable` registers them).

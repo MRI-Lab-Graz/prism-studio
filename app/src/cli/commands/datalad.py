@@ -67,12 +67,7 @@ def cmd_datalad_status(args) -> None:
     Studio's /api/projects/datalad/state runs the same function."""
     from src.datalad_state import datalad_state
 
-    state = datalad_state(
-        args.project,
-        check_server=bool(getattr(args, "check_server", False)),
-        validate=bool(getattr(args, "validate", False)),
-        check_nested=bool(getattr(args, "check_nested", False)),
-    )
+    state = datalad_state(args.project, check_nested=bool(getattr(args, "check_nested", False)))
     if getattr(args, "json", False):
         print(json.dumps(state, indent=2, ensure_ascii=False, default=str))
         return
@@ -82,12 +77,7 @@ def cmd_datalad_status(args) -> None:
         print(f"{state['nested_unregistered']} subject dataset(s) not registered yet: run `datalad enable` to finish.")
     server = state["server"]
     if server:
-        reach = {True: "reachable", False: "not reachable", None: "not checked"}[server["reachable"]]
-        print(f"Server {server['name']}: {server['url']} ({reach})")
-    for name in state["other_servers"]:
-        print(f"Server found as '{name}'. Use --sibling-name {name}.")
-    if "valid" in state:
-        print("Valid." if state["valid"] else f"{state['error_count']} validation error(s).")
+        print(f"Server {server['name']}: {server['url']}")
 
 
 def cmd_datalad_identity(args) -> None:
