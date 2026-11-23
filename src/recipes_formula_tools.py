@@ -7,11 +7,11 @@ the engine accepts.
 from __future__ import annotations
 
 import ast
+import math
 import re
 
 from src.recipes_formula_engine import (
     _SAFE_FORMULA_BINOPS,
-    _SAFE_FORMULA_BOOLOPS,
     _SAFE_FORMULA_CMPOPS,
     _SAFE_FORMULA_FUNCTIONS,
     _SAFE_FORMULA_MATH_FUNCTIONS,
@@ -27,11 +27,22 @@ _PLACEHOLDER = re.compile(r"\{([^{}]+)\}")
 
 
 def check_formula(formula: str, items: list[str], values: dict[str, str]) -> dict:
-    """Evaluate ``formula`` the way scoring does, for one row of sample ``values``."""
-    expr = str(formula or "")
+    """Evaluate ``formula`` the way scoring does, for one row of sample ``values``.
+
+    ``values`` are the numbers the formula sees, i.e. after any reverse-coding;
+    Transforms.Invert and MinValid are not applied here. As in scoring, one missing
+    listed item empties the result even if the formula does not use it."""
+    try:
+        return _check(str(formula or ""), items, values)
+    except Exception as exc:  # e.g. RecursionError on absurdly nested input
+        return _fail(f"The formula cannot be calculated ({type(exc).__name__}).")
+
+
+def _check(expr: str, items: list[str], values: dict[str, str]) -> dict:
     for name in dict.fromkeys(_PLACEHOLDER.findall(expr)):
         if name not in items:
             return _fail(f"{{{name}}} is not in this score's Items list.")
+    for name in items:
         token = _resolve_formula_placeholder(name, values, set(), None, None)
         if token is None:
             return _fail(f"Item {name} has no usable value (empty, n/a or not a number).")
@@ -62,6 +73,9 @@ _FUNC = {
 }
 
 
+_ARITY = {"ifelse": (3, 3), "abs": (1, 1), "sqrt": (1, 1), "exp": (1, 1), "log": (1, 2), "round": (1, 2)}
+
+
 def _name(raw: str) -> str:
     return r"\text{" + raw.replace("\\", "").replace("_", r"\_").replace("{", "").replace("}", "") + "}"
 
@@ -78,9 +92,10 @@ def _tex(node: ast.AST, names: dict[str, str]) -> str:  # noqa: C901
     if isinstance(node, ast.Expression):
         return t(node.body)
     if isinstance(node, ast.Constant):
-        if isinstance(node.value, bool) or not isinstance(node.value, (int, float, str)):
+        v = node.value
+        if isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v):
             raise ValueError("Unsupported constant")
-        return _name(node.value) if isinstance(node.value, str) else repr(node.value)
+        return repr(v)
     if isinstance(node, ast.Name):
         if node.id not in names:
             raise ValueError(f"Unknown name {node.id}")
@@ -109,8 +124,6 @@ def _tex(node: ast.AST, names: dict[str, str]) -> str:  # noqa: C901
             out += _CMP[type(o)] + t(c)
         return out
     if isinstance(node, ast.BoolOp):
-        if type(node.op) not in _SAFE_FORMULA_BOOLOPS:
-            raise ValueError("Unsafe boolean operator")
         sep = r"\land " if isinstance(node.op, ast.And) else r"\lor "
         return sep.join(rf"\left({t(v)}\right)" for v in node.values)
     if isinstance(node, ast.IfExp):
@@ -136,6 +149,9 @@ def _call(node: ast.Call, names) -> str:
         fname = f.attr
     else:
         raise ValueError("Unsafe function call")
+    lo, hi = _ARITY.get(fname, (1, None))
+    if len(node.args) < lo or (hi is not None and len(node.args) > hi):
+        raise ValueError(f"Wrong number of arguments for {fname}()")
     args = [_tex(a, names) for a in node.args]
     if fname == "ifelse" and len(args) == 3:
         return _cases(node.args[0], node.args[1], node.args[2], names)
@@ -160,6 +176,8 @@ def formula_to_latex(formula: str) -> dict:
         return {"ok": True, "latex": _tex(ast.parse(_PLACEHOLDER.sub(swap, text).strip(), mode="eval"), names), "message": ""}
     except SyntaxError:
         msg = "The formula is not a valid expression."
-    except (ValueError, TypeError, OverflowError) as exc:
+    except ValueError as exc:
         msg = f"The formula cannot be shown: {exc}"
+    except Exception as exc:  # e.g. RecursionError, never let the helper raise
+        msg = f"The formula cannot be shown ({type(exc).__name__})."
     return {"ok": False, "latex": None, "message": msg}

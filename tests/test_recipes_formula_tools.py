@@ -63,3 +63,25 @@ def test_latex_power_max_sqrt_ifelse():
 def test_latex_rejects_what_engine_rejects(f):
     r = formula_to_latex(f)
     assert not r["ok"] and r["latex"] is None and r["message"]
+
+
+@pytest.mark.parametrize(
+    "f",
+    ["ifelse({a}>1,1)", "abs({a},{b})", "max()", "sqrt()", "'x'", "1e400", "{a}+'x'",
+     "1+" * 3000 + "1", "-" * 3000 + "1"],
+    ids=lambda f: f[:20],
+)
+def test_latex_never_raises_and_refuses(f):
+    r = formula_to_latex(f)
+    assert r["ok"] is False and r["latex"] is None and r["message"]
+
+
+@pytest.mark.parametrize("f", ["1+" * 3000 + "1", "-" * 3000 + "1"], ids=lambda f: f[:5])
+def test_check_deep_nesting_is_a_message(f):
+    r = check_formula(f, ["a"], {"a": "1"})
+    assert r["ok"] is False and r["message"]
+
+
+def test_check_unused_missing_item_empties_result():
+    r = check_formula("{a}*2", ["a", "b"], {"a": "1", "b": ""})
+    assert not r["ok"] and r["result"] is None and "b" in r["message"]
