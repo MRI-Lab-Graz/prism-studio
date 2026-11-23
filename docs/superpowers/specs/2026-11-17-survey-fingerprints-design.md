@@ -106,8 +106,9 @@ substantive (a typo fix is not) is the team's ruling at acceptance.
 
 ### 3. `prism:` is an IRI
 
-The specification declares the prefix: `prism:` = `https://w3id.org/prism/` (the w3id redirect is registered by the
-team). `prism:ads.ads03` is then `https://w3id.org/prism/ads.ads03`. No ID string changes. Resolving the IRI to a page
+The specification declares the prefix: `prism:` = `https://w3id.org/prism-specification/` (already built for terms in
+`check_terms.expand`; survey IDs are added by `2026-11-17-specification-structure-design.md`). `prism:ads.ads03` is then
+`https://w3id.org/prism-specification/terms/survey/ads.ads03`. No ID string changes. Resolving the IRI to a page
 is later work; declaring it now makes every ID usable in RDF, OWL and SSSOM from the start.
 
 ### 4. Mappings in SKOS terms, exported as SSSOM
@@ -224,7 +225,7 @@ With `local:` names (rev 2) the collision can no longer happen before acceptance
    here. Until it is answered, only the specification-side formats and the local (project-only) half are built; nothing
    is shared. If the answer is no, the fallback is undecided: no sharing, or keyed hashes, which would end matching
    between projects.
-2. **w3id registration** of `https://w3id.org/prism/`: who in the team owns it.
+2. **w3id registration**: the base is `https://w3id.org/prism-specification/` (not `.../prism/`); the entry is **not registered yet** (404 on 2026-11-17); see `2026-11-17-specification-structure-design.md`.
 
 ## Calls I made (the user can overrule)
 
@@ -233,7 +234,7 @@ With `local:` names (rev 2) the collision can no longer happen before acceptance
 - Local files live in `code/specification/survey/`, next to `terms/` and `patches/`.
 - The fingerprint is unsalted SHA-256 (a salt would make independent projects unable to match).
 - rev 2: `local:` as the prefix for names before acceptance; NFKC + casefold + punctuation removal; labels in the wording
-  hash; `https://w3id.org/prism/` as the IRI base; JSON stays the mapping authoring format, SSSOM is an export.
+  hash; `https://w3id.org/prism-specification/` as the IRI base; JSON stays the mapping authoring format, SSSOM is an export.
 
 ## Phases and PRs
 
