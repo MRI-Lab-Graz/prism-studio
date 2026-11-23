@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://prism.org/schemas/survey/v2.1.6",
-  "version": "2.1.6",
+  "$id": "https://prism.org/schemas/survey/v2.1.7",
+  "version": "2.1.7",
   "x-prism": {
     "projectOnlyRequired": {
       "Technical": ["Respondent", "AdministrationMethod", "SoftwarePlatform"]
@@ -93,8 +93,8 @@
         "OriginalName": {
           "type": ["string", "object"],
           "minLength": 1,
-          "required": ["en"],
-          "properties": {"en": {"type": "string", "minLength": 1}},
+          "minProperties": 1,
+          "additionalProperties": {"type": "string", "minLength": 1},
           "description": "Full canonical name of the instrument (e.g., Beck Depression Inventory)"
         },
         "ShortName": {
@@ -278,8 +278,8 @@
         },
         "Instructions": {
           "type": ["string", "object"],
-          "required": ["en"],
-          "properties": {"en": {"type": "string", "minLength": 1}},
+          "minProperties": 1,
+          "additionalProperties": {"type": "string", "minLength": 1},
           "description": "Instructions given to the participant"
         },
         "RecallPeriod": {
