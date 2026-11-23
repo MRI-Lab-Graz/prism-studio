@@ -101,8 +101,6 @@ def test_status_prints_the_message_and_the_next_step_from_one_computation(monkey
     assert "3 uncommitted change(s) pending." in out and "Next step: save" in out and calls == ["/p"]
 
 
-
-
 def test_parser_accepts_datalad_status():
     parser, _ = build_prism_tools_parsers(ROOT)
     a = parser.parse_args(["datalad", "status", "--project", "/p", "--json"])

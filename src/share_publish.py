@@ -95,13 +95,22 @@ def audit_path(project_root) -> Path | None:
     return Path(git_dir) / "prism" / "save.jsonl" if git_dir else None
 
 
+def _adopt_legacy_log(path: Path) -> None:
+    """The log was `publish.jsonl` before sending moved to Worldline Desktop: its history goes in front of `save.jsonl`."""
+    legacy = path.with_name("publish.jsonl")
+    if not legacy.exists():
+        return
+    old = legacy.read_text(encoding="utf-8")
+    current = path.read_text(encoding="utf-8") if path.exists() else ""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(old + current, encoding="utf-8")
+    legacy.unlink()
+
+
 def _audit(root: Path, *, identity: Identity | None, sibling: str, result: str, error_count: int) -> None:
     path = audit_path(root)
     if path is None:
         return
-    legacy = path.with_name("publish.jsonl")  # the log's name before sending moved to Worldline Desktop
-    if legacy.exists() and not path.exists():
-        legacy.rename(path)
     entry = {
         "timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "identity": f"{identity.name} <{identity.email}>" if identity else None,
@@ -110,6 +119,7 @@ def _audit(root: Path, *, identity: Identity | None, sibling: str, result: str, 
         "error_count": error_count,
     }
     try:
+        _adopt_legacy_log(path)
         _write_audit(path, entry)
     except OSError as exc:  # never turn a finished push (or a hook check) into a crash
         print(f"PRISM: could not write audit log: {exc}", file=sys.stderr)
