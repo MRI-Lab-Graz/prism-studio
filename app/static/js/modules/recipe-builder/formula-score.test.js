@@ -1,7 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import {
-    derivedToEntry, entryToDerived, itemsUsedIn, scoreHasFormula, scoreLockReasons,
+    addItemOnce, debounce, derivedForSave, derivedToEntry, entryToDerived, insertAtCursor,
+    scoreHasFormula, scoreLockReasons,
 } from './formula-score.js';
 import { buildRecipe } from './recipe-merge.js';
 
@@ -50,9 +51,51 @@ describe('formula scores', () => {
         });
         expect(JSON.stringify(out)).toBe(text);
     });
+});
 
-    it('itemsUsedIn lists the names between braces once', () => {
-        expect(itemsUsedIn('({a}+{b})/{a}')).toEqual(['a', 'b']);
-        expect(itemsUsedIn('')).toEqual([]);
+describe('insertAtCursor', () => {
+    it('inserts {ITEM} at the cursor and moves the cursor behind it', () => {
+        expect(insertAtCursor('a+b', 1, 1, 'x')).toEqual({ text: 'a{x}+b', cursor: 4 });
+    });
+    it('replaces a selection', () => {
+        expect(insertAtCursor('a+b', 0, 3, 'x')).toEqual({ text: '{x}', cursor: 3 });
+    });
+});
+
+describe('addItemOnce', () => {
+    it('adds a name once and returns the same list otherwise', () => {
+        const items = ['a'];
+        expect(addItemOnce(items, 'b')).toEqual(['a', 'b']);
+        expect(addItemOnce(items, 'a')).toBe(items);
+    });
+});
+
+describe('debounce', () => {
+    it('runs once after the pause with the last arguments', () => {
+        vi.useFakeTimers();
+        const fn = vi.fn();
+        const d = debounce(fn, 300);
+        d(1); d(2);
+        vi.advanceTimersByTime(299);
+        expect(fn).not.toHaveBeenCalled();
+        vi.advanceTimersByTime(1);
+        expect(fn).toHaveBeenCalledTimes(1);
+        expect(fn).toHaveBeenCalledWith(2);
+        vi.useRealTimers();
+    });
+});
+
+describe('Derived entries other than max/min', () => {
+    it('pass through untouched, read-only', () => {
+        const d = { Name: 'x', Method: 'map', Source: 'a', Mapping: { 1: 2 } };
+        const entry = derivedToEntry(d);
+        expect(entry.readOnly).toBe(true);
+        expect(entryToDerived(entry)).toEqual(d);
+        expect(derivedForSave([entry])).toEqual([d]);
+    });
+    it('empty-named editable entries are not saved', () => {
+        const blank = derivedToEntry({ Name: '', Method: 'max', Items: [] });
+        const named = derivedToEntry({ Name: 'hi', Method: 'max', Items: ['a'] });
+        expect(derivedForSave([blank, named])).toEqual([{ Name: 'hi', Method: 'max', Items: ['a'] }]);
     });
 });

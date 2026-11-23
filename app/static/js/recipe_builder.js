@@ -61,20 +61,16 @@ document.addEventListener('DOMContentLoaded', function () {
     // does not edit is lost (modules/recipe-builder/recipe-merge.js).
     let buildRecipe, metadataFieldText, splitIrvScore;
     // Formula scores and Transforms.Derived (modules/recipe-builder/formula-score.js).
-    let scoreLockReasons, scoreHasFormula, itemsUsedIn, derivedToEntry, entryToDerived, DERIVED_METHODS;
-    const formulaScoreReady = import(
-        new URL('./modules/recipe-builder/formula-score.js', recipeBuilderScriptUrl).href
-    ).then(mod => {
-        ({ scoreLockReasons, scoreHasFormula, itemsUsedIn, derivedToEntry, entryToDerived, DERIVED_METHODS } = mod);
-    });
-    // Formula box helpers and the green-chip widget of the project page.
-    let insertAtCursor, addItemOnce, debounce, mountChipArea;
-    const formulaCardReady = Promise.all([
-        import(new URL('./modules/recipe-builder/formula-card.js', recipeBuilderScriptUrl).href),
+    let scoreLockReasons, scoreHasFormula, derivedToEntry, derivedForSave, DERIVED_METHODS,
+        insertAtCursor, addItemOnce, debounce, latest, mountChipArea;
+    const formulaScoreReady = Promise.all([
+        import(new URL('./modules/recipe-builder/formula-score.js', recipeBuilderScriptUrl).href),
         import(new URL('./modules/projects/chip-list.js', recipeBuilderScriptUrl).href),
-    ]).then(([card, chips]) => {
-        ({ insertAtCursor, addItemOnce, debounce } = card);
+    ]).then(([mod, chips]) => {
+        ({ scoreLockReasons, scoreHasFormula, derivedToEntry, derivedForSave, DERIVED_METHODS,
+            insertAtCursor, addItemOnce, debounce, latest } = mod);
         ({ mountChipArea } = chips);
+        document.getElementById('rbAddDerivedBtn')?.removeAttribute('disabled');
     });
     const recipeMergeReady = import(
         new URL('./modules/recipe-builder/recipe-merge.js', recipeBuilderScriptUrl).href
@@ -588,7 +584,7 @@ document.addEventListener('DOMContentLoaded', function () {
         compatibilityNotice.innerHTML = '';
 
         try {
-            await Promise.all([missingDataReady, recipeMergeReady, formulaScoreReady, formulaCardReady]);
+            await Promise.all([missingDataReady, recipeMergeReady, formulaScoreReady]);
             const [itemsResponse, recipeResponse] = await Promise.all([
                 fetchWithApiFallback(
                     '/api/recipe-builder/items?task=' + encodeURIComponent(task) +
@@ -1063,6 +1059,38 @@ document.addEventListener('DOMContentLoaded', function () {
         return parseApiJsonResponse(response, 'Formula request failed.');
     }
 
+    // One item picker: a pull-down of `options()` minus the chosen items, the chosen ones as green chips below.
+    // `get()`/`set(items)` read and write the owner's item list; `onAdd(name)` runs after a pick.
+    function mountItemPicker(picker, chips, { options, get, set, onAdd = () => {}, onChange = () => {} }) {
+        const fill = () => {
+            picker.innerHTML = '';
+            const first = document.createElement('option');
+            first.value = '';
+            first.textContent = 'Add an item…';
+            picker.appendChild(first);
+            options().filter((name, i, all) => !get().includes(name) && all.indexOf(name) === i).forEach(name => {
+                const opt = document.createElement('option');
+                opt.value = name;
+                opt.textContent = name;
+                picker.appendChild(opt);
+            });
+        };
+        const area = mountChipArea(chips, { onChange: (values) => { set([...values]); fill(); onChange(); } });
+        picker.addEventListener('mousedown', fill); // options may have changed since the card was built
+        picker.addEventListener('change', () => {
+            const name = picker.value;
+            if (!name) return;
+            set(addItemOnce(get(), name));
+            area.setValues(get());
+            fill();
+            onAdd(name);
+            onChange();
+        });
+        fill();
+        area.setValues(get());
+        return { fill };
+    }
+
     function buildFormulaBox(scale) {
         const el = document.createElement('div');
         el.className = 'rb-formula-box mt-2';
@@ -1078,10 +1106,21 @@ document.addEventListener('DOMContentLoaded', function () {
         picker.className = 'form-select form-select-sm mt-1';
         picker.disabled = scale.isLocked;
         picker.setAttribute('aria-label', 'Insert an item into the formula');
-
         const chips = document.createElement('div');
         chips.className = 'mt-1';
-        const area = mountChipArea(chips, { onChange: (values) => { scale.items = [...values]; refresh(); renderItemList(); } });
+        const { fill: fillPicker } = mountItemPicker(picker, chips, {
+            options: () => [...state.allItems, ...derivedNames()],
+            get: () => scale.items,
+            set: (items) => { scale.items = items; },
+            onAdd: (name) => {
+                const { text, cursor } = insertAtCursor(textarea.value, textarea.selectionStart, textarea.selectionEnd, name);
+                textarea.value = text;
+                textarea.setSelectionRange(cursor, cursor);
+                scale.formula = text;
+                textarea.focus();
+            },
+            onChange: () => { refresh(); renderItemList(); },
+        });
 
         const samples = document.createElement('div');
         samples.className = 'd-flex flex-wrap gap-1 mt-1';
@@ -1091,22 +1130,6 @@ document.addEventListener('DOMContentLoaded', function () {
         checkLine.className = 'small mt-1';
         const math = document.createElement('div');
         math.className = 'rb-formula-math mt-1';
-
-        function fillPicker() {
-            picker.innerHTML = '';
-            const first = document.createElement('option');
-            first.value = '';
-            first.textContent = 'Insert an item…';
-            picker.appendChild(first);
-            [...state.allItems, ...derivedNames()]
-                .filter((name, i, all) => !scale.items.includes(name) && all.indexOf(name) === i)
-                .forEach(name => {
-                    const opt = document.createElement('option');
-                    opt.value = name;
-                    opt.textContent = name;
-                    picker.appendChild(opt);
-                });
-        }
 
         function fillSamples() {
             samples.innerHTML = '';
@@ -1124,40 +1147,30 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
 
-        let latexToken = 0;
-        let checkToken = 0;
-        async function runLatex() {
-            const token = ++latexToken;
-            if (!textarea.value.trim()) { math.textContent = ''; return; }
-            try {
-                const data = await postFormula('/api/recipe-builder/formula-latex', { formula: textarea.value });
-                if (token !== latexToken) return;
-                if (data.ok && window.katex) {
-                    window.katex.render(String(data.latex), math, { throwOnError: false });
-                } else {
-                    math.textContent = data.ok ? String(data.latex) : String(data.message || '');
-                }
-            } catch (error) {
-                if (token === latexToken) math.textContent = error.message;
-            }
-        }
-        async function runCheck() {
-            const token = ++checkToken;
-            if (!textarea.value.trim()) { checkLine.textContent = ''; return; }
-            try {
-                const data = await postFormula('/api/recipe-builder/formula-check', {
+        const showError = (error) => ({ ok: false, message: error.message });
+        const runLatex = latest(
+            async () => {
+                if (!textarea.value.trim()) return null;
+                return postFormula('/api/recipe-builder/formula-latex', { formula: textarea.value }).catch(showError);
+            },
+            (data) => {
+                if (!data) math.textContent = '';
+                else if (data.ok && window.katex) window.katex.render(String(data.latex), math, { throwOnError: false });
+                else math.textContent = String(data.ok ? data.latex : data.message || '');
+            },
+        );
+        const runCheck = latest(
+            async () => {
+                if (!textarea.value.trim()) return null;
+                return postFormula('/api/recipe-builder/formula-check', {
                     formula: textarea.value, items: scale.items, values: sampleValues,
-                });
-                if (token !== checkToken) return;
-                checkLine.className = 'small mt-1 ' + (data.ok ? 'text-success' : 'text-danger');
-                checkLine.textContent = data.ok ? 'Result: ' + data.result : String(data.message || '');
-            } catch (error) {
-                if (token === checkToken) {
-                    checkLine.className = 'small mt-1 text-danger';
-                    checkLine.textContent = error.message;
-                }
-            }
-        }
+                }).catch(showError);
+            },
+            (data) => {
+                checkLine.className = 'small mt-1 ' + (data && data.ok ? 'text-success' : 'text-danger');
+                checkLine.textContent = !data ? '' : data.ok ? 'Result: ' + data.result : String(data.message || '');
+            },
+        );
         const runCheckSoon = debounce(runCheck, FORMULA_DEBOUNCE_MS);
         const runLatexSoon = debounce(runLatex, FORMULA_DEBOUNCE_MS);
 
@@ -1173,22 +1186,6 @@ document.addEventListener('DOMContentLoaded', function () {
             runCheckSoon();
             runLatexSoon();
         });
-        picker.addEventListener('mousedown', fillPicker); // derived names may have changed since the card was built
-        picker.addEventListener('change', () => {
-            const name = picker.value;
-            if (!name) return;
-            const { text, cursor } = insertAtCursor(textarea.value, textarea.selectionStart, textarea.selectionEnd, name);
-            textarea.value = text;
-            textarea.setSelectionRange(cursor, cursor);
-            scale.formula = text;
-            scale.items = addItemOnce(scale.items, name);
-            area.setValues(scale.items);
-            refresh();
-            renderItemList();
-            textarea.focus();
-        });
-
-        area.setValues(scale.items);
         el.append(textarea, picker, chips, samples, checkLine, math);
         return { el, refresh };
     }
@@ -1201,6 +1198,22 @@ document.addEventListener('DOMContentLoaded', function () {
         (state.derived || []).forEach((entry, index) => {
             const row = document.createElement('div');
             row.className = 'd-flex flex-wrap align-items-start gap-1 mb-2';
+
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.className = 'btn btn-sm btn-outline-danger';
+            remove.title = 'Remove this entry';
+            remove.innerHTML = '<i class="fas fa-times"></i>';
+            remove.addEventListener('click', () => { state.derived.splice(index, 1); renderDerivedSection(); });
+
+            if (entry.readOnly) { // other methods are kept exactly as loaded
+                const note = document.createElement('span');
+                note.className = 'small text-muted flex-grow-1';
+                note.textContent = entry.name + ' (' + String(entry.method) + ', kept as loaded)';
+                row.append(note, remove);
+                host.appendChild(row);
+                return;
+            }
 
             const name = document.createElement('input');
             name.type = 'text';
@@ -1225,37 +1238,13 @@ document.addEventListener('DOMContentLoaded', function () {
             const picker = document.createElement('select');
             picker.className = 'form-select form-select-sm';
             picker.style.width = 'auto';
-            const fillPicker = () => {
-                picker.innerHTML = '';
-                const first = document.createElement('option');
-                first.value = '';
-                first.textContent = 'Add an item…';
-                picker.appendChild(first);
-                state.allItems.filter(it => !entry.items.includes(it)).forEach(it => {
-                    const opt = document.createElement('option');
-                    opt.value = it;
-                    opt.textContent = it;
-                    picker.appendChild(opt);
-                });
-            };
             const chips = document.createElement('div');
             chips.className = 'flex-grow-1';
-            const area = mountChipArea(chips, { onChange: (values) => { entry.items = [...values]; fillPicker(); } });
-            picker.addEventListener('change', () => {
-                if (!picker.value) return;
-                entry.items = addItemOnce(entry.items, picker.value);
-                area.setValues(entry.items);
-                fillPicker();
+            mountItemPicker(picker, chips, {
+                options: () => state.allItems,
+                get: () => entry.items,
+                set: (items) => { entry.items = items; },
             });
-            fillPicker();
-            area.setValues(entry.items);
-
-            const remove = document.createElement('button');
-            remove.type = 'button';
-            remove.className = 'btn btn-sm btn-outline-danger';
-            remove.title = 'Remove this entry';
-            remove.innerHTML = '<i class="fas fa-times"></i>';
-            remove.addEventListener('click', () => { state.derived.splice(index, 1); renderDerivedSection(); });
 
             row.append(name, method, picker, chips, remove);
             host.appendChild(row);
@@ -1263,6 +1252,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     document.getElementById('rbAddDerivedBtn')?.addEventListener('click', () => {
+        if (!derivedToEntry) return; // module still loading
         if (!state.derived) state.derived = [];
         state.derived.push(derivedToEntry({ Name: '', Method: DERIVED_METHODS[0], Items: [] }));
         renderDerivedSection();
@@ -1685,7 +1675,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 citation: document.getElementById('rbMetaCitation').value.trim(),
             },
             invertTransform,
-            derivedTransform: state.derived && state.derived.map(entryToDerived),
+            derivedTransform: state.derived && derivedForSave(state.derived),
             scores: (state.scales[''] || []).map(scaleToScore),
             irvItems: document.getElementById('rbIncludeIrv').checked ? state.allItems : null,
             versionedScores,
