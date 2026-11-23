@@ -82,15 +82,11 @@ def test_the_state_holds_only_what_the_page_and_navbar_use(with_server):
             datalad_state(with_server, **{gone: True})
 
 
-
-
 def test_a_server_not_called_origin_is_no_server_here(dataset, tmp_path):
     _run("git", "remote", "add", "lab-server", str(tmp_path / "x"), cwd=dataset)
     state = datalad_state(dataset)
     assert state["server"] is None
     assert state["next_step"] == "put_on_server"
-
-
 
 
 def test_cli_json_and_the_route_answer_the_same(with_server, capsys, monkeypatch):

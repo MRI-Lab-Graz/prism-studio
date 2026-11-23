@@ -46,7 +46,7 @@ describe('renderState (Studio enables DataLad and saves; Worldline Desktop does 
 
   it('never offers a server action', () => {
     for (const next_step of ['install_datalad', 'enable', 'save', 'put_on_server', 'sync']) {
-      const view = renderState({ ...base, next_step, valid: false, error_count: 2 });
+      const view = renderState({ ...base, next_step });
       const all = [view.primary, ...view.secondary, ...view.more].filter(Boolean).map((a) => a.id);
       expect(all.filter((id) => ['open-from-server', 'put-on-server', 'sync', 'send-anyway', 'get-latest', 'get-data'].includes(id))).toEqual([]);
     }
