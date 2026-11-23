@@ -8,11 +8,18 @@ PRISM Studio Documentation
    <div class="prism-hero-shell">
      <div class="prism-hero">
        <img src="_static/prism_logo.png" alt="PRISM logo">
+       <h2 class="prism-headline">Raw study data in. A BIDS-compatible project out.</h2>
        <p class="prism-tagline">
-         Turn raw psychology and neuroscience study data into clean, BIDS-compatible
-         datasets &mdash; running locally on your machine, with participant data
-         never uploaded or sent to a remote service.
+         PRISM Studio converts, scores, validates and exports psychology and neuroscience data
+         &mdash; on your own machine. Participant data is never uploaded or sent to a remote service.
        </p>
+       <div class="prism-cta-row">
+         <a href="INSTALLATION.html" class="prism-cta">Install PRISM Studio</a>
+         <a href="TUTORIAL_BEGINNER.html" class="prism-cta prism-cta--secondary">Start the Tutorial</a>
+         <a href="MODALITY_WORKFLOW.html" class="prism-cta prism-cta--secondary">Propose a modality</a>
+       </div>
+       <img class="prism-hero-shot" src="_static/screenshots/landing-validator.png"
+            alt="PRISM Studio validation results: dataset is valid, 17 of 17 files valid, 11 subjects">
        <div class="prism-pill-list">
          <span class="prism-pill">BIDS-compatible</span>
          <span class="prism-pill">Full DataLad support</span>
@@ -21,47 +28,42 @@ PRISM Studio Documentation
          <span class="prism-pill">Local-first</span>
          <span class="prism-pill">Community modalities</span>
        </div>
-       <a href="INSTALLATION.html" class="prism-cta">Install PRISM Studio</a>
-       <a href="TUTORIAL_BEGINNER.html" class="prism-cta prism-cta--secondary">Start the Tutorial</a>
-       <a href="MODALITY_WORKFLOW.html" class="prism-cta prism-cta--secondary">Propose a modality</a>
      </div>
    </div>
 
-A concrete before and after
-============================
+Ontology-ready
+===============
 
-One common workflow: take a raw questionnaire spreadsheet, map participants, attach
-metadata, run scoring recipes, and export a clean project for analysis.
+Every PRISM ID is a stable address. It resolves to the definition of that
+instrument, item or term, and it can carry links to external vocabularies such as
+SNOMED CT or LOINC. Those links live in a separate, checked ``mappings/`` layer;
+PRISM never changes your data to carry meaning.
 
 .. raw:: html
 
-   <div class="prism-proof-grid">
-     <div class="prism-proof-panel">
-       <span class="prism-proof-label prism-proof-label--before">Before</span>
-       <h4>Raw study files</h4>
-       <ul class="prism-proof-list">
-         <li><span class="prism-proof-icon prism-proof-icon--before">!</span><span>One spreadsheet with mixed survey items, coded demographics, and ad hoc participant IDs</span></li>
-         <li><span class="prism-proof-icon prism-proof-icon--before">!</span><span>No reusable metadata, no scoring logic, and no clear BIDS-ready structure</span></li>
-         <li><span class="prism-proof-icon prism-proof-icon--before">!</span><span>Manual cleanup repeated in spreadsheets before every export or analysis pass</span></li>
-       </ul>
+   <div class="prism-ontology">
+     <div class="prism-ontology-step">
+       <span class="prism-ontology-label">1 &middot; An ID</span>
+       <code>prism:dass21.dass2101</code>
+       <p>One item of one instrument. The ID never changes.</p>
      </div>
-     <div class="prism-proof-step">
-       <span class="prism-proof-step-badge">&rarr;</span>
-       <span class="prism-proof-step-text">Convert, score, validate, export</span>
+     <span class="prism-ontology-arrow">&rarr;</span>
+     <div class="prism-ontology-step">
+       <span class="prism-ontology-label">2 &middot; Its address</span>
+       <code>w3id.org/prism-specification/terms/survey/dass21.dass2101</code>
+       <p>Resolves to the instrument&rsquo;s definition.</p>
      </div>
-     <div class="prism-proof-panel">
-       <span class="prism-proof-label prism-proof-label--after">After</span>
-       <h4>One analysis-ready PRISM project</h4>
-       <ul class="prism-proof-list">
-         <li><span class="prism-proof-icon prism-proof-icon--after">&check;</span><span>Participant mappings standardized once, with cleaner IDs and ontology-friendly metadata</span></li>
-         <li><span class="prism-proof-icon prism-proof-icon--after">&check;</span><span>Survey sidecars, scoring recipes, and validation feedback stored inside the project</span></li>
-         <li><span class="prism-proof-icon prism-proof-icon--after">&check;</span><span>BIDS-compatible structure plus export targets such as SPSS, TSV, CSV, labels, and codebooks</span></li>
-       </ul>
+     <span class="prism-ontology-arrow">&rarr;</span>
+     <div class="prism-ontology-step">
+       <span class="prism-ontology-label">3 &middot; Its links</span>
+       <code>mappings/survey/dass21.json</code>
+       <p>The item links to the SNOMED CT score of its subscale.</p>
      </div>
    </div>
-
-   <p class="prism-proof-note">This is the core promise of PRISM Studio: less spreadsheet surgery, more
-   reproducible research data.</p>
+   <p>
+     <a href="ONTOLOGY_READY.html" class="prism-cta">How it works</a>
+     <a href="specs/mappings.html" class="prism-cta prism-cta--secondary">Mappings specification</a>
+   </p>
 
 Why researchers use PRISM Studio
 ==================================
@@ -70,36 +72,20 @@ Why researchers use PRISM Studio
 
    <div class="prism-highlight-grid">
      <div>
-       <h4>Convert messy source data</h4>
-       <p>Import Excel, CSV, TSV, and LimeSurvey data into a structured PRISM dataset without hand-building folders or filenames.</p>
+       <h4>Convert &amp; score</h4>
+       <p>Import Excel, CSV, TSV and LimeSurvey data into a structured dataset, then compute questionnaire scores with recipes instead of fragile spreadsheet formulas. Version-aware and run-aware surveys stay traceable across sessions.</p>
      </div>
      <div>
-       <h4>Score questionnaires automatically</h4>
-       <p>Build scoring recipes for surveys and compute derived scores without maintaining fragile spreadsheet formulas.</p>
+       <h4>Privacy-safe export</h4>
+       <p>Export SPSS, CSV, TSV, labels and codebooks with anonymization and MRI metadata safeguards. Rename and de-identify subjects in bulk, with collision checks.</p>
      </div>
      <div>
-       <h4>Privacy-safe export for analysis</h4>
-       <p>Generate analysis-ready exports such as SPSS, CSV, TSV, labels, and codebooks with anonymization and MRI metadata/privacy safeguards.</p>
+       <h4>BIDS and DataLad</h4>
+       <p>PRISM adds surveys and other study metadata without giving up standard BIDS validators and apps. Full DataLad provenance, and one-click sync to a remote store that verifies every file.</p>
      </div>
      <div>
-       <h4>Stay compatible with BIDS apps</h4>
-       <p>PRISM adds surveys and other study metadata without giving up standard BIDS validators and downstream tools.</p>
-     </div>
-     <div>
-       <h4>Handle multi-version survey studies</h4>
-       <p>Use version-aware and run-aware survey workflows so evolving instruments remain conversion-ready and traceable across sessions.</p>
-     </div>
-     <div>
-       <h4>Full DataLad provenance support</h4>
-       <p>Initialize tracked projects, save snapshots, and record DataLad-backed mutation runs for critical dataset updates.</p>
-     </div>
-     <div>
-       <h4>Rename and de-identify subjects in bulk</h4>
-       <p>Rewrite subject or BIDS entity IDs across an entire dataset in one batch, with DataLad-aware per-subject commits and collision checks.</p>
-     </div>
-     <div>
-       <h4>Sync to a remote DataLad server</h4>
-       <p>Push a tracked project to a remote RIA store with one click, verify every file transferred intact, and disconnect safely.</p>
+       <h4>Open modalities and ontologies</h4>
+       <p>Missing a data type? Propose it. Link your terms to external vocabularies in a separate, checked layer, and share them with the community.</p>
      </div>
    </div>
 
@@ -186,6 +172,15 @@ archived on Zenodo with a citable DOI:
 See `CITATION.cff <https://github.com/MRI-Lab-Graz/prism-studio/blob/main/CITATION.cff>`_
 in the repository root for the full citation, including all authors.
 
+.. raw:: html
+
+   <div class="prism-footer-strip">
+     <span>Open source &middot; AGPL-3.0</span>
+     <span>Local-first: nothing is uploaded</span>
+     <span>Cite: <a href="https://doi.org/10.5281/zenodo.22809100">doi:10.5281/zenodo.22809100</a></span>
+     <span><a href="https://github.com/MRI-Lab-Graz/prism-studio">GitHub</a></span>
+   </div>
+
 .. toctree::
    :maxdepth: 2
    :hidden:
@@ -243,6 +238,7 @@ in the repository root for the full citation, including all authors.
    ERROR_CODES
    TEMPLATES
    SCHEMA_VERSIONING
+   ONTOLOGY_READY
 
 .. toctree::
    :maxdepth: 2
@@ -265,6 +261,7 @@ in the repository root for the full citation, including all authors.
    specs/environment
    specs/physio
    specs/mappings
+   specs/instrument-ids
    specs/project
    specs/dataset_description
    specs/entities

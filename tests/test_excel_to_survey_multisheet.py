@@ -257,7 +257,7 @@ def test_extract_excel_templates_supports_transposed_general_sheet(tmp_path):
 
 
 def test_extract_excel_templates_requires_language_specific_item_description(tmp_path):
-    """Generic Description column is ignored; Description_de or Description_en is required."""
+    """Generic Description column is ignored; a Description_<language> column is required."""
     excel_path = tmp_path / "survey_mono.xlsx"
 
     items_df = pd.DataFrame(
@@ -283,7 +283,7 @@ def test_extract_excel_templates_requires_language_specific_item_description(tmp
     try:
         extract_excel_templates(excel_file=excel_path, check_collisions=False)
     except ValueError as exc:
-        assert "Description_de/Description_en" in str(exc)
+        assert "Description_<language>" in str(exc)
     else:
         raise AssertionError(
             "Expected ValueError when only generic Description is provided"

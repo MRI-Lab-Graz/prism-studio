@@ -13,6 +13,7 @@ from typing import Callable
 from jsonschema import validate, ValidationError
 from src.schema_manager import validate_schema_version, apply_schema_validation_profile
 from src.entity_rules import check_entities, load_entity_rules
+from src.instrument_ids import stub_id_problems
 from src.specification import current_specification
 from src.term_registry import context_value, resolve_column, term_columns
 from src.converters.survey_core import get_allowed_values
@@ -75,7 +76,7 @@ BIOSAMPLE_RECOMMENDED_TECHNICAL = (
 
 # Column fields a resolved term supplies when the column does not set them.
 TERM_INHERITED_FIELDS = (
-    "Units", "DataType", "MinValue", "MaxValue", "WarnMinValue", "WarnMaxValue", "LOINC", "Levels",
+    "Units", "DataType", "MinValue", "MaxValue", "WarnMinValue", "WarnMaxValue", "Levels",
 )
 
 MRI_SUFFIX_REGEX = re.compile(
@@ -107,6 +108,18 @@ ENV_FORBIDDEN_COLUMNS = {
 ENV_RETIRED_MESSAGE = (
     "environment format 1.1.0 is retired; re-create it with: python prism_tools.py environment convert ..."
 )
+
+
+SURVEY_STUB_MESSAGE = (
+    "texts missing: this survey is a stub (Study.ItemTextsIncluded is false); "
+    "fill in your own licensed copy of the item texts"
+)
+
+
+def is_survey_stub(sidecar_data: dict) -> bool:
+    """A survey template without item texts (see docs/specs/instrument-ids.md)."""
+    study = sidecar_data.get("Study")
+    return isinstance(study, dict) and study.get("ItemTextsIncluded") is False
 
 
 def is_retired_environment_sidecar(sidecar_data: dict) -> bool:
@@ -1004,8 +1017,9 @@ class DatasetValidator:
 
             # Metadata quality checks: warn when Levels contain empty labels.
             file_name = os.path.basename(file_path)
+            is_stub = modality == "survey" and is_survey_stub(sidecar_data)
             for col_name, col_def in effective_defs.items():
-                if isinstance(col_def, dict):
+                if isinstance(col_def, dict) and not is_stub:
                     issues.extend(
                         self._check_empty_levels_labels(col_name, col_def, file_name)
                     )
@@ -1445,6 +1459,13 @@ class DatasetValidator:
                     return []  # reported once per sidecar, not once per data file
                 self._terms_checked.add(("retired", key))
                 return [("ERROR", f"{key}: {ENV_RETIRED_MESSAGE}")]
+            if modality == "survey" and is_survey_stub(sidecar_data):
+                # before schema validation, so it shows even when the schema also fails
+                key = normalize_path(sidecar_path)
+                if ("stub", key) not in self._terms_checked:  # once per sidecar, not per data file
+                    self._terms_checked.add(("stub", key))
+                    issues.append(("WARNING", f"{key}: {SURVEY_STUB_MESSAGE}"))
+                    issues.extend(("ERROR", f"{key}: {p}") for p in stub_id_problems(sidecar_data))
             # Validate against schema if available (PRISM modalities only)
             schema = self._schema_for_sidecar(modality, sidecar_path)
             if schema:

@@ -634,28 +634,6 @@ python prism_tools.py settings set --datalad-for-new-projects on
 python prism_tools.py settings set --personal-library-path /absolute/path/to/my-library
 ```
 
-### Publish
-
-Pushes a DataLad dataset on a department share to its server sibling, but only if the
-dataset validates. Refusals are exit code `1` (validation errors) or `2` (anything else:
-no identity, no sibling, not a dataset, uncommitted changes (run `datalad save` first), bad `--as`, existing hook). Success is `0`.
-
-```bash
-# Validate and push (identity: --as, else PRISM_USER_NAME/PRISM_USER_EMAIL, else git config)
-python prism_tools.py publish --project /absolute/path/to/share/my-project --as "Ada Lovelace <ada@example.org>" --json
-
-# Validate only; exit 1 on errors (this is what the pre-push hook runs)
-python prism_tools.py publish --check --project /absolute/path/to/share/my-project
-
-# Install the git pre-push hook that enforces the same rule on plain `git push`
-python prism_tools.py publish --install-hook --project /absolute/path/to/share/my-project
-```
-
-Options: `--project` (required), `--sibling`, `--as "Name <email>"`, `--allow-invalid`, `--check`,
-`--install-hook`, `--json`. `--allow-invalid` sends the dataset despite validation errors (you acknowledge them);
-the result is `pushed_with_errors`, still lists the errors, and the audit log records it with the error count. See [DataLad](DATALAD.md#publishing-from-a-department-share)
-for the hook's requirements and limits.
-
 ### Methods section and preregistration draft
 
 ```bash
@@ -892,7 +870,7 @@ Most files under `scripts/` are implementation details called by the CLIs. If
 you're a new user, prefer `prism-validator ...`, `python prism_tools.py ...`, and
 `python prism-studio.py` instead of calling scripts directly.
 
-## DataLad server (setup check, get latest, sync)
+## DataLad (setup check, enable, save, status)
 
 Checks that this machine can use DataLad with a DataLad server: Git, git-annex, DataLad,
 the SSH client, an SSH key (set up by your IT admin, not by PRISM), and (with a server URL) a real key-based login. Each failed
@@ -905,72 +883,8 @@ python prism_tools.py datalad doctor --url user@server.example.org:/data/study
 python prism_tools.py datalad doctor --url user@server.example.org:/data/study --json
 ```
 
-`update` gets what others have saved on the server. It only fast-forwards (it never
-merges), refuses while the project has unsaved changes, and skips a project that has no
-server yet. `sync` runs `update`, then sends your saved changes, and only if the dataset
-validates; unsaved changes must be saved first. The server is the project's `origin`
-(or `--sibling-name`). `--allow-invalid` sends despite validation errors (as `datalad save --allow-invalid`
-saves); the result is `pushed_with_errors` and the audit log records it. Exit codes: 0 ok, 1 refused or failed, 2 bad usage.
-
-```bash
-python prism_tools.py datalad update --project /absolute/path/to/my-project
-python prism_tools.py datalad sync --project /absolute/path/to/my-project
-```
-
-`put-on-server` is for the first person: it creates the project's dataset at `--location` (a local or network
-folder such as `/srv/lab/study` or `C:\share\study`, `user@host:path`, or `ssh://host/path`; web addresses and
-values starting with `-` are refused), names it `origin` (or `--sibling-name`) and then sends it like `sync`. Before
-anything is created on the server it refuses a project that already has that server (use `sync`), a folder that is
-not empty ("open it from the server instead"), unsaved changes, validation errors (unless `--allow-invalid`) and a
-public host while `sourcedata/` is tracked. Nested subject datasets are created too. If the send is interrupted after
-the server dataset exists, run `sync`. Studio's `POST /api/projects/datalad/put-on-server` runs the same function as a
-job (`location`, `sibling_name`, `allow_invalid`, and `name`/`email` for `--as`). An ssh location whose user or server
-name starts with `-` or contains spaces, and any location containing `::` (git transport helpers), is refused.
-
-```bash
-python prism_tools.py datalad put-on-server --project /absolute/path/to/my-project --location user@lab.example.org:/data/study
-```
-
-`open-from-server` is for everybody else: it needs no project. It clones the project at `--location` (same forms and
-refusals as `put-on-server`; a relative folder is relative to your working directory) into `--target`, an empty or new
-folder given as a full path, with the server as `origin`. It installs the nested subject datasets level by level without
-their data (fetch it with Get data). Before a dataset's nested datasets are installed, its own files are checked; a
-failed check stops the install. What is checked: the dataset was checked out completely (`git status`, at most 60
-seconds); its committed `.datalad/config` holds only `datalad.dataset.id` and its `.gitmodules` only `path`, `url` and
-`datalad-id` (any other setting could redirect an address); `.datalad`, `.datalad/config` and `.gitmodules` are not
-links; every `url` is a relative path inside the dataset (what DataLad writes, `./sub-01`) or an address under the
-exact `--location`; every `path` is a nested dataset recorded in that very dataset (not a deeper path such as
-`sub-01/ses-1`, not a link) and a real folder. For a folder location (the server is read on your computer), the
-location, every folder down to each nested dataset's source on the server and each of their `.git` must be real
-folders (a link or a `gitdir:` file is refused) without `.git/objects/info/alternates`, and no copied dataset may end
-up with an alternates file (either would make the copy read another repository of your computer). For an ssh location
-the addresses are resolved on the server and are not checked on your computer beyond the rules above. The server's own
-`origin` is not added to your copy. Known limitation: a nested dataset recorded with `datalad-url` (DataLad writes it
-when a subdataset was added from an address rather than created in place; PRISM never does) cannot be opened this way. The save-gate hook goes into every dataset as soon as it is there (git
-does not copy hooks). It stops before cloning when the target is not a full path, not empty, or inside a git
-repository, when DataLad, git or git-annex is missing, or git does not know your name and email (`reason`:
-`bad_location`, `bad_target`, `target_not_empty`, `no_datalad`, `no_identity`, `clone_failed`). If a nested install
-fails after the clone, the copy is left incomplete (and gated): delete the folder named in the message, then try again.
-Studio's `POST /api/projects/datalad/open-from-server` (`location`, `target`) runs the same function as a job (a target
-that is not a full path is refused with 400) and then opens the new copy as the current project.
-
-```bash
-python prism_tools.py datalad open-from-server --location user@lab.example.org:/data/study --target ~/projects/study
-```
-
-`get-data --project <root> [filters] [--json]` fetches the data (MRI, physio, ...) of your own copy from the server
-(`origin`). It takes the export's filter flags, added by the same helper to the `export` commands:
-`--exclude-subject`, `--exclude-session`, `--exclude-modality`, `--exclude-acq MODALITY=LABEL`, `--exclude-task MODALITY=TASK`,
-`--include-sourcedata`, `--no-derivatives`, `--no-code`, `--include-analysis` (same defaults as the export). Without filters
-everything the defaults keep is fetched. A project without `origin` is not an error (`skipped: true`, exit 0, "nothing to fetch
-from"); an unreachable server, or files no server has (listed in the message and in `failed_paths`), exit 1. Studio's
-`POST /api/projects/datalad/get-data` runs the same function as a job (the filters under the export page's option names,
-e.g. `exclude_subjects`). The selection itself is `src/export_selection.py`, which the export's "fetch annexed content"
-step uses too.
-
-```bash
-python prism_tools.py datalad get-data --project ~/projects/study --exclude-subject sub-02 --exclude-modality physio
-```
+Sending your saves to a server, getting the latest, opening a copy from a server and getting data are done in
+[Worldline Desktop](https://worldline-desktop.readthedocs.io/); `prism_tools.py` has no commands for them.
 
 `status` shows how many changes are unsaved and the one next step the DataLad page offers
 (`install_datalad`, `enable`, `put_on_server`, `save` or `sync`; `save` also when the unsaved changes cannot be counted, `checked: false`). `--check-server` asks the server whether it can be reached
@@ -1011,7 +925,8 @@ Look up the shipped metric terms (the term registry, see the Terms section of
     python prism_tools.py terms freeze --modality survey [--json]
     python prism_tools.py terms resolve --sidecar <survey-sidecar.json> [--project <project>] [--json]
     python prism_tools.py terms suggest <column> [--specimen saliva] [--modality biosample] [--json]
-    python prism_tools.py terms propose (--sidecar <sidecar.json> | --data <file.tsv>) --column <column> [--label TEXT] [--open] [--out FILE] [--modality biosample] [--json]
+    python prism_tools.py terms check-links (--dir <folder> | --project <project>) [--json]
+    python prism_tools.py terms propose (--sidecar <sidecar.json> | --data <file.tsv>) --column <column> [--label TEXT] [--link VOCABULARY=URL ...] [--open] [--out FILE] [--modality biosample] [--json]
 
 
 `terms resolve` prints four tab-separated columns: column, item ID (`-` for none), reason, source (`library` or
@@ -1026,9 +941,13 @@ a later call adds another language to the same task file. `remove-survey` delete
 - `freeze`: adds the survey IDs that are new to `official/library/survey/term-ids.txt` (commit it); an ID is frozen once released, so it refuses (exit 1) when a released ID of a shipped instrument is gone. A released ID whose instrument has no template here (third-party templates are not always shipped) is not an error: the command prints `N released ID(s) of instruments whose template is not shipped` (`not_shipped` with `--json`) and exits 0; the released list is never shortened.
 - `resolve`: gives each column of a project's survey sidecar its item ID (`prism:<task>.<item-key>` for a library task, `local:<task>.<item-key>` for a task only the project has: not official, not frozen), or `-` and the reason: `unknown instrument`, `unknown item`, `alias`, `changed scale`, `changed wording`, `language not registered`. An item whose answer values, minimum/maximum or wording (in a language the library also has) were edited has no official ID. Nothing is written; validation does not change. Exit 1 if the file cannot be read.
 - `suggest`: how the validator relates a column name to the registry (`suggestion`, `unknown`, ...) and which official terms look similar.
-- `propose`: builds a proposal for a new metric from a column of your sidecar (a new analyte gets a parent and a child term, a known analyte with a new specimen only a child) and checks it with the rules of the specification repository. **Nothing is sent** unless you add `--open`, which opens a prefilled "Propose a Metric" form in the [prism-specification](https://github.com/MRI-Lab-Graz/prism-specification) repository in your browser (if the link would be too long, the command prints the form address and you paste the proposal). A bot checks it there and a maintainer takes it from there; the maintainers may choose a different ID or name, and your column name is kept as an alias. `--label` sets the name of the new term (default: the column name, or the name of a `Term` the column already carries). `--out FILE` also saves the proposal document (format v2), for sending to a maintainer if you do not use GitHub. Give either the sidecar that defines the column and `Technical` (`--sidecar`), or a data file (`--data`, a `.tsv`): then its sidecar is resolved with BIDS inheritance (root-level merged with subject-level), exactly as the validator reads it. - `local add-values`: allows new values of an enum field of the biosample schema in this project, for example `--field Technical.SpecimenType --value sweat` (lowercase letters, digits and `-`). They are stored in `code/specification/patches/biosample.json` (a schema patch: `add_enum_values`, checked by the vendored `schema_patch.py`) and the validator uses them from the next run; a value the official schema has is left out and reported. A value outside such a field's enum prints this command in the validator's error. Exit code 1 for a field that cannot be extended or a value that is not allowed; a broken patch file is never overwritten.
+- `check-links`: checks mapping files, the links from PRISM IDs to external vocabularies, with the specification's own checker (the same one that guards the official `mappings/`). `--dir <folder>` checks a folder of `<modality>/<family>.json` files; `--project <project>` checks the project's local links (`code/specification/mappings`) against the official IDs and the project's local terms. It reports an unknown vocabulary, an address that does not fit its vocabulary, an ID that does not exist, a file whose name is not the ID's family, and an ID mapped twice; exit code 1 when there is any problem. It only reads; nothing is changed or sent.
+- `propose`: builds a proposal for a new metric from a column of your sidecar (a new analyte gets a parent and a child term, a known analyte with a new specimen only a child) and checks it with the rules of the specification repository. **Nothing is sent** unless you add `--open`, which opens a prefilled "Propose a Metric" form in the [prism-specification](https://github.com/MRI-Lab-Graz/prism-specification) repository in your browser (if the link would be too long, the command prints the form address and you paste the proposal). A bot checks it there and a maintainer takes it from there; the maintainers may choose a different ID or name, and your column name is kept as an alias. `--label` sets the name of the new term (default: the column name, or the name of a `Term` the column already carries). `--link VOCABULARY=URL` (repeatable, for example `loinc=https://loinc.org/2276-4`) links the new term to an external vocabulary: the proposal then carries a file under `mappings/`. `--out FILE` also saves the proposal document (format v2), for sending to a maintainer if you do not use GitHub. Give either the sidecar that defines the column and `Technical` (`--sidecar`), or a data file (`--data`, a `.tsv`): then its sidecar is resolved with BIDS inheritance (root-level merged with subject-level), exactly as the validator reads it.
+- `local add-values`: allows new values of an enum field of the biosample schema in this project, for example `--field Technical.SpecimenType --value sweat` (lowercase letters, digits and `-`). They are stored in `code/specification/patches/biosample.json` (a schema patch: `add_enum_values`, checked by the vendored `schema_patch.py`) and the validator uses them from the next run; a value the official schema has is left out and reported. A value outside such a field's enum prints this command in the validator's error. Exit code 1 for a field that cannot be extended or a value that is not allowed; a broken patch file is never overwritten.
 - `local remove-values`: removes values added this way; removing the last one removes the file. `local list` shows these items as layer 2 (`local`, `now-official` or `invalid`).
 - `propose --patch`: shares the schema additions (file `patches/biosample.json` of the proposal); `--all` includes them, and a term whose specimen only a local addition provides brings them along. The maintainers' bot applies the patch to the real schema and prepares the release (archive, minor version, regenerated spec page) for review.
+
+`spec local add-term --link VOCABULARY=URL` (repeatable) links the new local term to an external vocabulary: the link is stored in the project (`code/specification/mappings/<modality>/<family>.json`, the same layout as the official `mappings/`) and `spec propose` shares it with the term. Any vocabulary of `mappings/vocabularies.json`, any modality. The old sidecar column field `LOINC` is gone (biosample schema 1.1.3); a link belongs to the term's ID.
 
 The validator's "not an official metric" notice prints the matching `--data` command. Exit code 1 if the metric is already official (the message names the term to use with `Term`), the sidecar or column cannot be read, or the proposal fails the checks.
 
@@ -1040,7 +959,7 @@ JSON file per term, exactly the term a proposal carries) and are read by the val
 official registry; the official registry always wins, and a local term never reaches another project.
 
     python prism_tools.py spec local list --project <project> [--json]
-    python prism_tools.py spec local add-term --project <project> (--data <file.tsv> | --sidecar <sidecar.json>) --column <column> [--label TEXT] [--json]
+    python prism_tools.py spec local add-term --project <project> (--data <file.tsv> | --sidecar <sidecar.json>) --column <column> [--label TEXT] [--link VOCABULARY=URL ...] [--json]
     python prism_tools.py spec local remove --project <project> <term-id> [--json]
     python prism_tools.py spec local add-values --project <project> --field <field> --value <value> [--value <value> ...] [--json]
     python prism_tools.py spec local remove-values --project <project> --field <field> --value <value> [--value <value> ...] [--json]
@@ -1050,6 +969,7 @@ official registry; the official registry always wins, and a local term never rea
 
 - `local list`: every local item with its status: `local`, `now-official` (the official registry has it since; the official definition is used, remove your copy) or `invalid` (a file that was skipped, with the reason).
 - `local add-term`: makes the metric of a column a local term (a new analyte gets a parent and a child, a known analyte with a new specimen only a child), after the same checks a proposal passes. The validator uses it from the next run; a column that carries `"Term": "<id>"` inherits its unit and range. Exit code 1 for an official metric (the message names the term to use), a name an existing term owns, or an unreadable source.
+- A project's own terms are `local:<slug>` (files, `Term` in a column, `local list`, `local remove`); `propose` turns them into the `prism:<slug>` form the maintainers receive. A `local:` term whose slug the official registry has since taken is `now-official`: use `prism:<slug>`. Old files that still say `prism:<slug>` load as `local:`; a column's `Term` must now say `local:<slug>`.
 - `local remove`: removes a term; removing a parent also removes its local children.
 - `propose`: the same as `terms propose`, for local terms: `--term` (repeatable) names the ones to share, `--all` shares every local term of the project in one proposal. A named child brings its local parent, a named parent its local children. Terms the official registry has adopted since are left out and listed (`skipped` in `--json`). The proposal is checked with the specification repository's rules and sent as a **format v2** document (`prism-proposal/2`: the files it adds, up to 40, at most 50,000 bytes); `--out FILE` saves that document, and with `--open` the prefilled form opens (a proposal too long for a link is pasted into the form's text field). **Nothing is sent** otherwise.
 
@@ -1061,7 +981,7 @@ These need no project and send nothing unless you add `--open`; they are what *S
 
     python prism_tools.py spec catalog [--json]
     python prism_tools.py spec propose-values --modality <modality> --field <field> --value <value> [--value <value> ...] [--not-sure] [--closest <name>] [--entry FIELD=VALUE ...] [--out FILE] [--open] [--json]
-    python prism_tools.py spec propose-metric --name <name> --description <text> --units <units> --specimen <specimen> [--alias <name> ...] [--modality biosample|environment] [--level CODE=LABEL ...] [--cf-standard-name <name>] [--group <heading>] [--project <folder>] [--not-sure] [--closest <name>] [--entry FIELD=VALUE ...] [--out FILE] [--open] [--json]
+    python prism_tools.py spec propose-metric --name <name> --description <text> --units <units> --specimen <specimen> [--alias <name> ...] [--modality biosample|environment] [--level CODE=LABEL ...] [--cf-standard-name <name>] [--group <heading>] [--link VOCABULARY=URL ...] [--project <folder>] [--not-sure] [--closest <name>] [--entry FIELD=VALUE ...] [--out FILE] [--open] [--json]
     python prism_tools.py spec example --modality <modality> [--template <stem>] [--json]
     python prism_tools.py spec check-kind-name <name> [--json]
     python prism_tools.py spec propose-new-kind (--description <text> | --measured <text> --holds <text> [--device <text>] [--row <text>]) --sample <file> [--name <name>] [--closest <name>] [--out FILE] [--open] [--json]

@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.abspath(".."))
 project = "PRISM Studio"
 copyright = "2025-2026, MRI-Lab-Graz"
 author = "MRI-Lab-Graz"
-release = "1.25.1"
+release = "1.26.1"
 
 # -- General configuration ---------------------------------------------------
 extensions = [
@@ -29,6 +29,8 @@ exclude_patterns = [
     "archive/**",
     # Design specs and plans are working documents for the developers, not part of the published docs.
     "superpowers/**",
+    # Handoff notes between work sessions (see CLAUDE.md), also not published.
+    "handouts/**",
     # Advanced pages intentionally hidden from public RTD navigation.
     "LIMESURVEY_VERSION_DIFFERENCES.md",
     "PAVLOVIA_EXPORT.md",

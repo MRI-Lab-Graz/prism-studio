@@ -1,8 +1,8 @@
 """Push a project to a plain remote destination via rsync, for users not using DataLad.
 
-A simpler sibling of the "Push to DataLad Server" feature
-(`projects_datalad_server_blueprint.py`): a single "Sync now" action that
-copies the project to an SSH target or local/mounted path with `rsync -a`.
+A single "Sync now" action that copies the project to an SSH target or
+local/mounted path with `rsync -a`. (Sending DataLad saves to a server is
+Worldline Desktop's job.)
 There is no sibling/connection state to register or disconnect — each sync
 is just a copy, optionally followed by a checksum verification pass.
 """

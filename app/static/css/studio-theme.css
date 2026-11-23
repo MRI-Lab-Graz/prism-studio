@@ -449,6 +449,17 @@
     color: #ffffff;
 }
 
+/* Disabled = gray in every variant (after the solid variants above, which would otherwise keep the colour). */
+.studio-theme .btn:disabled,
+.studio-theme main .btn:disabled {
+    background-color: var(--studio-border-soft);
+    border-color: var(--studio-border);
+    color: #6c757d;
+    box-shadow: none;
+    transform: none;
+    opacity: 1;
+}
+
 .studio-theme .btn-success:hover {
     background-color: var(--studio-semantic-success-hover);
     border-color: var(--studio-semantic-success-hover);

@@ -150,7 +150,7 @@ class DatasetStats:
                 self.physio.add(task)
             else:
                 # Fallback task extraction
-                match = re.search(r"_task-([a-zA-Z0-9]+)", filename)
+                match = re.search(r"_task-([^_.]+)", filename)
                 if match:
                     self.physio.add(match.group(1))
 

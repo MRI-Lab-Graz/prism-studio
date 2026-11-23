@@ -311,3 +311,9 @@ def test_an_existing_subject_folder_gives_no_warning(tmp_path):
         organize=True, subject_rewrite_mode="keep", parse_bids_filename=parse_bids_filename,
     )
     assert saved.warnings == []
+
+
+def test_a_conversion_leaves_a_bidsignore_that_hides_the_prism_folders(world):
+    project, _staged, _source = world
+    _save(world)
+    assert "survey/" in (project / ".bidsignore").read_text(encoding="utf-8").splitlines()

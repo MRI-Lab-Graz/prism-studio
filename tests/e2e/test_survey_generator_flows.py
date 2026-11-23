@@ -22,7 +22,7 @@ def open_generator(page, studio_url):
 def pick(page, search, nth=0):
     """Search for a template and tick it; returns its row."""
     page.fill("#templateSearch", search)
-    row = page.locator(".tpl-row:visible").nth(nth)
+    row = page.locator(".tpl-row:visible:has(.file-checkbox:not(:disabled))").nth(nth)
     row.locator(".file-checkbox").check()
     return row
 

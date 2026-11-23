@@ -6,24 +6,35 @@ from pathlib import Path
 from openpyxl import Workbook
 from openpyxl.worksheet.datavalidation import DataValidation
 
+from src.schema_manager import DEFAULT_SCHEMA_DIR
+
 DATA_COLUMNS = ("participant_id", "session", "panel", "run", "sample_id",
                 "collection_time", "analyte", "value", "unit", "comment")
 PANEL_COLUMNS = ("panel", "SpecimenType", "CollectionMethod", "Anticoagulant",
                  "FastingRequired", "StorageTemperature", "Laboratory",
                  "AssayMethod", "AssayKit", "Description")
 
-_SCHEMA = Path(__file__).resolve().parents[1] / "app/schemas/stable/biosample.schema.json"
 _ROWS = 1000  # pull-downs and text-format id cells cover this many rows
+
+
+def load_biosample_schema() -> dict:
+    """The biosample schema, from the folder Studio loads its schemas from (also when packaged)."""
+    schema = Path(DEFAULT_SCHEMA_DIR) / "stable" / "biosample.schema.json"
+    return json.loads(schema.read_text(encoding="utf-8"))
+
+
+def _technical() -> dict:
+    return load_biosample_schema()["properties"]["Technical"]["properties"]
 
 
 def specimen_types() -> list[str]:
     """SpecimenType values the schema allows."""
-    tech = json.loads(_SCHEMA.read_text(encoding="utf-8"))["properties"]["Technical"]["properties"]
+    tech = _technical()
     return [v for v in tech["SpecimenType"]["enum"] if v]
 
 
 def write_biosample_template(path: Path) -> None:
-    tech = json.loads(_SCHEMA.read_text(encoding="utf-8"))["properties"]["Technical"]["properties"]
+    tech = _technical()
     wb = Workbook()
     data = wb.active
     data.title = "data"

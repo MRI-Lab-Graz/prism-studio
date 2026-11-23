@@ -96,8 +96,8 @@ def dispatch_prism_tools(
     elif args.command == "orcid":
         handlers["orcid_search"](args)
     elif args.command == "terms":
-        if args.action in ("list", "show", "suggest", "propose", "freeze", "resolve"):
-            handlers[f"terms_{args.action}"](args)
+        if args.action in ("list", "show", "suggest", "propose", "freeze", "resolve", "check-links"):
+            handlers[f"terms_{args.action.replace('-', '_')}"](args)
         else:
             parsers["terms"].print_help()
     elif args.command == "modality-version":
@@ -181,8 +181,6 @@ def dispatch_prism_tools(
             parsers["sessions"].print_help()
     elif args.command == "merge-versions":
         handlers["merge_versions"](args)
-    elif args.command == "publish":
-        handlers["publish"](args)
     elif args.command == "save-gate":
         handlers["save_gate"](args)
     elif args.command == "datalad":
@@ -190,9 +188,7 @@ def dispatch_prism_tools(
             handlers["datalad_doctor"](args)
         elif args.action == "identity":
             handlers["datalad_identity"](args)
-        elif args.action == "sync":
-            handlers["datalad_sync"](args)
-        elif args.action in ("enable", "save", "update", "status", "put-on-server", "open-from-server", "get-data"):
+        elif args.action in ("enable", "save", "status"):
             handlers[f"datalad_{args.action.replace('-', '_')}"](args)
         else:
             parsers["datalad"].print_help()

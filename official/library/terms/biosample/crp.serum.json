@@ -6,6 +6,5 @@
   "Units": "mg/L",
   "MinValue": 0,
   "WarnMaxValue": 10,
-  "LOINC": "30522-7",
   "Status": "official"
 }

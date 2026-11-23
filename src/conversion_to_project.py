@@ -87,7 +87,7 @@ def extract_tasks_from_output(output_root: Path) -> list[str]:
     tasks = set()
     for file_path in Path(output_root).rglob("*"):
         if file_path.is_file() and "_task-" in file_path.name:
-            match = re.search(r"_task-([a-zA-Z0-9]+)", file_path.name)
+            match = re.search(r"_task-([^_.]+)", file_path.name)
             if match:
                 tasks.add(match.group(1))
     return sorted(tasks)
@@ -144,6 +144,16 @@ def _merge_participants_into_staged(project_root: Path, staged_root: Path, log) 
     )
 
 
+def _stage_bidsignore(project_root: Path, staged_root: Path) -> None:
+    """Stage the project's .bidsignore with the PRISM-only folders listed, so BIDS validators skip them and the
+    DataLad-aware copy saves it with the conversion."""
+    from src.bids_integration import check_and_update_bidsignore
+
+    if (project_root / ".bidsignore").is_file():
+        shutil.copy2(project_root / ".bidsignore", staged_root / ".bidsignore")
+    check_and_update_bidsignore(str(staged_root), [])
+
+
 def save_conversion_to_project(
     *,
     project_root,
@@ -166,11 +176,12 @@ def save_conversion_to_project(
 
     log(f"Saving output to project: {project_root.name} (into project root)", "info")
     _merge_participants_into_staged(project_root, staged_root, log)
+    _stage_bidsignore(project_root, staged_root)
     pairs: list[tuple[Path, Path]] = []
     for item in sorted(staged_root.rglob("*")):
         if item.is_file() and filter_system_files([item.name]):
             pairs.append((item, project_root / item.relative_to(staged_root)))
-    output_rel = {dest.relative_to(project_root).as_posix() for _src, dest in pairs}
+    output_rel = {dest.relative_to(project_root).as_posix() for _src, dest in pairs} - {".bidsignore"}
     pairs.extend(extra_pairs or [])  # e.g. the templates the conversion used: copied, but not "converted output"
     if archive_sourcedata and source_path:
         pairs.append((Path(source_path), project_root / "sourcedata" / source_name))
@@ -242,14 +253,15 @@ def register_converted_physio_sessions(project_path, converted, dataset_name, lo
     registered: list[str] = []
     for (session, folder), tasks in session_tasks.items():
         tasks = sorted(set(tasks))
+        label = "ses-" + session.removeprefix("ses-")
         try:
             register_session_in_project(Path(project_path), session, tasks, folder, dataset_name, "physio")
             registered.append(session)
             if log_fn:
-                log_fn(f"Registered in project.json: ses-{session} ({folder}){' → ' + ', '.join(tasks) if tasks else ''}", "info")
+                log_fn(f"Registered in project.json: {label} ({folder}){' → ' + ', '.join(tasks) if tasks else ''}", "info")
         except Exception as error:  # noqa: BLE001 - a registration problem never fails a saved conversion
             if log_fn:
-                log_fn(f"⚠️ Could not register session ses-{session} in project.json: {error}", "warning")
+                log_fn(f"⚠️ Could not register session {label} in project.json: {error}", "warning")
     return registered
 
 
@@ -275,9 +287,15 @@ def save_physio_batch_to_project(
     pairs: list[tuple[Path, Path]] = []
     warnings: list[str] = []
     warned: set[str] = set()
+    into_prism = target_root == project_root
+    if into_prism:  # the staged participants table is a bare ID list: merge it, never copy it over the project's
+        _merge_participants_into_staged(project_root, staged_root, log_fn or _quiet)
+        _stage_bidsignore(project_root, staged_root)
     for item in sorted(staged_root.rglob("*")):
         if not item.is_file():
             continue
+        if not into_prism and item.name in ("participants.tsv", "participants.json"):
+            continue  # sourcedata/ and rawdata/ hold raw files, not the participants table
         if cancel_check and cancel_check():
             raise ConversionCancelled()
         rel = rewrite_subject_in_relative_path(item.relative_to(staged_root), subject_rewrite_mode)
@@ -295,7 +313,7 @@ def save_physio_batch_to_project(
     saved = ProjectSave(
         copied_paths=[str(p) for p in copy_result.get("copied_paths") or []], datalad=copy_result.get("datalad"), warnings=warnings
     )
-    saved.output_paths = [project_root / rel for rel in saved.copied_paths]
+    saved.output_paths = [project_root / rel for rel in saved.copied_paths if rel != ".bidsignore"]  # not converted output
     saved.registered_sessions = register_converted_physio_sessions(project_root, converted, dataset_name, log_fn)
     return saved
 

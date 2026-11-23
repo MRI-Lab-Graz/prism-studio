@@ -16,6 +16,9 @@ from src.spec_overlay import (  # noqa: E402
 PARENT = {"TermID": "prism:dhea-s", "Level": "analyte", "Label": "DHEA-S", "Aliases": ["dhea_s"], "Description": "d"}
 CHILD = {"TermID": "prism:dhea-s.saliva", "Level": "analyte-specimen", "Parent": "prism:dhea-s",
          "SpecimenType": "saliva", "Units": "pg/mL", "MinValue": 0}
+# a project's own terms are local: in the registry (files may still say prism:); the proposal form is prism:
+LOCAL_PARENT = {**PARENT, "TermID": "local:dhea-s"}
+LOCAL_CHILD = {**CHILD, "TermID": "local:dhea-s.saliva", "Parent": "local:dhea-s"}
 
 
 def _folder(project: Path) -> Path:
@@ -37,7 +40,7 @@ def test_load_local_terms_reads_valid_files(tmp_path):
     _put(folder, "dhea-s.json", PARENT)
     _put(folder, "dhea-s.saliva.json", CHILD)
     terms, problems = load_local_terms(tmp_path)
-    assert problems == [] and terms == {"dhea-s": PARENT, "dhea-s.saliva": CHILD}
+    assert problems == [] and terms == {"dhea-s": LOCAL_PARENT, "dhea-s.saliva": LOCAL_CHILD}
 
 
 def test_missing_overlay_is_empty(tmp_path):
@@ -67,7 +70,7 @@ def test_write_creates_one_file_per_term_without_status(tmp_path):
     written = write_local_terms(tmp_path, "biosample", [PARENT, CHILD])
     assert sorted(p.name for p in written) == ["dhea-s.json", "dhea-s.saliva.json"]
     assert "Status" not in json.loads(written[0].read_text(encoding="utf-8"))
-    assert load_local_terms(tmp_path) == ({"dhea-s": PARENT, "dhea-s.saliva": CHILD}, [])
+    assert load_local_terms(tmp_path) == ({"dhea-s": LOCAL_PARENT, "dhea-s.saliva": LOCAL_CHILD}, [])
 
 
 @pytest.mark.parametrize("tid", ["prism:../x", "prism:a\n", "prism:A", "prism:a/b", "x", "bids:x"])

@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed (breaking)
+- **Sending, syncing and getting data moved to Worldline Desktop.** `prism_tools publish` and `prism_tools datalad sync | update | put-on-server | open-from-server | get-data` are gone, with their Studio routes (Sync now, Put on server, Open from server, Get data, Publish). Use [Worldline Desktop](https://worldline-desktop.readthedocs.io/) (0.6.3 or later refuses to send a project that tracks `sourcedata/` to a public host). The DataLad page keeps Enable DataLad and Save; `datalad enable | save | status | doctor | identity` and `save-gate` stay.
+- If you installed the old pre-push hook (`publish --install-hook`), run `prism_tools save-gate --install-hooks --project <root>`: it removes that hook, which would otherwise block every push.
+
+## [1.26.1] - 2026-11-20
+
+### Fixed
+- **The packaged desktop app no longer crashes on the Converter page.** The biosample template and import read their schema from an `app/schemas` folder next to the source, which a packaged app does not have; both read it from the folder Studio loads its schemas from. (1.26.0 was published to PyPI only; its desktop builds failed this smoke test.)
+
+## [1.26.0] - 2026-11-20
+
+### Changed
+- **A task label is letters and digits only (BIDS), so no hyphen.** Synced from prism-specification v1.5.24 (survey schema 2.1.6): `Study.TaskName` and the survey `task` entity refuse a hyphen, and a template with one is refused on save. The 29 hyphenated library tasks are renamed (`ecr-g-10` is now `ecrg10`, `bfi-s` is `bfis`), and so are their IDs (`prism:ecrg10.ecrg1001`); the readable name stays in `ShortName`. The phenotype importer derives letters-and-digits task names. Existing projects: `dataset rewrite-entities --modality survey --entity task --current-value gold-dsi --replacement golddsi` renames the data files.
+- **Survey converter: "Force session" (optional) replaces the required "Session ID".** The session normally comes from the file's session column or from the dates; fill the box only if the whole file is one fixed session. The picker no longer preselects the only existing session.
+
+### Fixed
+- **Surveys with a hyphen in the task name were missing from the validator's survey list, the filename-parts rename list and the task readers** (`gold-dsi`, `maia-2`, `pss-10`); they are listed and can be renamed now.
+- The footer shows the Zenodo DOI.
+- **A project's link folder is never followed outside the project.** `terms check-links --project` refuses a symbolic `code/specification`, and writing local links rejects an ID that is not a valid local ID.
+- Dialogs of the converter, template editor and survey customizer carry `role="dialog"`, and the conversion log `role="log"` (HTML validity).
+
+### Added
+
+- **Ontology-ready.** PRISM IDs are stable and resolvable (`https://w3id.org/prism-specification/...`); links from IDs to external vocabularies live in a separate, checked `mappings/` layer; PRISM never changes data to carry meaning. New page `docs/ONTOLOGY_READY.md`, README badge and landing pill. No ontology tool is included.
+- `terms check-links (--dir <folder> | --project <project>)`: a lab checks its own mapping files (links from PRISM IDs to external vocabularies) with the specification's own checker. Read-only, exit 1 on problems.
+- `spec local add-term --link VOCABULARY=URL`: a local term can carry links to any vocabulary, stored in the project's `code/specification/mappings/` and shared by `spec propose`. The LOINC special cases are gone: the sidecar column field `LOINC` (biosample schema 1.1.3; synced prism-specification v1.5.22; the biosample-inflammation template lost its two `LOINC` fields, the codes live in `mappings/biosample/`), its conversion in the proposal builder, and its inheritance in the validator.
+- Proposals can carry links to external vocabularies: `terms propose --link` and `spec propose-metric --link VOCABULARY=URL` (and a field on the Propose-changes page) add a `mappings/` file to the proposal; a `LOINC` term field is refused (it is a link). Synced prism-specification v1.5.21.
+- **Ontology links for surveys: `terms show` reads them, and 29 vocabularies are known.** Synced from prism-specification
+  v1.5.20. `mappings/survey/dass.json` and `dass21.json` link every DASS item to the SNOMED CT score of its subscale
+  (`prism_tools.py terms show prism:dass21.dass2101 --modality survey` prints it under `Measures`); the demo has a
+  `ValueRules` example. `mappings/vocabularies.json` now accepts links to SNOMED CT, LOINC, ChEBI, NCIT, HPO, MONDO,
+  DOID, MFOEM, MFOMD, Uberon, PATO, CMO, OBA, EFO, ICD-11, ICD-10, MeSH, UMLS, Wikidata, Cognitive Atlas, NIH CDE,
+  PubChem, UniProt, ATC, Orphanet, OMIM, HMDB, DrugBank and RxNorm. Links are `unreviewed` until a maintainer checks them.
+
 ### Changed
 - **Documentation and examples no longer depend on third-party instruments.** The workshop and the beginner tutorials
   (`TUTORIAL_BEGINNER*`, `WORKSHOP`, `EXAMPLES`) are built on the demonstration questionnaire (`demo`, items

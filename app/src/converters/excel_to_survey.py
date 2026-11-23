@@ -1571,10 +1571,10 @@ def extract_excel_templates(
 
         # Enforce explicit language columns for item descriptions.
         # Generic `Description` is intentionally ignored to avoid mixed language mapping.
-        if not (description_map.get("de") or description_map.get("en")):
+        if not description_map:
             raise ValueError(
-                f"Item '{var_name}' in group '{prefix}' is missing Description_de/Description_en. "
-                "Please provide at least one of these columns."
+                f"Item '{var_name}' in group '{prefix}' has no item text. "
+                "Provide a Description_<language> column (e.g. Description_en, Description_de, Description_fr)."
             )
 
         entry = {"Description": description_map}

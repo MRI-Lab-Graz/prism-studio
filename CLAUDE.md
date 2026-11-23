@@ -20,6 +20,13 @@ show the result. (What stays in the GUI is UI state only: which card is open, wh
 - Before you edit anything in `app/src/web/**` ask: "is this the CLI's job?" It almost always is.
 - Known open differences are tracked in `docs/CLI_STUDIO_DIVERGENCES.md`. Remove entries; never add one on purpose.
 
+## Be agnostic: no feature for one example
+
+Never build a field, flag or code path for one example (LOINC, biosample). It works for every vocabulary in
+`mappings/vocabularies.json` and every modality, or it does not exist. Start from the example, write the general
+mechanism, and treat all data equally. (A sidecar `LOINC` field on biosample columns was exactly this mistake: the
+general form is a link, `vocabulary=URL`, on any term of any modality, in `mappings/`.)
+
 ## Structured GUI behaviour: the project page is the reference
 
 Every Studio page behaves like the project page (`app/templates/projects.html`,
@@ -94,6 +101,27 @@ model inherits the session's). **Never use another model** (Opus, Fable, Haiku, 
 a check, and never switch models in the middle of a task, unless the user has approved that specific use first. This
 overrides the model-selection advice of the superpowers skills (they suggest cheaper or more capable tiers). If a task
 seems to need a different model, ask the user and wait for the answer.
+
+## Token budget: work cheaper
+
+The model is not what burns the usage limit; context size and the number of agent runs are (one long session used a
+5-hour limit in about an hour: every tool call re-reads the whole conversation, and each subagent starts with its own
+100k-token context). So:
+
+- **One stream per chat.** Start a fresh chat for each stream (a batch PR, a Studio PR) and carry state in a handoff file
+  (`docs/handouts/`), not in a long conversation. Do not let one session run for hours across streams.
+- **Fewer, bigger agent runs.** One review per batch or PR, not one per template or per task. No new review round when
+  the last one was clean. A defect found by a review is fixed directly, or by resuming the agent that built it
+  (`SendMessage`), not by a new agent with a fresh context.
+- **Audits once per PR.** `ponytail:ponytail-audit` and `/code-review` run once on the finished branch, not per task.
+  (This narrows the per-task review of `superpowers:subagent-driven-development`; the user has asked for it.)
+- **No parallel fan-out** of many agents unless the user asks for it; no duplicate or polling agents (stop a duplicate
+  with `TaskStop`).
+- **Hand files, not text.** Give agents a file path to read and let them write their report to a file; keep pasted
+  output and reports short in the main chat.
+- **Short main context.** Read only the part of a file you need; redirect long command output to a file and read its
+  tail. Say once what was done; do not repeat summaries.
+- **Tell the user early** when a plan will be expensive (many agent runs) and offer the cheaper variant.
 
 ## One implementation: every command lives in the backend/CLI, the GUI only calls it
 
@@ -304,9 +332,10 @@ extension, anywhere in the project, including `sourcedata/`.
 
 Consequence to keep in mind: because `sourcedata/` (raw, possibly identifiable
 participant data) is plain git, it travels with every push and stays in history.
-It is for the **internal lab server only**; `src/share_publish.publish_to_server`
-refuses http(s)/public-host targets while `sourcedata/` is tracked. Any new push
-or publish path must go through that guard or repeat it.
+It is for the **internal lab server only**. Studio and the CLI have **no push path** (sending, syncing, publishing and
+getting data are Worldline Desktop's job, since 2026-11-21); the public-host guard lives there
+(`src/datalad/sourcedata-guard.js` in Worldline-desktop). Do not add a push or publish path to this repo; if one is
+ever needed, port that guard first.
 
 ## Session IDs are free-form strings — never normalize them
 

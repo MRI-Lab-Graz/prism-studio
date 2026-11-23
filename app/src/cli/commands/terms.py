@@ -8,6 +8,8 @@ from pathlib import Path
 
 from src.term_proposal import (
     ProposalError,
+    attach_links,
+    parse_links,
     build_proposal,
     check_with_specification,
     deliver_proposal,
@@ -140,6 +142,21 @@ def _fail(args, message: str, **extra) -> None:
     sys.exit(1)
 
 
+def cmd_terms_check_links(args) -> None:
+    """Check mapping files (a folder, or a project's local links) with the specification's checker; exit 1 on problems."""
+    from src.mappings_check import check_links
+    from src.spec_overlay import OverlayError
+
+    try:
+        problems = check_links(Path(args.dir) if args.dir else None, project=args.project)
+    except (OverlayError, OSError, ValueError, RecursionError) as exc:
+        _fail(args, str(exc) or type(exc).__name__)
+    _emit(args, {"success": not problems, "problems": problems},
+          "\n".join(problems) if problems else "No problems: every link is a known vocabulary, a real ID and a well-formed address.")
+    if problems:
+        sys.exit(1)
+
+
 def cmd_terms_propose(args) -> None:
     """Build a proposal for a new metric from a sidecar column; send nothing unless --open."""
     if getattr(args, "data", None):
@@ -157,6 +174,7 @@ def cmd_terms_propose(args) -> None:
     registry = load_registry(args.modality)
     try:
         proposal = build_proposal(registry, sidecar, args.column, args.label, args.modality)
+        attach_links(proposal, parse_links(getattr(args, "link", None)))
     except ProposalError as exc:
         _fail(args, str(exc))
     problems = check_with_specification(proposal, registry)

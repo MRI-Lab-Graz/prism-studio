@@ -5,6 +5,5 @@
   "SpecimenType": "serum",
   "Units": "pg/mL",
   "MinValue": 0,
-  "LOINC": "26881-3",
   "Status": "official"
 }

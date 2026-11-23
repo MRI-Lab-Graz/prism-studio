@@ -22,7 +22,7 @@ from src.spec_overlay import (
 )
 from src.survey_fingerprints import fingerprint_sidecar
 from src.spec_contribute import check_new_kind_name, example_entries, proposal_for_new_kind, proposal_for_new_metric, proposal_for_values, spec_catalog
-from src.term_proposal import deliver_proposal, vendored_term_proposal
+from src.term_proposal import ProposalError, deliver_proposal, parse_links, vendored_term_proposal
 
 
 def _emit(args, payload: dict, text: str) -> None:
@@ -71,9 +71,9 @@ def cmd_spec_local_add_term(args) -> None:
     try:
         result = add_local_term(
             args.project, column=args.column, data_file=args.data, sidecar_file=args.sidecar,
-            label=args.label, modality=args.modality,
+            label=args.label, modality=args.modality, links=parse_links(args.link),
         )
-    except OverlayError as exc:
+    except (OverlayError, ProposalError) as exc:
         _fail(args, str(exc))
     ids = [term["TermID"] for term in result["proposal"]["terms"]]
     written = [str(path) for path in result["written"]]
@@ -229,13 +229,14 @@ def cmd_spec_propose_metric(args) -> None:
             _fail(args, f"--level {item!r}: use CODE=LABEL")
         levels[code] = label
     try:
+        links = parse_links(getattr(args, "link", None))
         result = proposal_for_new_metric(
             args.name, args.description, args.units, args.specimen, args.alias, args.modality,
             project_root=args.project,
             entries=_cli_entries(args), not_sure=args.not_sure, closest=args.closest,
-            levels=levels or None, cf_standard_name=args.cf_standard_name, group=args.group,
+            levels=levels or None, cf_standard_name=args.cf_standard_name, group=args.group, links=links,
         )
-    except OverlayError as exc:
+    except (OverlayError, ProposalError) as exc:
         _fail(args, str(exc))
     _deliver_result(args, result)
 

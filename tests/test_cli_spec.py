@@ -54,20 +54,20 @@ def test_add_term_then_list_then_the_validator_uses_it(tmp_path):
     data = json.loads(out)
     assert code == 0 and data["success"] and len(data["written"]) == 2
     code, out = _run("spec", "local", "list", "--project", str(project), "--json")
-    assert [(i["id"], i["status"]) for i in json.loads(out)["items"]] == [("prism:dhea-s", "local"), ("prism:dhea-s.saliva", "local")]
+    assert [(i["id"], i["status"]) for i in json.loads(out)["items"]] == [("local:dhea-s", "local"), ("local:dhea-s.saliva", "local")]
     _code, report = _run(str(project), script="prism.py")
     assert "dhea_s" in report and "is not an official metric" not in report  # the column is known now
     assert "uses the local term" not in report  # the column itself still has no Term: only a suggestion
 
 
 def test_a_column_that_names_the_local_term_is_validated_with_it(tmp_path):
-    project = _project(tmp_path / "p", {"dhea_s": {"Term": "prism:dhea-s"}})
+    project = _project(tmp_path / "p", {"dhea_s": {"Term": "local:dhea-s"}})
     sidecar = project / "biosample-saliva_biosample.json"
     # the metric is unknown until the term is added; give the column a definition just for the add step
     donor = _project(tmp_path / "donor")
     _run("spec", "local", "add-term", "--project", str(project), "--data", _tsv(donor), "--column", "dhea_s", "--label", "DHEA-S")
     _code, report = _run(str(project), script="prism.py")
-    assert "uses the local term prism:dhea-s.saliva" in report, report
+    assert "uses the local term local:dhea-s.saliva" in report, report
     assert sidecar.exists()
 
 
@@ -171,7 +171,7 @@ def test_propose_all_reports_what_the_official_registry_adopted(tmp_path):
     adopted.write_text(json.dumps({"TermID": "prism:cortisol", "Level": "analyte", "Label": "mine", "Aliases": [], "Description": "d"}), encoding="utf-8")
     code, out = _run("spec", "propose", "--project", str(project), "--all", "--json")
     data = json.loads(out)
-    assert code == 0 and data["skipped"] == ["prism:cortisol"] and len(data["document"]["files"]) == 4
+    assert code == 0 and data["skipped"] == ["local:cortisol"] and len(data["document"]["files"]) == 4
 
 
 def test_propose_with_nothing_local_exits_1(tmp_path):
@@ -486,7 +486,7 @@ def test_environment_local_term_share_command_works_as_printed(tmp_path):
     term = json.loads(out)["proposal"]["terms"][0]["TermID"]
     sidecar = project / "recording-weather_environment.json"
     data = json.loads(sidecar.read_text(encoding="utf-8"))
-    data["noise_db"] = {"Term": term}
+    data["noise_db"] = {"Term": term.replace("prism:", "local:")}  # a proposal says prism:, the project local:
     sidecar.write_text(json.dumps(data), encoding="utf-8")
     note = next(m for m in _infos(project) if "uses the local term" in m)
     code, out = _run(*_suggested(note, "spec propose"), "--json")
@@ -584,3 +584,14 @@ def test_add_survey_deeply_nested_sidecar_exits_1(tmp_path):
     deep.write_text("[" * 100000, encoding="utf-8")
     code, out = _run("spec", "local", "add-survey", "--project", str(project), "--sidecar", str(deep))
     assert code == 1 and out.startswith("Error:")
+
+
+def test_add_term_link_writes_the_project_mapping_and_shares_it(tmp_path):
+    project = _project(tmp_path / "p")
+    code, out = _run("spec", "local", "add-term", "--project", str(project), "--data", _tsv(project), "--column", "dhea_s",
+                     "--link", "loinc=https://loinc.org/2191-5", "--json")
+    assert code == 0, out
+    mapping = project / "code" / "specification" / "mappings" / "biosample" / "dhea-s.json"
+    assert json.loads(mapping.read_text(encoding="utf-8")) == {"local:dhea-s.saliva": {"SameAs": {"loinc": "https://loinc.org/2191-5"}}}
+    code, out = _run("spec", "propose", "--project", str(project), "--all", "--json")
+    assert code == 0 and "mappings/biosample/dhea-s.json" in json.loads(out)["document"]["files"]

@@ -84,8 +84,6 @@ STUDY_DESC_ALIASES = {
 }
 PROTOCOL_ALIASES = {"protocol", "procedure", "method"}
 INSTRUCTIONS_ALIASES = {"instructions", "instruction"}
-INSTRUCTIONS_EN_ALIASES = {"instructions_en"}
-INSTRUCTIONS_DE_ALIASES = {"instructions_de"}
 REFERENCE_ALIASES = {"reference", "citation", "doi"}
 ESTIMATED_DURATION_ALIASES = {"estimatedduration", "estimated_duration", "duration"}
 EQUIPMENT_ALIASES = {"equipment", "device"}
@@ -93,36 +91,14 @@ SUPERVISOR_ALIASES = {"supervisor"}
 
 ACRONYMS = {"cmj", "hgs", "ads", "bdi", "stai", "psqi", "gad7", "phq9", "vo2max"}
 
-TRANSLATIONS = {
-    "Measures right leg length from hip to medial malleolus in supine position": "Misst die rechte Beinlänge vom Hüftknochen bis zum Innenknöchel in Rückenlage",
-    "Measures left leg length from hip to medial malleolus in supine position": "Misst die linke Beinlänge vom Hüftknochen bis zum Innenknöchel in Rückenlage",
-    "Measures dynamic balance and anterior reach": "Misst das dynamische Gleichgewicht und die Reichweite nach vorne (anterior)",
-    "Measures dynamic balance and posteromedial reach": "Misst das dynamische Gleichgewicht und die Reichweite nach hinten-innen (posteromedial)",
-    "Measures dynamic balance and posterolateral reach": "Misst das dynamische Gleichgewicht und die Reichweite nach hinten-außen (posterolateral)",
-    "Measures maximal isometric right-hand grip strength using Jamar hand dynamometer": "Misst die maximale isometrische Greifkraft der rechten Hand mit einem Jamar-Handdynamometer",
-    "Measures maximal isometric left-hand grip strength using Jamar hand dynamometer": "Misst die maximale isometrische Greifkraft der linken Hand mit einem Jamar-Handdynamometer",
-    "Participant self-assessment of": "Selbsteinschätzung des Teilnehmers bezüglich",
-    "How well do you think you have performed this task?": "Wie gut haben Sie diese Aufgabe Ihrer Meinung nach ausgeführt?",
-    "very bad": "sehr schlecht",
-    "very good": "sehr gut",
-    "pre-intervention": "for der Intervention",
-    "mid-intervention": "während der Intervention",
-    "post-intervention": "nach der Intervention",
-    "trial": "Durchgang",
-    "assessment": "Untersuchung",
-    "Imported": "Importierte",
-    "biometrics data": "biometrische Daten",
-    "Team at": "Team zum Zeitpunkt",
-}
 
-
-def translate_text(text):
-    if not text:
-        return text
-    out = text
-    for en, de in TRANSLATIONS.items():
-        out = out.replace(en, de)
-    return out
+def _administration_time(text):
+    """'10', '10 min', '10-15 minutes' or '10 bis 15' -> {"min": 10, "max": 15} (the schema's AdministrationTime); None if not minutes."""
+    nums = re.findall(r"\d+(?:[.,]\d+)?", str(text))
+    if not 1 <= len(nums) <= 2:
+        return None
+    lo, hi = (float(n.replace(",", ".")) for n in (nums[0], nums[-1]))
+    return {"min": int(lo) if lo.is_integer() else lo, "max": int(hi) if hi.is_integer() else hi}
 
 
 def format_group_name(name):
@@ -347,8 +323,12 @@ def process_excel_biometrics(
     study_desc_idx = find_column_idx(header_row, STUDY_DESC_ALIASES)
     protocol_idx = find_column_idx(header_row, PROTOCOL_ALIASES)
     instructions_idx = find_column_idx(header_row, INSTRUCTIONS_ALIASES)
-    instructions_en_idx = find_column_idx(header_row, INSTRUCTIONS_EN_ALIASES)
-    instructions_de_idx = find_column_idx(header_row, INSTRUCTIONS_DE_ALIASES)
+    # Instructions_<language> for any language (en, de, fr, ...)
+    instructions_lang_idx = {}
+    for i, h in enumerate(header_row):
+        m = re.fullmatch(r"instructions[_-]([a-z]{2,3})", str(h).strip().lower())
+        if m:
+            instructions_lang_idx.setdefault(m.group(1), i)
     reference_idx = find_column_idx(header_row, REFERENCE_ALIASES)
     duration_idx = find_column_idx(header_row, ESTIMATED_DURATION_ALIASES)
     equipment_idx = find_column_idx(header_row, EQUIPMENT_ALIASES)
@@ -373,8 +353,7 @@ def process_excel_biometrics(
             study_desc_idx,
             protocol_idx,
             instructions_idx,
-            instructions_en_idx,
-            instructions_de_idx,
+            *instructions_lang_idx.values(),
             reference_idx,
             duration_idx,
             equipment_idx,
@@ -451,8 +430,6 @@ def process_excel_biometrics(
                 "StudyDescription": None,
                 "Protocol": None,
                 "Instructions": None,
-                "Instructions_en": None,
-                "Instructions_de": None,
                 "Reference": None,
                 "EstimatedDuration": None,
                 "Equipment": None,
@@ -477,8 +454,8 @@ def process_excel_biometrics(
         _set_once("StudyDescription", study_desc_idx)
         _set_once("Protocol", protocol_idx)
         _set_once("Instructions", instructions_idx)
-        _set_once("Instructions_en", instructions_en_idx)
-        _set_once("Instructions_de", instructions_de_idx)
+        for lang, idx in instructions_lang_idx.items():
+            _set_once(f"Instructions_{lang}", idx)
         _set_once("Reference", reference_idx)
         _set_once("EstimatedDuration", duration_idx)
         _set_once("Equipment", equipment_idx)
@@ -618,77 +595,71 @@ def process_excel_biometrics(
                         if isinstance(v, str):
                             all_texts.append(v)
 
-            default_lang = detect_language(all_texts)
+        default_lang = detect_language(all_texts)
 
-            # Convert to i18n format
-            i18n_variables = {}
-            for var_name, var_def in variables.items():
-                new_def = copy.deepcopy(var_def)
-                if isinstance(new_def.get("Description"), str):
-                    en_text = new_def["Description"]
-                    new_def["Description"] = {
-                        "en": en_text,
-                        "de": translate_text(en_text),
-                    }
-                if isinstance(new_def.get("Levels"), dict):
-                    new_levels = {}
-                    for k, v in new_def["Levels"].items():
-                        if isinstance(v, str):
-                            new_levels[k] = {"en": v, "de": translate_text(v)}
-                        else:
-                            new_levels[k] = v
-                    new_def["Levels"] = new_levels
-                i18n_variables[var_name] = new_def
+        # Convert to i18n format
+        i18n_variables = {}
+        for var_name, var_def in variables.items():
+            new_def = copy.deepcopy(var_def)
+            if isinstance(new_def.get("Description"), str):
+                new_def["Description"] = {default_lang: new_def["Description"]}
+            if isinstance(new_def.get("Levels"), dict):
+                new_levels = {}
+                for k, v in new_def["Levels"].items():
+                    if isinstance(v, str):
+                        new_levels[k] = {default_lang: v}
+                    else:
+                        new_levels[k] = v
+                new_def["Levels"] = new_levels
+            i18n_variables[var_name] = new_def
 
-            sidecar = {
-                "Technical": {
-                    "Type": "Biometrics",
-                    "FileFormat": "tsv",
-                    "Equipment": equipment_value,
-                    "Supervisor": supervisor_value,
-                },
-                "I18n": {
-                    "Languages": ["en", "de"],
-                    "DefaultLanguage": default_lang,
-                },
-                "Study": {
-                    "BiometricName": group,
-                    "OriginalName": original_name,
-                    "Protocol": meta.get("Protocol") or "",
-                    "Description": {
-                        "en": study_description,
-                        "de": translate_text(study_description),
-                    },
-                },
-                "Metadata": {
-                    "SchemaVersion": "1.1.1",
-                    "CreationDate": pd.Timestamp.now().strftime("%Y-%m-%d"),
-                    "Creator": "excel_to_biometrics_library.py",
-                },
-            }
+        sidecar = {
+            "Technical": {
+                "Type": "Biometrics",
+                "FileFormat": "tsv",
+                "Equipment": equipment_value,
+                "Supervisor": supervisor_value,
+            },
+            "I18n": {
+                "Languages": [default_lang],
+                "DefaultLanguage": default_lang,
+            },
+            "Study": {
+                "BiometricName": group,
+                "OriginalName": original_name,
+                "Protocol": meta.get("Protocol") or "",
+                "Description": {default_lang: study_description},
+            },
+            "Metadata": {
+                "SchemaVersion": "1.1.1",
+                "CreationDate": pd.Timestamp.now().strftime("%Y-%m-%d"),
+                "Creator": "excel_to_biometrics_library.py",
+            },
+        }
 
-            if meta.get("Instructions"):
-                sidecar["Study"]["Instructions"] = {default_lang: meta["Instructions"]}
-            elif meta.get("Instructions_en") or meta.get("Instructions_de"):
-                instr = {}
-                if meta.get("Instructions_en"):
-                    instr["en"] = meta["Instructions_en"]
-                if meta.get("Instructions_de"):
-                    instr["de"] = meta["Instructions_de"]
+        if meta.get("Instructions"):
+            sidecar["Study"]["Instructions"] = {default_lang: meta["Instructions"]}
+        else:
+            instr = {k.split("_", 1)[1]: v for k, v in meta.items() if k.startswith("Instructions_") and v}
+            if instr:
                 sidecar["Study"]["Instructions"] = instr
                 for lang in instr:
                     if lang not in sidecar["I18n"]["Languages"]:
                         sidecar["I18n"]["Languages"].append(lang)
 
-            if meta.get("Reference"):
-                sidecar["Study"]["Reference"] = meta["Reference"]
-            if meta.get("EstimatedDuration"):
-                sidecar["Study"]["EstimatedDuration"] = meta["EstimatedDuration"]
+        if meta.get("Reference"):
+            sidecar["Study"]["Citation"] = meta["Reference"]
+        if meta.get("EstimatedDuration"):
+            minutes = _administration_time(meta["EstimatedDuration"])
+            if minutes:
+                sidecar["Study"]["AdministrationTime"] = minutes
+            else:
+                print(f"Warning: duration '{meta['EstimatedDuration']}' of {group} is not minutes; AdministrationTime not set")
 
-            sidecar.update(i18n_variables)
+        sidecar.update(i18n_variables)
 
-            json_filename = f"biometrics-{group}.json"
-            json_path = os.path.join(output_dir, json_filename)
+        json_filename = f"biometrics-{group}.json"
+        json_path = os.path.join(output_dir, json_filename)
         with open(json_path, "w", encoding="utf-8") as f:
             json.dump(sidecar, f, indent=2, ensure_ascii=False)
         print(f"  - Created {json_path}")

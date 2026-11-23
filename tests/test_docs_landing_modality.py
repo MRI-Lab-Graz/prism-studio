@@ -14,7 +14,7 @@ def test_landing_page_has_a_propose_a_modality_section_with_a_link():
 
 
 def test_hero_has_a_propose_button():
-    hero = INDEX.split("A concrete before and after")[0]
+    hero = INDEX.split("Ontology-ready\n")[0]
     assert 'href="MODALITY_WORKFLOW.html"' in hero
 
 

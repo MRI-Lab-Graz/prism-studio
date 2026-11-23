@@ -19,6 +19,7 @@ from src.term_proposal import (
     MODALITY_NAME,
     ProposalError,
     as_v2,
+    attach_links,
     build_proposal,
     check_with_specification,
     issue_url,
@@ -87,9 +88,22 @@ def _real_terms_folder(project_root, modality: str) -> Path:
 
 
 def _local_part(term_id) -> str | None:
-    """The file stem of a `prism:` term ID, or None when it is not a valid local ID."""
+    """The file stem of a `local:` term ID (`prism:` is accepted: old project files, and the form of a proposal)."""
     prefix, _, local = term_id.partition(":") if isinstance(term_id, str) else ("", "", "")
-    return local if prefix == "prism" and _scripts()[1]._LOCAL.fullmatch(local) else None
+    return local if prefix in ("local", "prism") and _scripts()[1]._LOCAL.fullmatch(local) else None
+
+
+def _relabel(term: dict, prefix: str, stems) -> dict:
+    """The term with its ID (and its Parent, when the parent's stem is in `stems`) under `prefix`.
+
+    A project's own terms are `local:<slug>`; the proposal that shares them is `prism:<slug>`. A child of an
+    official parent keeps the official `prism:` parent.
+    """
+    out = {**term, "TermID": f"{prefix}:{term['TermID'].partition(':')[2]}"}
+    parent = term.get("Parent")
+    if isinstance(parent, str) and parent.partition(":")[2] in stems:
+        out["Parent"] = f"{prefix}:{parent.partition(':')[2]}"
+    return out
 
 
 def load_local_terms(project_root, modality: str = "biosample") -> tuple[dict[str, dict], list[str]]:
@@ -115,12 +129,12 @@ def load_local_terms(project_root, modality: str = "biosample") -> tuple[dict[st
         elif "Status" in data:
             problems.append(f"{path.name}: a local term has no Status (the maintainers' merge sets it)")
         elif _local_part(data.get("TermID")) != path.stem:
-            problems.append(f"{path.name}: TermID {data.get('TermID')!r} must be prism:{path.stem}")
+            problems.append(f"{path.name}: TermID {data.get('TermID')!r} must be local:{path.stem}")
         elif (bad := check_terms.type_problems(data, path.name)):
             problems += bad
         else:
             terms[path.stem] = data
-    return terms, problems
+    return {stem: _relabel(term, "local", terms) for stem, term in terms.items()}, problems
 
 
 def _checked_modality(modality) -> str:
@@ -218,8 +232,10 @@ def write_local_terms(project_root, modality: str, terms: list[dict]) -> list[Pa
     """Write one file per term (exactly the proposal term); every ID is checked before anything is written."""
     for term in terms:
         if _local_part(term.get("TermID")) is None:
-            raise OverlayError(f"{term.get('TermID')!r} is not a valid local term ID (prism:<slug>[.<specimen>])")
+            raise OverlayError(f"{term.get('TermID')!r} is not a valid local term ID (local:<slug>[.<specimen>])")
     folder = _real_terms_folder(project_root, modality)
+    stems = {_local_part(term["TermID"]) for term in terms} | set(load_local_terms(project_root, modality)[0])
+    terms = [_relabel(term, "local", stems) for term in terms]
     targets = [folder / f"{_local_part(term['TermID'])}.json" for term in terms]
     for path in targets:  # all of them first: nothing is written when one is in the way, and nothing is overwritten
         if path.exists() or path.is_symlink():
@@ -228,6 +244,76 @@ def write_local_terms(project_root, modality: str, terms: list[dict]) -> list[Pa
     for term, path in zip(terms, targets):
         path.write_text(json.dumps(term, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     return targets
+
+
+def _links_folder(project_root, modality: str) -> Path:
+    return overlay_root(project_root) / "mappings" / _checked_modality(modality)
+
+
+def _family(term_id: str) -> str:
+    return term_id.partition(":")[2].partition(".")[0]
+
+
+def load_local_links(project_root, modality: str = "biosample") -> dict[str, dict]:
+    """{`prism:` ID: {vocabulary: URL}} of the project's local links (`code/specification/mappings/<modality>/<family>.json`).
+
+    Project data is untrusted: a file or entry that is not the expected shape is skipped; the proposal check judges the rest."""
+    folder = _links_folder(project_root, modality)
+    links: dict[str, dict] = {}
+    for path in sorted(folder.glob("*.json")) if folder.is_dir() else []:
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError, RecursionError):
+            continue
+        for term_id, entry in (data.items() if isinstance(data, dict) else ()):
+            same = entry.get("SameAs") if isinstance(entry, dict) else None
+            if _local_part(term_id) is not None and isinstance(same, dict):
+                links[f"prism:{_local_part(term_id)}"] = same
+    return links
+
+
+def write_local_links(project_root, modality: str, links: dict[str, dict]) -> list[Path]:
+    """Add the links ({ID: {vocabulary: URL}}) to the family files of the project's local mappings; the IDs become `local:`."""
+    folder = _real_overlay_folder(project_root, "mappings", _checked_modality(modality))
+    by_family: dict[str, dict] = {}
+    for term_id, same in links.items():
+        if _local_part(term_id) is None:
+            raise OverlayError(f"{term_id!r} is not a valid local term ID")
+        by_family.setdefault(_family(term_id), {})[f"local:{term_id.partition(':')[2]}"] = {"SameAs": same}
+    written = []
+    for family, entries in by_family.items():
+        path = folder / f"{family}.json"
+        if path.is_symlink():
+            raise OverlayError(f"{path} is a symbolic link; the specification folder of a project must be a real folder")
+        try:
+            existing = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
+        except (OSError, ValueError, RecursionError) as exc:
+            raise OverlayError(f"{path.name} cannot be read ({type(exc).__name__}); fix or remove it first") from exc
+        if not isinstance(existing, dict):
+            raise OverlayError(f"{path.name} must be a JSON object; fix or remove it first")
+        folder.mkdir(parents=True, exist_ok=True)
+        for key, entry in entries.items():  # an entry keeps its other vocabularies
+            old = existing.get(key)
+            old_same = old.get("SameAs") if isinstance(old, dict) and isinstance(old.get("SameAs"), dict) else {}
+            existing[key] = {**(old if isinstance(old, dict) else {}), "SameAs": {**old_same, **entry["SameAs"]}}
+        path.write_text(json.dumps(existing, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        written.append(path)
+    return written
+
+
+def _remove_local_links(project_root, modality: str, term_ids: list[str]) -> None:
+    """Drop the links of removed local terms; a family file left empty is removed."""
+    folder = _real_overlay_folder(project_root, "mappings", _checked_modality(modality))
+    for path in sorted(folder.glob("*.json")) if folder.is_dir() else []:
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError, RecursionError):
+            continue
+        if not isinstance(data, dict) or path.is_symlink():
+            continue
+        kept = {k: v for k, v in data.items() if _local_part(k) not in term_ids}
+        if kept != data:
+            path.write_text(json.dumps(kept, indent=2, ensure_ascii=False) + "\n", encoding="utf-8") if kept else path.unlink()
 
 
 def remove_local_terms(project_root, modality: str, term_id: str) -> list[Path]:
@@ -245,8 +331,9 @@ def remove_local_terms(project_root, modality: str, term_id: str) -> list[Path]:
             data = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, ValueError, RecursionError):
             continue
-        if isinstance(data, dict) and data.get("Parent") == f"prism:{stem}" and path != target and not path.is_symlink():
+        if isinstance(data, dict) and data.get("Parent") in (f"prism:{stem}", f"local:{stem}") and path != target and not path.is_symlink():
             doomed.append(path)
+    _remove_local_links(project_root, modality, [p.stem for p in doomed])  # first: refuses a symlinked folder before anything is deleted
     for path in doomed:
         path.unlink()
     return doomed
@@ -377,7 +464,8 @@ def _project_specimens(project_root, modality: str) -> list[str] | None:
 
 
 def add_local_term(
-    project_root, *, column: str, data_file=None, sidecar_file=None, label=None, modality: str = "biosample"
+    project_root, *, column: str, data_file=None, sidecar_file=None, label=None, modality: str = "biosample",
+    links: dict[str, str] | None = None,
 ) -> dict:
     """Make a column's metric a local term of this project: build the proposal, check it, write the term files."""
     if bool(data_file) == bool(sidecar_file):
@@ -389,12 +477,20 @@ def add_local_term(
             sidecar = json.loads(Path(sidecar_file).read_text(encoding="utf-8"))
         registry = merged_registry(project_root, modality)
         proposal = build_proposal(registry, sidecar, column, label, modality)
+        attach_links(proposal, links or {})
     except (ProposalError, OSError, ValueError, RecursionError) as exc:
         raise OverlayError(str(exc) or type(exc).__name__) from exc
+    local_stems = set(load_local_terms(project_root, modality)[0])  # the check speaks prism: (the proposal's form)
+    proposal["terms"] = [_relabel(term, "prism", local_stems) for term in proposal["terms"]]
     # the check wants a Status on every registry entry; a local term has none until the maintainers merge it
-    checked_against = {stem: term if "Status" in term else {**term, "Status": "official"} for stem, term in registry.items()}
+    checked_against = {
+        stem: term if "Status" in term else {**_relabel(term, "prism", local_stems), "Status": "official"}
+        for stem, term in registry.items()
+    }
     new_stems = {term["TermID"].partition(":")[2] for term in proposal["terms"]}
-    other_stems = set(load_local_terms(project_root, modality)[0]) - new_stems  # existing local terms
+    if taken := sorted(new_stems & local_stems):
+        raise OverlayError("; ".join(f"local:{stem} is already a local term of this project" for stem in taken))
+    other_stems = local_stems - new_stems  # existing local terms
     # another, already broken local term must not stop an unrelated metric: drop only the problems that name one
     # (the registry check prefixes its messages with the file stem); everything else blocks, the safe default
     problems = [
@@ -403,7 +499,14 @@ def add_local_term(
     ]
     if problems:
         raise OverlayError("; ".join(problems))
-    return {"proposal": proposal, "written": write_local_terms(project_root, modality, proposal["terms"])}
+    terms = write_local_terms(project_root, modality, proposal["terms"])
+    try:
+        links = write_local_links(project_root, modality, proposal.get("links", {}))
+    except OverlayError:
+        for path in terms:  # no half-added term: a retry must not meet "already a local term"
+            path.unlink()
+        raise
+    return {"proposal": proposal, "written": terms + links}
 
 
 def list_local_items(project_root, modality: str = "biosample") -> list[dict]:
@@ -625,9 +728,9 @@ def proposal_for_local_terms(
             stem = _local_part(term_id)
             if stem is None or stem not in local:
                 raise OverlayError(f"no local term {term_id} in this project")
-            if term_id in ignored:
-                if term_id not in skipped:
-                    skipped.append(term_id)
+            if local[stem]["TermID"] in ignored:
+                if local[stem]["TermID"] not in skipped:
+                    skipped.append(local[stem]["TermID"])
                 continue
             term = usable[stem]
             related = [
@@ -635,7 +738,7 @@ def proposal_for_local_terms(
                 if other["TermID"] == term.get("Parent") or other.get("Parent") == term["TermID"]
             ]
             chosen_stems += [stem, *related]
-    chosen = [usable[stem] for stem in dict.fromkeys(chosen_stems)]
+    chosen = [_relabel(usable[stem], "prism", local) for stem in dict.fromkeys(chosen_stems)]
     patch, patch_messages = load_local_patches(project_root, modality)
     added = {v for op in (patch or {}).get("operations", []) if op.get("path") == "Technical.SpecimenType" for v in op.get("values", [])}
     if patch and (include_patch or any(t.get("SpecimenType") in added for t in chosen)):
@@ -645,6 +748,9 @@ def proposal_for_local_terms(
     if not chosen and not patch:
         raise OverlayError("nothing to share" + (f" (covered by official terms: {', '.join(skipped)})" if skipped else ""))
     proposal = {"modality": modality, "terms": sorted(chosen, key=lambda t: t["TermID"]), **({"patch": patch} if patch else {})}
+    local_links = load_local_links(project_root, modality)
+    if links := {t["TermID"]: local_links[t["TermID"]] for t in chosen if t["TermID"] in local_links}:
+        proposal["links"] = links
     document = as_v2(proposal)
     return {
         "proposal": proposal,

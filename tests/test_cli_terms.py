@@ -454,3 +454,23 @@ def test_resolve_shows_messages_about_invalid_local_files(tmp_path):
     assert code == 0 and out.startswith("warning: ")
     data = json.loads(_run("resolve", "--sidecar", str(sidecar), "--project", str(project), "--json")[1])
     assert data["problems"]
+
+
+def test_terms_show_survey_item_carries_its_snomed_subscale_link():
+    """DASS-21 item 1 ("hard to wind down") counts towards the stress subscale (mappings/survey/dass21.json)."""
+    code, out = _run("show", "prism:dass21.dass2101", "--modality", "survey", "--json")
+    (link,) = json.loads(out)["measures"]
+    assert code == 0
+    assert link["URL"] == "https://snomed.info/id/416767005" and link["Match"] == "related" and link["Higher"] == "more"
+
+
+def test_propose_link_flag_puts_the_link_in_the_document(tmp_path):
+    code, out = _run("propose", "--sidecar", str(_sidecar(tmp_path)), "--column", "ferr_ugl", "--json",
+                     "--link", "loinc=https://loinc.org/2276-4")
+    document = json.loads(out)["proposal"]["links"]
+    assert code == 0 and document == {"prism:ferr-ugl.serum": {"loinc": "https://loinc.org/2276-4"}}
+
+
+def test_propose_bad_link_exits_1_naming_the_flag(tmp_path):
+    code, out = _run("propose", "--sidecar", str(_sidecar(tmp_path)), "--column", "ferr_ugl", "--json", "--link", "loinc")
+    assert code == 1 and "--link" in json.loads(out)["error"]

@@ -12,8 +12,9 @@ from src.converters.phenotype_import import (
 )
 
 
-def test_sanitize_task_name_keeps_hyphens_and_lowercases():
-    assert sanitize_task_name_from_phenotype_filename("Wellbeing_Multi") == "wellbeing-multi"
+def test_sanitize_task_name_is_letters_and_digits_only_and_lowercase():
+    assert sanitize_task_name_from_phenotype_filename("Wellbeing_Multi") == "wellbeingmulti"
+    assert sanitize_task_name_from_phenotype_filename("gold-dsi") == "golddsi"
 
 
 def test_sanitize_task_name_strips_desc_suffix():
@@ -21,7 +22,7 @@ def test_sanitize_task_name_strips_desc_suffix():
 
 
 def test_sanitize_task_name_strips_disallowed_characters():
-    assert sanitize_task_name_from_phenotype_filename("A survey!! (v2)") == "a-survey-v2"
+    assert sanitize_task_name_from_phenotype_filename("A survey!! (v2)") == "asurveyv2"
 
 
 def test_sanitize_task_name_falls_back_when_empty():

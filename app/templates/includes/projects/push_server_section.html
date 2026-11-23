@@ -1,4 +1,4 @@
-    <!-- Back up to a server with rsync (DataLad snapshots and the lab server live on the DataLad page) -->
+    <!-- Back up to a server with rsync (DataLad snapshots are sent with Worldline Desktop) -->
     <div class="card shadow-sm mt-4" id="rsyncServerCard" style="display: none;">
         <div class="card-header bg-info bg-opacity-10" data-bs-toggle="collapse" data-bs-target="#pushServerSection"
              role="button" tabindex="0" aria-expanded="false" aria-controls="pushServerSection">
@@ -22,7 +22,7 @@
                     Not using DataLad? Copy this project to an SSH-accessible server or a local/mounted
                     drive as a plain backup. Each sync is additive — local files are always kept, and
                     files already copied are not deleted from the destination.
-                    For snapshots shared with your team, use the <a href="{{ url_for('projects.datalad_page') }}">DataLad page</a>.
+                    For snapshots shared with your team, use <a href="https://worldline-desktop.readthedocs.io/" target="_blank" rel="noopener noreferrer">Worldline Desktop</a>.
                 </div>
 
                 <div class="mb-3" id="rsyncServerStatusPanel" aria-live="polite">

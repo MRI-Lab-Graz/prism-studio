@@ -6,7 +6,9 @@ to a file with `prism_tools.py terms propose ... --out proposal.json` in PRISM S
   {"modality": "biosample", "terms": [<parent term>, <child term>]}
 
 The issue body is untrusted text: it is parsed as JSON only, size-capped, and every field
-is checked against an allow-list before anything is written. File names are derived only
+is checked against an allow-list before anything is written. Besides term files a proposal may carry links to
+other vocabularies, `mappings/<modality>/<family>.json` (checked with check_mappings.py; the bot merges the new IDs
+into the family's file and refuses an ID that is already mapped). File names are derived only
 from IDs that passed the slug rule. Stdlib only; reuses scripts/check_terms.py.
 
 Usage:
@@ -40,7 +42,7 @@ MAX_PROBLEMS = 50
 MAX_LINE = 300  # characters per problem line in the log
 ALLOWED_FIELDS = frozenset(
     "TermID Level Label Aliases Description Parent SpecimenType Units AlternativeUnits "
-    "MinValue WarnMaxValue LOINC Equivalents Levels CFStandardName Group".split()
+    "MinValue WarnMaxValue Equivalents Levels CFStandardName Group".split()
 )
 REPO = Path(__file__).resolve().parents[1]
 # The term modalities before they were declared in entities.schema.json. PRISM Studio vendors these scripts
@@ -51,6 +53,7 @@ _LOCAL = re.compile(r"^[a-z][a-z0-9-]{0,62}(\.[a-z][a-z0-9-]{0,62})?$")  # at mo
 _PATCH_PATH = re.compile(r"patches/(?P<modality>[a-z][a-z0-9]*)\.json")
 # The repository paths a proposal may add. Later layers (schema patches, new modalities) add theirs here.
 _TERM_PATH = re.compile(r"terms/(?P<modality>[a-z][a-z0-9]*)/(?P<stem>[a-z][a-z0-9-]{0,62}(?:\.[a-z][a-z0-9-]{0,62})?)\.json")
+_MAPPING_PATH = re.compile(r"mappings/(?P<modality>[a-z][a-z0-9]*)/(?P<stem>[a-z][a-z0-9-]{0,62})\.json")  # a family's links
 _SECTION = re.compile(r"^### (.+?)\s*$", re.M)
 _OPENING_FENCE = re.compile(r"```[A-Za-z]*\n")
 _CHECKBOX = re.compile(r"^- \[([ xX])\]", re.M)
@@ -144,6 +147,24 @@ def _term_problems(term, where: str) -> list[str]:
     return problems
 
 
+def _mapping_shape(path: str, data, stem: str) -> list[str]:
+    """Problems of the shape of one proposed mapping file (the entries themselves are checked with the registry)."""
+    if not isinstance(data, dict):
+        return [f"{path}: must be a JSON object of ID -> entry"]
+    if not data:
+        return [f"{path}: has no entries"]
+    problems = []
+    for key, entry in data.items():
+        local = key.partition(":")[2] if isinstance(key, str) and key.startswith("prism:") else ""
+        if not _LOCAL.fullmatch(local):
+            problems.append(f"{path}: key {key!r} must be prism:<lowercase-slug>[.<specimen>]")
+        elif local.split(".")[0] != stem:
+            problems.append(f"{path}: the family of {key} is {local.split('.')[0]!r}, the file is {stem!r}")
+        if not isinstance(entry, dict):
+            problems.append(f"{path}: {key!r}: the entry must be a JSON object")
+    return problems
+
+
 def _declared(modalities: dict | None) -> dict[str, dict]:
     """The term modalities a proposal may name: the given ones, else this repository's declaration (LEGACY_MODALITIES
     when the script runs without schemas/ beside it, as vendored in PRISM Studio)."""
@@ -188,9 +209,18 @@ def _normalize_v2(proposal: dict, modalities=None) -> tuple[list[tuple[str, dict
     pairs = []
     for path, term in files.items():
         patch_match = _PATCH_PATH.fullmatch(path) if isinstance(path, str) else None
-        match = patch_match or (_TERM_PATH.fullmatch(path) if isinstance(path, str) else None)
+        mapping_match = _MAPPING_PATH.fullmatch(path) if isinstance(path, str) else None
+        match = patch_match or mapping_match or (_TERM_PATH.fullmatch(path) if isinstance(path, str) else None)
         if not match or (not patch_match and match["modality"] not in declared):
-            problems.append(f"path {path!r} is not allowed (terms/<{'|'.join(declared)}>/<id>.json or patches/<modality>.json)")
+            kinds = "|".join(declared)
+            problems.append(f"path {path!r} is not allowed (terms/<{kinds}>/<id>.json, mappings/<{kinds}>/<family>.json "
+                            "or patches/<modality>.json)")
+            continue
+        if mapping_match:  # its entries are checked with the registry, in check_proposal
+            found = _mapping_shape(path, term, mapping_match["stem"])
+            problems += found
+            if not found:
+                pairs.append((path, term))
             continue
         if patch_match:  # the patch is validated against the schema it targets, in check_proposal
             if isinstance(term, dict):
@@ -215,10 +245,10 @@ def _kinds(pairs: list[tuple[str, dict]], declared: dict) -> list[str]:
     """The term modalities a proposal touches: those of its term files and of its patches of term modalities."""
     kinds = []
     for path, _obj in pairs:
-        term = _TERM_PATH.fullmatch(path)
-        modality = (term or _PATCH_PATH.fullmatch(path))["modality"]
-        if term or modality in declared:
-            kinds.append(modality)
+        patch = _PATCH_PATH.fullmatch(path)
+        match = patch or _TERM_PATH.fullmatch(path) or _MAPPING_PATH.fullmatch(path)
+        if not patch or match["modality"] in declared:
+            kinds.append(match["modality"])
     return list(dict.fromkeys(kinds))
 
 
@@ -236,6 +266,50 @@ def split(pairs: list[tuple[str, dict]]) -> tuple[list[tuple[str, dict]], list[t
     return [(p, o) for p, o in pairs if p.startswith("terms/")], [(p, o) for p, o in pairs if p.startswith("patches/")]
 
 
+def links_of(pairs: list[tuple[str, dict]]) -> list[tuple[str, dict]]:
+    """The family files of links among the files a proposal adds (`split` gives the terms and the patches)."""
+    return [(p, o) for p, o in pairs if p.startswith("mappings/")]
+
+
+def _mapped_ids(folder: Path) -> tuple[dict[str, str], list[str]]:
+    """(ID -> file name of every ID already mapped in a modality's mappings folder, problems).
+
+    A file that cannot be read stops the check: skipping it would let a proposal re-map an ID that is mapped there.
+    """
+    mapped, problems = {}, []
+    for path in sorted(Path(folder).glob("*.json")):
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            data = None
+        if not isinstance(data, dict):
+            problems.append(f"{path.name} in the mappings folder cannot be read as a JSON object; a maintainer must fix it first")
+            continue
+        mapped.update({key: path.name for key in data})
+    return mapped, problems
+
+
+def _mapping_problems(pairs: list[tuple[str, dict]], registry: dict[str, dict], mappings_dir: Path | None) -> list[str]:
+    """Problems of the proposed links: a term that exists or is proposed, not yet mapped, a valid entry."""
+    if mappings_dir is None:
+        return ["a proposal with links needs the mappings folder to check them (mappings_dir)"]
+    check_mappings = _sibling("check_mappings")  # only a proposal with links needs it (and scripts/survey_ids.py beside it)
+    vocabs, problems = check_mappings.load_vocabularies(Path(mappings_dir) / "vocabularies.json")
+    for path, data in pairs:
+        mapped, found = _mapped_ids(Path(mappings_dir) / _MAPPING_PATH.fullmatch(path)["modality"])
+        problems += found
+        for key, entry in data.items():
+            term = registry.get(key.partition(":")[2])
+            if term is None:
+                problems.append(f"{path}: {key} is not a term of this registry and not proposed with the links")
+                continue
+            if key in mapped:
+                problems.append(f"{path}: {key} is already mapped in {mapped[key]}; changing a link is a maintainer's edit")
+            levels = term.get("Levels")
+            problems += check_mappings.entry_problems(entry, f"{path}: {key}", vocabs, set(levels) if isinstance(levels, dict) else None)
+    return problems
+
+
 # ponytail: hard-coded Technical.SpecimenType; right while biosample is the only term modality with a contextField
 # (one kind of data per proposal makes a patched term modality the terms' own). Read the declared contextField
 # when a second contextField modality arrives.
@@ -245,7 +319,7 @@ def _specimens_of(schema: dict) -> list[str]:
 
 def check_proposal(
     proposal: dict, registry: dict[str, dict], specimens: list[str] | None, schema: dict | None = None,
-    *, schemas: dict[str, dict] | None = None, modalities=None,
+    *, schemas: dict[str, dict] | None = None, modalities=None, mappings_dir: Path | None = None,
 ) -> tuple[list[dict], list[str]]:
     """Return (the new terms with Status "official", problems); checked together with the registry.
 
@@ -257,6 +331,9 @@ def check_proposal(
     `specimens` None = a one-level registry (no context field). `modalities` = modality -> `terms`
     declaration (default: those of this repository, LEGACY_MODALITIES without schemas/ beside the script).
     One kind of data per proposal: the term files and the patches of term modalities name one modality.
+    Links (`mappings/<modality>/<family>.json`) are checked against `mappings_dir` (vocabularies.json and what is
+    already mapped): the ID must be a term of the registry or proposed with them, and an ID that is already mapped
+    is refused (a changed link is a maintainer's edit).
     """
     declared = _declared(modalities)
     pairs, problems = normalize(proposal, declared)
@@ -289,6 +366,8 @@ def check_proposal(
     if problems:
         return [], problems
     problems = check_terms.check_registry(merged, specimens)
+    if not problems and (links := links_of(pairs)):
+        problems = _mapping_problems(links, merged, mappings_dir)
     return ([] if problems else terms), problems
 
 
@@ -307,6 +386,23 @@ def write_terms(terms: list[dict], out_dir: Path, modality: str) -> list[Path]:
     return written
 
 
+def write_links(links: list[tuple[str, dict]], out_dir: Path, mappings_dir: Path) -> list[Path]:
+    """Write each proposed family file under out_dir/<repository path>: the file as it is in mappings_dir, then the new IDs.
+
+    The IDs were checked as not yet mapped, so merging never changes an existing entry.
+    """
+    written = []
+    for path, entries in links:
+        match = _MAPPING_PATH.fullmatch(path)
+        existing_file = Path(mappings_dir) / match["modality"] / f"{match['stem']}.json"
+        existing = json.loads(existing_file.read_text(encoding="utf-8")) if existing_file.is_file() else {}
+        target = Path(out_dir) / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(json.dumps({**existing, **entries}, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        written.append(target)
+    return written
+
+
 SCHEMA_RELEASE_NOTE = """
 This proposal changes a modality schema. The bot prepared the release steps: the previous schema is archived
 unchanged, the patch version and `$id` of the stable schema are bumped, and the field tables of the spec page
@@ -315,16 +411,22 @@ are regenerated. The stable schema file is edited in place, so its diff shows on
 """
 
 
-def pr_body(issue_number: int, schema_release: bool = False) -> str:
+LINKS_CHECK = (
+    "- [ ] The links (`mappings/`) are real entries of the named vocabulary, and the diff of each mapping file only adds "
+    "lines (an existing link is never changed by a proposal)\n"
+)
+
+
+def pr_body(issue_number: int, schema_release: bool = False, links: bool = False) -> str:
     return f"""Generated by the metric proposal bot from #{issue_number}. Closes #{issue_number} when merged. This is a **draft**.
 
-Contents: the proposed files (terms under `terms/`{", schema release under `schemas/` and `specs/`" if schema_release else ""}). The automatic check passed (a failing proposal never gets a pull request).
+Contents: the proposed files (terms under `terms/`{", links under `mappings/`" if links else ""}{", schema release under `schemas/` and `specs/`" if schema_release else ""}). The automatic check passed (a failing proposal never gets a pull request).
 {SCHEMA_RELEASE_NOTE if schema_release else ""}
 Maintainer checklist:
 - [ ] The ID is sensible and final (IDs are frozen once released); change it before merging if not
 - [ ] The contributor's own column name is in `Aliases`
-- [ ] Units are UCUM; ranges and LOINC codes are cited or left out (none were invented)
-- [ ] CI is green (the bot commit does not start it; push or approve the run)
+- [ ] Units are UCUM; ranges are cited or left out (none were invented)
+{LINKS_CHECK if links else ""}- [ ] CI is green (the bot commit does not start it; push or approve the run)
 """
 
 
@@ -355,6 +457,7 @@ def _run_check(args) -> int:
     terms: list[dict] = []
     term_modalities: list[str] = []
     patches: list[tuple[str, dict]] = []
+    links: list[tuple[str, dict]] = []
     repo = args.repo or REPO
     try:
         proposal = _read_proposal(args.file)
@@ -382,11 +485,14 @@ def _run_check(args) -> int:
                 schemas[modality] = json.loads(file.read_text(encoding="utf-8"))
             else:
                 missing.append(f"{path}: no modality {modality} in schemas/stable")
-        terms, found = check_proposal(proposal, registry, specimens, schema, schemas=schemas, modalities=modalities)
+        mappings_dir = args.mappings or Path(repo) / "mappings"
+        terms, found = check_proposal(proposal, registry, specimens, schema, schemas=schemas, modalities=modalities,
+                                      mappings_dir=mappings_dir)
         found = missing or found
         problems += found
         if not found:
             patches = patch_pairs
+            links = links_of(pairs)
             term_modalities = [_TERM_PATH.fullmatch(path)["modality"] for path, _term in term_pairs]
     except ProposalError as exc:
         problems.append(str(exc))
@@ -399,6 +505,7 @@ def _run_check(args) -> int:
         try:
             for modality in dict.fromkeys(term_modalities):
                 write_terms([t for t, m in zip(terms, term_modalities) if m == modality], files / "terms", modality)
+            write_links(links, files, args.mappings or Path(repo) / "mappings")
             for path, patch in patches:
                 release_patch.release(repo, files, _PATCH_PATH.fullmatch(path)["modality"], patch)
         except ValueError as exc:  # PatchError / ReleaseError: the proposal cannot be released, and the message says why
@@ -423,6 +530,7 @@ def main(argv: list[str] | None = None) -> int:
     check.add_argument("--schema", type=Path, help="the modality schema (default: schemas/stable/<modality>.schema.json of --repo)")
     check.add_argument("--out", required=True, type=Path)
     check.add_argument("--file", type=Path)
+    check.add_argument("--mappings", type=Path, help="the mappings folder links are checked against (default: mappings/ of --repo)")
     check.add_argument("--repo", type=Path, help="a complete checkout (the bot passes it): its schemas/stable/entities.schema.json, "
                        "terms and schemas are read and a schema release is prepared from it; without --repo, "
                        "--terms and --schema are required (biosample only)")
@@ -430,7 +538,8 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("check-new-kind")
     args = ap.parse_args(argv)
     if args.command == "pr-body":
-        print(pr_body(int(os.environ["ISSUE_NUMBER"]), schema_release=os.environ.get("SCHEMA_RELEASE") == "1"))
+        print(pr_body(int(os.environ["ISSUE_NUMBER"]), schema_release=os.environ.get("SCHEMA_RELEASE") == "1",
+                      links=os.environ.get("HAS_LINKS") == "1"))
         return 0
     if args.command == "check-new-kind":
         problems = _capped(check_new_kind(os.environ.get("ISSUE_BODY", "")))

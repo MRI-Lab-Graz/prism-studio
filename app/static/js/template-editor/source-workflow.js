@@ -578,7 +578,7 @@ async function loadExcelGroup(context, file, group, previousEditorState) {
     });
     const data = await readImportJson(res, 'Import failed');
 
-    hideExcelGroupPicker(context);
+    // The picker stays so the next instrument of the same file can be loaded (as with .lsa).
     const importSummaryMessage = applyImportedTemplate(context, data, file);
     await finishImport(context, importSummaryMessage, data.notes);
   } catch (error) {

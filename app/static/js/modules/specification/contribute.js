@@ -204,7 +204,7 @@
 
     async function add(metric, label) {
         clearMessage();
-        const body = { data_file: metric.data_file, column: metric.column };
+        const body = { data_file: metric.data_file, column: metric.column, links: readLinks() };
         if (label) body.label = label;
         const { ok, data } = await call(urls.add, body);
         if (!ok) { say(data.error || "Could not add the measurement", "danger"); return; }
@@ -543,7 +543,7 @@
     });
 
     const m = {};
-    ["pick", "group", "group-box", "detail", "form-group", "form-group-box", "yes", "form", "name", "aliases", "description", "units", "units-box", "units-other", "kind-box", "kind-unit", "kind-levels", "specimen", "specimen-box", "levels", "levels-box", "cf", "cf-box", "share", "use", "use-hint", "project", "local"]
+    ["pick", "group", "group-box", "detail", "form-group", "form-group-box", "yes", "form", "name", "aliases", "description", "units", "units-box", "units-other", "kind-box", "kind-unit", "kind-levels", "specimen", "specimen-box", "levels", "levels-box", "cf", "cf-box", "links", "share", "use", "use-hint", "project", "local"]
         .forEach(function (key) { m[key] = document.getElementById("spec-m-" + key); });
 
     function choose(select) {
@@ -709,11 +709,16 @@
         });
         return Object.keys(levels).length ? levels : null;
     }
+    // the lines as typed ("VOCABULARY=URL"); the backend reads them, as it does `--link`
+    function readLinks() {
+        const lines = m.links.value.split("\n").map(function (l) { return l.trim(); }).filter(Boolean);
+        return lines.length ? lines : null;
+    }
     m.share.addEventListener("click", function () {
         const oneLevel = currentKind().specimen_level === false;
         const asLevels = oneLevel && m["kind-levels"].checked;
         propose({
-            levels: asLevels ? readLevels() : null, cf_standard_name: oneLevel ? m.cf.value.trim() || null : null,
+            links: readLinks(), levels: asLevels ? readLevels() : null, cf_standard_name: oneLevel ? m.cf.value.trim() || null : null,
             name: m.name.value, description: m.description.value,
             units: (asLevels ? "" : m.units.value === "other" ? m["units-other"].value : m.units.value) || null, specimen: oneLevel ? null : m.specimen.value,
             aliases: m.aliases.value.split(","), modality: kindSelect.value, group: m["form-group"].value || null,

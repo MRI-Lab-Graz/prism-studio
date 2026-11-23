@@ -1,0 +1,725 @@
+{
+  "Technical": {
+    "StimulusType": "Questionnaire",
+    "FileFormat": "tsv",
+    "Language": "de"
+  },
+  "Metadata": {
+    "SchemaVersion": "2.1.3",
+    "CreationDate": "2026-11-16",
+    "Creator": "PRISM Studio"
+  },
+  "I18n": {
+    "Languages": [
+      "de"
+    ]
+  },
+  "Study": {
+    "TaskName": "esrdscltm",
+    "ShortName": "ESRD-SCL TM",
+    "OriginalName": "End-Stage Renal Disease Symptom Checklist - Transplantationsmodul",
+    "Category": "Well-being & Life Satisfaction",
+    "Authors": [
+      "Franke, Gabriele Helga"
+    ],
+    "Year": 2009,
+    "Citation": "Franke, G. H. (2009). ESRD-SCL TM. End-Stage Renal Disease Symptom Checklist - Transplantationsmodul [Verfahrensdokumentation, Autorenbeschreibung und Fragebogen mit Auswertung]. In Leibniz-Institut für Psychologie (ZPID) (Hrsg.), Open Test Archive. Trier: ZPID. https://doi.org/10.23668/psycharchives.4510",
+    "DOI": "10.23668/psycharchives.4510",
+    "Source": "https://doi.org/10.23668/psycharchives.4510",
+    "License": "\"Copyright Autor(-Innen); CC-BY-SA 4.0\" \"Es wird vom Testarchiv online und kostenlos zur Verfügung gestellt und ist urheberrechtlich geschützt, d. h. das Urheberrecht liegt weiterhin bei den AutorInnen.\" \"Mit der Nutzung des Verfahrens verpflichte ich mich, die Bedingungen der Creative Commons Lizenz CC BY-SA 4.0 zu beachten.\" \"Sie wurden uns durch die Rechteinhaber/-innen zur weiteren Nachnutzung zur Verfügung gestellt. (Open Test Archive, Nutzungsbedingungen, https://www.testarchiv.eu/de/nutzungsbedingungen)\" \"Es wird vom Testarchiv online und kostenlos zur Verfügung gestellt und ist urheberrechtlich geschützt, d. h. das Urheberrecht liegt weiterhin bei dem/den Autor/en.\" \"It is made available online and free of charge by the test archive and is protected by copyright, i.e. the copyright remains with the author(s).\" \"By using this test, I agree to abide by the terms of the Creative Commons License CC BY-SA 4.0.\"",
+    "LicenseID": "CC-BY-SA-4.0",
+    "LicenseURL": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "CopyrightHolder": "Franke, Gabriele Helga",
+    "LicenseChecked": "2026-11-14",
+    "LicenseLanguages": [
+      "de"
+    ],
+    "LicenseTerms": [
+      "This template is released under CC BY-SA 4.0 (ShareAlike): derived versions must carry the same licence.",
+      "Converted from the PDF questionnaire to JSON; item wording taken over unchanged.",
+      "The authors of this version, as given by the Open Test Archive page, hold the rights in the template version published there. Rights in an original instrument (which the original authors, a journal or a publisher may hold separately) are not covered by this licence statement.",
+      "The authors ask users to send the feedback form after using the test (a request of the Open Test Archive, not a condition added by PRISM): https://www.testarchiv.eu/de/test/9003073",
+      "Reliability, validity and norming data come from the Open Test Archive page and apply to the published version only."
+    ],
+    "References": [
+      {
+        "Type": "primary",
+        "Citation": "Franke, G. H. (2001). ESRD-SCL TM. End-Stage Renal Disease Symptom Checklist - Transplantation Module. Essen: Eigendruck.",
+        "Year": 2001
+      },
+      {
+        "Type": "other",
+        "Citation": "Bullinger, M. & Kirchberger, I. (1998). SF-36 Fragebogen zum Gesundheitszustand. Göttingen: Hogrefe.",
+        "Year": 1998
+      },
+      {
+        "Type": "other",
+        "Citation": "Franke, G. H. (2002). SCL-90-R: Symptom-Checkliste von L. R. Derogatis - deutsche Version (2., vollständig überarbeitete und neu normierte Auflage). Göttingen: Beltz Test.",
+        "Year": 2002
+      },
+      {
+        "Type": "other",
+        "Citation": "Franke, G. H., Reimer, J., Lütkes, P., Kohnle, M., Gerken, G., Philipp, T. & Heemann, U. (2000). Die ESRD Symptom Checklist - Transplantation Module (ESRD-SCLTM) - ein diagnostisches Verfahren zur Erfassung der krankheitsspezifischen Lebensqualität von Patienten nach Nierentransplantation. Nieren- und Hochdruckkrankheiten, 29, 233-244.",
+        "Year": 2000
+      },
+      {
+        "Type": "other",
+        "Citation": "Ortega, T., Valdés, C., Rebollo, P. & Ortega, F. (2007). Evaluation of reliability and validity of Spanish version of the end-stage renal disease symptom checklist-transplantation module. Transplantation, 84 (11), 1428-1435.",
+        "Year": 2007
+      },
+      {
+        "Type": "other",
+        "Citation": "Stavem, K. & Ganss, R. (2006). Reliability and validity of the ESRD Symptom Checklist - Transplantation Module in Norwegian kidney transplant recipients. BMC Nephrology, 7 (17), 7-17. https://doi.org/10.1186/1471-2369-7-17",
+        "DOI": "10.1186/1471-2369-7-17",
+        "Year": 2006
+      }
+    ],
+    "Keywords": [
+      "Category: Clinical procedures / Psychosomatic complaints",
+      "Category: Clinical procedures / Well-being and resilience",
+      "Engl. Name: End-Stage Renal Disease Symptom Checklist - Transplantation Module"
+    ],
+    "Access": "public",
+    "Notes": "Format: Paper-Pencil. Contact data (section Kontaktdaten) and e-mail addresses are not copied (personal data). The English descriptions are machine translations (Claude, Anthropic) of the archive's German text, not verified by the test authors; the German original is on the archive page https://www.testarchiv.eu/de/test/9003073.",
+    "ArchiveMetadata": {
+      "fields": {
+        "Sprachversionen": "German",
+        "Format": "Paper-pencil",
+        "Itemzahl": "43 items",
+        "Subskalen": "(1) Reduced physical functioning, (2) Reduced cognitive functioning, (3) Cardiac and renal dysfunction, (4) Cortisone side effects, (5) Increased hair and gum growth, (6) Transplantation-associated psychological burden, (7) Global Score",
+        "Durchführungszeit": "5-10 min.",
+        "Auswertungsdauer": "No information.",
+        "Reliabilität": "Internal consistency: Cronbach's alpha = .76-.97",
+        "Validität": "Findings on construct validity.",
+        "Normierung": "None. Comparison data from N = 458 ESRD patients.",
+        "Anwendungsbereich": "Research, (can be used supportively in practice; professional qualification required)",
+        "Altersbereich": "Adults (patients after kidney transplantation)",
+        "Ältere Versionen": "Version 1: https://doi.org/10.23668/psycharchives.316"
+      },
+      "sections": {
+        "Kurzabstract": "The ESRD-SCL is a disease-specific self-report instrument for assessing the psychological and physiological quality of life of patients after kidney transplantation, with a focus on the side effects of therapy with immunosuppressants. It comprises the scales: (1) Reduced physical functioning (10 items), (2) Reduced cognitive functioning (8 items), (3) Cardiac and renal dysfunction (7 items), (4) Cortisone side effects (5 items), (5) Increased hair and gum growth (5 items), (6) Transplantation-associated psychological burden (8 items) and (7) the Global Score (= mean of all 43 items). Reliability: Reliability (according to Cronbach's alpha) lies between alpha = .76 (scale 3) and alpha = .97 (scale 1). Validity: Validity was demonstrated by correlations with the SF-36 and with sociodemographic and clinical variables.",
+        "Diagnostische Zielsetzung": "The End-Stage Renal Disease Symptom Checklist - Transplantation Module (ESRD-SCL; Franke et al., 2000) is a disease-specific self-report instrument for assessing the psychological and physiological quality of life of patients after kidney transplantation, with a focus on the side effects of therapy with immunosuppressants.",
+        "Aufbau": "The burden with regard to the 43 statements is rated on a five-point Likert scale (0 = not at all to 4 = very much) and comprises the scales:\n(1) Reduced physical functioning (10 items),\n(2) Reduced cognitive functioning (8 items),\n(3) Cardiac and renal dysfunction (7 items),\n(4) Cortisone side effects (5 items),\n(5) Increased hair and gum growth (5 items),\n(6) Transplantation-associated psychological burden (8 items),\n(7) and the Global Score (= mean of all 43 items).\nTo answer the questions, the test person should be able to act in a suitable test environment.",
+        "Grundlagen und Konstruktion": "The test construction is based on classical test theory. In the German-speaking area, psychological burden is very often assessed with the SCL-90-R (Franke, 2002) and health-related quality of life often with the generic questionnaire on health status (SF-36; Bullinger & Kirchberger, 1998), although the specific burdens of patients with kidney disease are not taken into account. Experts therefore compiled 79 items that are relevant for this patient group. Items that burdened more than 20% of patients were examined by factor analysis. The final instrument comprises six scales and 43 items as well as a seventh scale that gives the overall sum score.",
+        "Empirische Prüfung und Gütekriterien": "Reliability: Reliability (according to Cronbach's alpha) lies between alpha = .76 (scale 3) and alpha = .97 (scale 1).\nValidity: Validity was demonstrated by correlations with the SF-36 and with sociodemographic and clinical variables.\nNorms: No norming of the instrument is available.",
+        "Durchführung/Altersbereiche": "Adults (patients after kidney transplantation).",
+        "Durchführung/Durchführungszeit": "Completing the questionnaire takes between 5 and 10 minutes.",
+        "Bewertung": "The instrument is disease-specific and is suitable for assessing burden in kidney transplant recipients. With only 43 items, six dimensions of the disease-specific burden of kidney transplant recipients as well as general psychological burden are assessed in only 5 to 10 minutes, so that the survey also appears reasonable. Administration objectivity is ensured by standardized instructions. Raw scale scores are formed by averaging the items belonging to a scale; item transformations are not necessary. Reference values from various samples are available for judging the level of burden, so that scoring objectivity and interpretation objectivity are ensured. The transparency of the items is high. As with any self-report questionnaire, responses can be faked.\nThe ESRD-SCL asks about the current burden of kidney transplant recipients, so that the instrument is suitable for repeated measurement. The instrument was constructed for the target group and is available in various languages.",
+        "Orginalfassung/Anderssprachlige Fassungen": "Ortega, T., Valdés, C., Rebollo, P. & Ortega, F. (2007). Evaluation of reliability and validity of Spanish version of the end-stage renal disease symptom checklist-transplantation module. Transplantation, 84 (11), 1428-1435.\nStavem, K. & Ganss, R. (2006). Reliability and validity of the ESRD Symptom Checklist - Transplantation Module in Norwegian kidney transplant recipients. BMC Nephrology, 7 (17), 7-17. https://doi.org/10.1186/1471-2369-7-17",
+        "Testpaket (Paper-Pencil)/Rückmeldung an die Autor/-innen": "Please inform the authors about the use of the test instrument! You can find the contact details under \"Kontaktinformationen\"! If authors in the Open Test Archive have already died or no contact details (e-mail or postal address) are available for them, users are no longer obliged to provide feedback."
+      }
+    },
+    "Description": "The ESRD-SCL is a disease-specific self-report instrument for assessing the psychological and physiological quality of life of patients after kidney transplantation, with a focus on the side effects of therapy with immunosuppressants. It comprises the scales: (1) Reduced physical functioning (10 items), (2) Reduced cognitive functioning (8 items), (3) Cardiac and renal dysfunction (7 items), (4) Cortisone side effects (5 items), (5) Increased hair and gum growth (5 items), (6) Transplantation-associated psychological burden (8 items) and (7) the Global Score (= mean of all 43 items). Reliability: Reliability (according to Cronbach's alpha) lies between alpha = .76 (scale 3) and alpha = .97 (scale 1). Validity: Validity was demonstrated by correlations with the SF-36 and with sociodemographic and clinical variables.",
+    "Reliability": "Internal consistency: Cronbach's alpha = .76-.97",
+    "Validity": "Findings on construct validity.",
+    "Norming": "None. Comparison data from N = 458 ESRD patients.",
+    "AdministrationTime": {
+      "min": 5,
+      "max": 10
+    },
+    "AgeRange": "Adults (patients after kidney transplantation)",
+    "Instructions": "Die folgende Liste stellt Ihnen viele körperliche und seelische Beschwerden vor, die man manchmal hat. Bitte kreuzen Sie bei jeder Feststellung die Zahl an, die am besten auf Sie zutrifft. Bitte beantworten Sie jede Frage! Wie sehr leiden Sie zur Zeit unter...."
+  },
+  "ESRDSCLTM01": {
+    "Description": "Einem schlechten Gesundheitszustand",
+    "Levels": {
+      "0": "Überhaupt nicht",
+      "1": "ein wenig",
+      "2": "ziemlich",
+      "3": "stark",
+      "4": "sehr stark"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ESRDSCLTM02": {
+    "Description": "Einer eingeschränkten körperlichen Leistungsfähigkeit",
+    "Levels": {
+      "0": "Überhaupt nicht",
+      "1": "ein wenig",
+      "2": "ziemlich",
+      "3": "stark",
+      "4": "sehr stark"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ESRDSCLTM03": {
+    "Description": "Ihrem Aussehen",
+    "Levels": {
+      "0": "Überhaupt nicht",
+      "1": "ein wenig",
+      "2": "ziemlich",
+      "3": "stark",
+      "4": "sehr stark"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ESRDSCLTM04": {
+    "Description": "Einer eingeschränkten geistigen Leistungsfähigkeit",
+    "Levels": {
+      "0": "Überhaupt nicht",
+      "1": "ein wenig",
+      "2": "ziemlich",
+      "3": "stark",
+      "4": "sehr stark"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ESRDSCLTM05": {
+    "Description": "Gedanken über eine / meine Transplantation",
+    "Levels": {
+      "0": "Überhaupt nicht",
+      "1": "ein wenig",
+      "2": "ziemlich",
+      "3": "stark",
+      "4": "sehr stark"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ESRDSCLTM06": {
+    "Description": "Grübeln über den Organspender",
+    "Levels": {
+      "0": "Überhaupt nicht",
+      "1": "ein wenig",
+      "2": "ziemlich",
+      "3": "stark",
+      "4": "sehr stark"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ESRDSCLTM07": {
+    "Description": "Der Frage, wie lange das Transplantat funktionieren wird",
+    "Levels": {
+      "0": "Überhaupt nicht",
+      "1": "ein wenig",
+      "2": "ziemlich",
+      "3": "stark",
+      "4": "sehr stark"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ESRDSCLTM08": {
+    "Description": "Alpträumen",
+    "Levels": {
+      "0": "Überhaupt nicht",
+      "1": "ein wenig",
+      "2": "ziemlich",
+      "3": "stark",
+      "4": "sehr stark"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ESRDSCLTM09": {
+    "Description": "Kopfschmerzen",
+    "Levels": {
+      "0": "Überhaupt nicht",
+      "1": "ein wenig",
+      "2": "ziemlich",
+      "3": "stark",
+      "4": "sehr stark"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ESRDSCLTM10": {
+    "Description": "Schlaflosigkeit",
+    "Levels": {
+      "0": "Überhaupt nicht",
+      "1": "ein wenig",
+      "2": "ziemlich",
+      "3": "stark",
+      "4": "sehr stark"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ESRDSCLTM11": {
+    "Description": "Mißstimmung",
+    "Levels": {
+      "0": "Überhaupt nicht",
+      "1": "ein wenig",
+      "2": "ziemlich",
+      "3": "stark",
+      "4": "sehr stark"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ESRDSCLTM12": {
+    "Description": "Konzentrationsstörungen",
+    "Levels": {
+      "0": "Überhaupt nicht",
+      "1": "ein wenig",
+      "2": "ziemlich",
+      "3": "stark",
+      "4": "sehr stark"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ESRDSCLTM13": {
+    "Description": "Nervosität",
+    "Levels": {
+      "0": "Überhaupt nicht",
+      "1": "ein wenig",
+      "2": "ziemlich",
+      "3": "stark",
+      "4": "sehr stark"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ESRDSCLTM14": {
+    "Description": "Starkem Schwindel",
+    "Levels": {
+      "0": "Überhaupt nicht",
+      "1": "ein wenig",
+      "2": "ziemlich",
+      "3": "stark",
+      "4": "sehr stark"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ESRDSCLTM15": {
+    "Description": "Angstzuständen",
+    "Levels": {
+      "0": "Überhaupt nicht",
+      "1": "ein wenig",
+      "2": "ziemlich",
+      "3": "stark",
+      "4": "sehr stark"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ESRDSCLTM16": {
+    "Description": "Vergeßlichkeit",
+    "Levels": {
+      "0": "Überhaupt nicht",
+      "1": "ein wenig",
+      "2": "ziemlich",
+      "3": "stark",
+      "4": "sehr stark"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ESRDSCLTM17": {
+    "Description": "Verschlechtertem Sehvermögen",
+    "Levels": {
+      "0": "Überhaupt nicht",
+      "1": "ein wenig",
+      "2": "ziemlich",
+      "3": "stark",
+      "4": "sehr stark"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ESRDSCLTM18": {
+    "Description": "Verschlechtertem Hörvermögen",
+    "Levels": {
+      "0": "Überhaupt nicht",
+      "1": "ein wenig",
+      "2": "ziemlich",
+      "3": "stark",
+      "4": "sehr stark"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ESRDSCLTM19": {
+    "Description": "Ohrgeräuschen",
+    "Levels": {
+      "0": "Überhaupt nicht",
+      "1": "ein wenig",
+      "2": "ziemlich",
+      "3": "stark",
+      "4": "sehr stark"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ESRDSCLTM20": {
+    "Description": "Stimmungsschwankungen",
+    "Levels": {
+      "0": "Überhaupt nicht",
+      "1": "ein wenig",
+      "2": "ziemlich",
+      "3": "stark",
+      "4": "sehr stark"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ESRDSCLTM21": {
+    "Description": "Herz-Rhythmusstörungen",
+    "Levels": {
+      "0": "Überhaupt nicht",
+      "1": "ein wenig",
+      "2": "ziemlich",
+      "3": "stark",
+      "4": "sehr stark"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ESRDSCLTM22": {
+    "Description": "Zu hohem Blutdruck",
+    "Levels": {
+      "0": "Überhaupt nicht",
+      "1": "ein wenig",
+      "2": "ziemlich",
+      "3": "stark",
+      "4": "sehr stark"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ESRDSCLTM23": {
+    "Description": "Knochenschmerzen",
+    "Levels": {
+      "0": "Überhaupt nicht",
+      "1": "ein wenig",
+      "2": "ziemlich",
+      "3": "stark",
+      "4": "sehr stark"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ESRDSCLTM24": {
+    "Description": "Gelenkschmerzen",
+    "Levels": {
+      "0": "Überhaupt nicht",
+      "1": "ein wenig",
+      "2": "ziemlich",
+      "3": "stark",
+      "4": "sehr stark"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ESRDSCLTM25": {
+    "Description": "Muskelschmerzen",
+    "Levels": {
+      "0": "Überhaupt nicht",
+      "1": "ein wenig",
+      "2": "ziemlich",
+      "3": "stark",
+      "4": "sehr stark"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ESRDSCLTM26": {
+    "Description": "Erkältungen oder Grippe",
+    "Levels": {
+      "0": "Überhaupt nicht",
+      "1": "ein wenig",
+      "2": "ziemlich",
+      "3": "stark",
+      "4": "sehr stark"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ESRDSCLTM27": {
+    "Description": "Einer verstärkten Körperbehaarung",
+    "Levels": {
+      "0": "Überhaupt nicht",
+      "1": "ein wenig",
+      "2": "ziemlich",
+      "3": "stark",
+      "4": "sehr stark"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ESRDSCLTM28": {
+    "Description": "Zahnfleischwucherungen",
+    "Levels": {
+      "0": "Überhaupt nicht",
+      "1": "ein wenig",
+      "2": "ziemlich",
+      "3": "stark",
+      "4": "sehr stark"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ESRDSCLTM29": {
+    "Description": "Zahnfleischblutungen",
+    "Levels": {
+      "0": "Überhaupt nicht",
+      "1": "ein wenig",
+      "2": "ziemlich",
+      "3": "stark",
+      "4": "sehr stark"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ESRDSCLTM30": {
+    "Description": "Einem aufgequollenen Gesicht",
+    "Levels": {
+      "0": "Überhaupt nicht",
+      "1": "ein wenig",
+      "2": "ziemlich",
+      "3": "stark",
+      "4": "sehr stark"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ESRDSCLTM31": {
+    "Description": "Verstärkten Infektionen",
+    "Levels": {
+      "0": "Überhaupt nicht",
+      "1": "ein wenig",
+      "2": "ziemlich",
+      "3": "stark",
+      "4": "sehr stark"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ESRDSCLTM32": {
+    "Description": "Geschwollenen Füßen",
+    "Levels": {
+      "0": "Überhaupt nicht",
+      "1": "ein wenig",
+      "2": "ziemlich",
+      "3": "stark",
+      "4": "sehr stark"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ESRDSCLTM33": {
+    "Description": "Magenschmerzen",
+    "Levels": {
+      "0": "Überhaupt nicht",
+      "1": "ein wenig",
+      "2": "ziemlich",
+      "3": "stark",
+      "4": "sehr stark"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ESRDSCLTM34": {
+    "Description": "Gefühlsstörungen in den Beinen",
+    "Levels": {
+      "0": "Überhaupt nicht",
+      "1": "ein wenig",
+      "2": "ziemlich",
+      "3": "stark",
+      "4": "sehr stark"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ESRDSCLTM35": {
+    "Description": "Dem Gefühl, abgeschlagen oder erschöpft zu sein",
+    "Levels": {
+      "0": "Überhaupt nicht",
+      "1": "ein wenig",
+      "2": "ziemlich",
+      "3": "stark",
+      "4": "sehr stark"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ESRDSCLTM36": {
+    "Description": "Zahnfleischveränderungen",
+    "Levels": {
+      "0": "Überhaupt nicht",
+      "1": "ein wenig",
+      "2": "ziemlich",
+      "3": "stark",
+      "4": "sehr stark"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ESRDSCLTM37": {
+    "Description": "Vermehrtem Haarwuchs",
+    "Levels": {
+      "0": "Überhaupt nicht",
+      "1": "ein wenig",
+      "2": "ziemlich",
+      "3": "stark",
+      "4": "sehr stark"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ESRDSCLTM38": {
+    "Description": "Einem geschwollenen Gesicht am Morgen",
+    "Levels": {
+      "0": "Überhaupt nicht",
+      "1": "ein wenig",
+      "2": "ziemlich",
+      "3": "stark",
+      "4": "sehr stark"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ESRDSCLTM39": {
+    "Description": "Gewichtsveränderungen",
+    "Levels": {
+      "0": "Überhaupt nicht",
+      "1": "ein wenig",
+      "2": "ziemlich",
+      "3": "stark",
+      "4": "sehr stark"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ESRDSCLTM40": {
+    "Description": "Geschwollenen Beinen",
+    "Levels": {
+      "0": "Überhaupt nicht",
+      "1": "ein wenig",
+      "2": "ziemlich",
+      "3": "stark",
+      "4": "sehr stark"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ESRDSCLTM41": {
+    "Description": "Der Neigung zu blauen Flecken",
+    "Levels": {
+      "0": "Überhaupt nicht",
+      "1": "ein wenig",
+      "2": "ziemlich",
+      "3": "stark",
+      "4": "sehr stark"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ESRDSCLTM42": {
+    "Description": "Vermehrtem Durst",
+    "Levels": {
+      "0": "Überhaupt nicht",
+      "1": "ein wenig",
+      "2": "ziemlich",
+      "3": "stark",
+      "4": "sehr stark"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "ESRDSCLTM43": {
+    "Description": "Erinnerungsstörungen",
+    "Levels": {
+      "0": "Überhaupt nicht",
+      "1": "ein wenig",
+      "2": "ziemlich",
+      "3": "stark",
+      "4": "sehr stark"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  }
+}

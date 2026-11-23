@@ -778,3 +778,106 @@ html[data-color-mode="dark"] .prism-persona-note-badge {
     font-size: 0.78rem;
     margin-left: 0.4rem;
 }
+
+a.prism-pill {
+    text-decoration: none;
+}
+
+/* -- Landing page: headline, hero screenshot, ontology steps, footer strip -- */
+
+.prism-hero h2.prism-headline {
+    font-size: 2rem;
+    line-height: 1.2;
+    margin: 0.25rem auto 0.75rem;
+    max-width: 700px;
+    border: 0;
+}
+
+.prism-cta-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.6rem;
+    margin-bottom: 1.75rem;
+}
+
+.prism-cta-row .prism-cta {
+    margin: 0;
+}
+
+.prism-hero img.prism-hero-shot {
+    max-width: 100%;
+    width: 100%;
+    border: 1px solid var(--prism-border-soft);
+    border-radius: 10px;
+    box-shadow: var(--prism-shadow);
+    margin: 0 0 1.5rem;
+}
+
+.prism-ontology {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: 0.9rem;
+    align-items: center;
+    margin: 1.5rem 0;
+}
+
+@media (max-width: 800px) {
+    .prism-ontology {
+        grid-template-columns: 1fr;
+    }
+    .prism-ontology-arrow {
+        transform: rotate(90deg);
+        justify-self: center;
+    }
+}
+
+.prism-ontology-step {
+    border: 1px solid var(--prism-border-soft);
+    border-radius: var(--prism-radius);
+    background: var(--prism-surface);
+    box-shadow: var(--prism-shadow);
+    padding: 1rem 1.1rem;
+    min-width: 0;
+}
+
+.prism-ontology-step code {
+    display: block;
+    overflow-wrap: anywhere;
+    margin: 0.35rem 0 0.5rem;
+}
+
+.prism-ontology-step p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--prism-text-muted);
+}
+
+.prism-ontology-label {
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--prism-brand-success-hover);
+}
+
+html[data-color-mode="dark"] .prism-ontology-label {
+    color: #7fd8a8;
+}
+
+.prism-ontology-arrow {
+    font-size: 1.5rem;
+    color: var(--prism-text-soft);
+}
+
+.prism-footer-strip {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.4rem 1.5rem;
+    margin: 2rem 0 0.5rem;
+    padding: 0.9rem 1rem;
+    border-top: 1px solid var(--prism-border-soft);
+    font-size: 0.9rem;
+    color: var(--prism-text-muted);
+}

@@ -8,8 +8,10 @@ from pathlib import Path
 from src.entity_rules import load_entity_rules
 
 
+_LINK_HELP = "Link the new term to an external vocabulary as VOCABULARY=URL, for example loinc=https://loinc.org/2276-4 (repeatable); the proposal then carries a mappings file"
+
 def add_export_filter_flags(parser) -> None:
-    """The export's scope flags (what comes along, what is left out); `datalad get-data` takes the very same ones."""
+    """The export's scope flags (what comes along, what is left out); the export commands share them."""
     parser.add_argument("--include-sourcedata", action="store_true", help="Also export sourcedata/")
     parser.add_argument("--no-derivatives", action="store_true", help="Leave out derivatives/")
     parser.add_argument("--no-code", action="store_true", help="Leave out code/")
@@ -846,23 +848,6 @@ def build_prism_tools_parsers(
         "--output", metavar="PATH", help="Write the merged template to this path instead of overwriting the original"
     )
 
-    parser_publish = subparsers.add_parser(
-        "publish",
-        help="Push a department-share dataset to the DataLad server (only if it validates)",
-    )
-    parser_publish.add_argument("--project", required=True, help="Dataset root on the share")
-    parser_publish.add_argument("--sibling", help="Server sibling name (default: project's configured sibling)")
-    parser_publish.add_argument(
-        "--as", dest="as_identity", help='Who is publishing: "Name <email>" (else PRISM_USER_NAME/EMAIL, else git config)'
-    )
-    parser_publish.add_argument(
-        "--allow-invalid", action="store_true",
-        help="Publish even if the dataset has PRISM validation errors (default: refuse)",
-    )
-    parser_publish.add_argument("--check", action="store_true", help="Validate only; exit 1 on errors (used by the pre-push hook)")
-    parser_publish.add_argument("--install-hook", action="store_true", help="Install the git pre-push hook that enforces the same rule")
-    parser_publish.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
-
     parser_save_gate = subparsers.add_parser(
         "save-gate",
         help="Save gate: commits are allowed only on valid datasets (git pre-commit hook)",
@@ -893,50 +878,6 @@ def build_prism_tools_parsers(
     parser_datalad_identity.add_argument("--email", help="Your email (sets git user.email)")
     parser_datalad_identity.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
 
-    parser_datalad_sync = datalad_subparsers.add_parser(
-        "sync", help="Get the latest from the server, then send your saved changes (only if the dataset validates)"
-    )
-    parser_datalad_sync.add_argument("--project", required=True, help="Project root")
-    parser_datalad_sync.add_argument("--sibling-name", help="Server name (default: origin)")
-    parser_datalad_sync.add_argument(
-        "--as", dest="as_identity", help='Who is syncing: "Name <email>" (else PRISM_USER_NAME/EMAIL, else git config)'
-    )
-    parser_datalad_sync.add_argument(
-        "--allow-invalid", action="store_true",
-        help="Send even if the dataset has PRISM validation errors (default: refuse)",
-    )
-    parser_datalad_sync.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
-
-    parser_datalad_put = datalad_subparsers.add_parser(
-        "put-on-server",
-        help="Create the project's dataset on the lab server, then send it (only if the dataset validates)",
-    )
-    parser_datalad_put.add_argument("--project", required=True, help="Project root")
-    parser_datalad_put.add_argument(
-        "--location", required=True,
-        help="Where the server keeps the project: a folder (local or network), user@host:path or ssh://host/path",
-    )
-    parser_datalad_put.add_argument("--sibling-name", help="Server name (default: origin)")
-    parser_datalad_put.add_argument(
-        "--as", dest="as_identity", help='Who is sending: "Name <email>" (else PRISM_USER_NAME/EMAIL, else git config)'
-    )
-    parser_datalad_put.add_argument(
-        "--allow-invalid", action="store_true",
-        help="Send even if the dataset has PRISM validation errors (default: refuse)",
-    )
-    parser_datalad_put.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
-
-    parser_datalad_open = datalad_subparsers.add_parser(
-        "open-from-server",
-        help="Get your own copy of a project from the lab server (nested datasets installed, no data yet)",
-    )
-    parser_datalad_open.add_argument(
-        "--location", required=True,
-        help="Where the server keeps the project: a folder (local or network), user@host:path or ssh://host/path",
-    )
-    parser_datalad_open.add_argument("--target", required=True, help="An empty or new folder for your copy")
-    parser_datalad_open.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
-
     parser_datalad_enable = datalad_subparsers.add_parser(
         "enable", help="Make the project a DataLad dataset and save a first snapshot"
     )
@@ -954,20 +895,6 @@ def build_prism_tools_parsers(
         help="Save even if the dataset has PRISM validation errors (default: refuse)",
     )
     parser_datalad_save.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
-    parser_datalad_update = datalad_subparsers.add_parser(
-        "update", help="Get the latest saved changes from the server (never merges; refuses unsaved changes)"
-    )
-    parser_datalad_update.add_argument("--project", required=True, help="Project root")
-    parser_datalad_update.add_argument("--sibling-name", help="Server name (default: origin)")
-    parser_datalad_update.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
-    parser_datalad_get_data = datalad_subparsers.add_parser(
-        "get-data",
-        help="Fetch the data (MRI, physio, ...) of your copy from the server; the export's filters choose what",
-    )
-    parser_datalad_get_data.add_argument("--project", required=True, help="Project root")
-    add_export_filter_flags(parser_datalad_get_data)
-    parser_datalad_get_data.add_argument("--sibling-name", help="Server name (default: origin)")
-    parser_datalad_get_data.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
     parser_datalad_status = datalad_subparsers.add_parser(
         "status", help="Show the DataLad state, the unsaved changes and the next step"
     )
@@ -2262,11 +2189,16 @@ def build_prism_tools_parsers(
         ("freeze", "Add new survey IDs to the released list (survey only; refuses when a released ID is gone)"),
         ("resolve", "Give a project's survey sidecar columns their official item IDs (or the reason for none)"),
         ("suggest", "Relate a column name to the registry (similar official terms)"),
+        ("check-links", "Check your own mapping files (links from PRISM IDs to external vocabularies) with the specification's checker"),
         ("propose", "Build a proposal for a new metric from a sidecar column (sends nothing unless --open)"),
     ):
         _p = terms_subparsers.add_parser(_name, help=_help)
         if _name == "show":
             _p.add_argument("term", help="Term ID, e.g. prism:cortisol, or a local name")
+        if _name == "check-links":
+            _where = _p.add_mutually_exclusive_group(required=True)
+            _where.add_argument("--dir", help="A folder of mapping files: <modality>/<family>.json")
+            _where.add_argument("--project", help="A PRISM project: its local links (code/specification/mappings) are checked")
         if _name == "resolve":
             _p.add_argument("--sidecar", required=True, help="The survey sidecar .json")
             _p.add_argument("--project", help="Also use this project's own survey fingerprints (code/specification/survey/)")
@@ -2283,6 +2215,7 @@ def build_prism_tools_parsers(
             )
             _p.add_argument("--column", required=True, help="The column to propose as a new metric")
             _p.add_argument("--label", help="Name for the new term (default: the column name)")
+            _p.add_argument("--link", action="append", help=_LINK_HELP)
             _p.add_argument("--open", action="store_true", help="Open the prefilled proposal form in the browser")
             _p.add_argument("--out", help="Also save the proposal to this file (to send it to a maintainer without GitHub)")
         _p.add_argument(
@@ -2329,6 +2262,7 @@ def build_prism_tools_parsers(
     parser_spec_metric.add_argument("--level", action="append", help="A level as CODE=LABEL instead of a unit (repeatable; kinds without sample type)")
     parser_spec_metric.add_argument("--group", help="Optional heading the measurement is listed under, for example 'Air quality' (1-60 characters)")
     parser_spec_metric.add_argument("--cf-standard-name", help="Optional CF standard name, for example air_temperature (kinds without sample type)")
+    parser_spec_metric.add_argument("--link", action="append", help=_LINK_HELP)
     parser_spec_metric.add_argument("--alias", action="append", help="Another name for it (repeatable)")
     parser_spec_metric.add_argument("--modality", default="biosample", help="The kind of data (default: biosample)")
     parser_spec_metric.add_argument("--project", help="A project whose own sample types are accepted too (optional)")
@@ -2377,6 +2311,7 @@ def build_prism_tools_parsers(
             _source.add_argument("--data", help="A data file (.tsv): its sidecar is resolved with BIDS inheritance")
             _parser.add_argument("--column", required=True, help="The column whose metric becomes a local term")
             _parser.add_argument("--label", help="Name for the new term (default: the column name)")
+            _parser.add_argument("--link", action="append", help=_LINK_HELP)
         if _name in ("add-values", "remove-values"):
             _parser.add_argument("--field", required=True, help="The sidecar field, for example Technical.SpecimenType")
             _parser.add_argument("--value", action="append", required=True, help="A value to allow (repeatable)")
@@ -3371,7 +3306,6 @@ def build_prism_tools_parsers(
         "rsync": parser_rsync,
         "methods": parser_methods,
         "sessions": parser_sessions,
-        "publish": parser_publish,
         "save-gate": parser_save_gate,
         "merge-versions": parser_merge_versions,
         "environment": parser_environment,

@@ -400,7 +400,7 @@ def _base_fix_hint(code: str, message: str = "") -> str:
         if code == "PRISM301":
             if "licenseid" in message.lower() or "license" in message.lower():
                 # Try to extract the survey/task name from the message (e.g. task-danceq_survey.json)
-                task_match = re.search(r"task-([a-zA-Z0-9]+)_survey", message)
+                task_match = re.search(r"task-([^_]+)_survey", message)
                 survey_name = task_match.group(1) if task_match else "this instrument"
                 return f"The PRISM schema requires a valid 'LicenseID' for survey instruments (e.g., 'Proprietary' or 'CC-BY-4.0') for survey '{survey_name}'. The human-readable 'License' statement is optional but recommended."
 

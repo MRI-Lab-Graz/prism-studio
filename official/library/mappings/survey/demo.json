@@ -1,0 +1,26 @@
+{
+  "prism:demo.score-total": {
+    "ValueRules": [
+      {
+        "Name": "demo-high-total",
+        "Source": "Demonstration only: invented for the PRISM demo questionnaire, not a clinical or research rule",
+        "Rules": [
+          {
+            "When": {
+              "Op": ">=",
+              "Value": 16
+            },
+            "State": "high"
+          },
+          {
+            "When": {
+              "Op": "<",
+              "Value": 16
+            },
+            "State": "low"
+          }
+        ]
+      }
+    ]
+  }
+}

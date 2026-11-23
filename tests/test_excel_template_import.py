@@ -138,3 +138,40 @@ def test_summarize_groups_reports_counts_and_samples_excluding_reserved_keys():
         {"prefix": "age", "item_count": 1, "sample_vars": ["age"]},
         {"prefix": "big", "item_count": 2, "sample_vars": ["BIG5_E1", "BIG5_E2"]},
     ]
+
+
+def test_multisheet_workbook_with_plain_description_is_auto_labeled():
+    """The shipped biometrics template has a Template sheet and a Help sheet; its plain
+    Description column used to be rejected because only single-sheet files were labeled."""
+    header = ["VariableName", "Group", "Description", "Units"]
+    rows = [header, ["grip_strength", "grip", "Maximale Griffkraft der Hand", "kg"]]
+    help_rows = [["Column", "Description"], ["Units", "Unit of measure"]]
+    buf = io.BytesIO()
+    with pd.ExcelWriter(buf, engine="openpyxl") as writer:
+        pd.DataFrame(rows).to_excel(writer, sheet_name="Template", index=False, header=False)
+        pd.DataFrame(help_rows).to_excel(writer, sheet_name="Help", index=False, header=False)
+
+    groups = parse_excel_groups(buf.getvalue(), "biometrics.xlsx")
+
+    assert set(groups) == {"grip"}
+    assert "Maximale Griffkraft der Hand" in groups["grip"]["grip_strength"]["Description"].values()
+
+
+def test_any_language_column_is_enough_french_only():
+    header = ["Variable name", "Description_fr", "Scale_fr"]
+    rows = [header, ["mood", "Humeur actuelle", "0=jamais;1=souvent"]]
+
+    groups = parse_excel_groups(_write_xlsx(rows), "codebook.xlsx")
+
+    item = groups["mood"]["mood"]
+    assert item["Description"] == {"fr": "Humeur actuelle"}
+    assert item["Levels"] == {"0": {"fr": "jamais"}, "1": {"fr": "souvent"}}
+
+
+def test_a_plain_description_next_to_a_french_column_is_not_relabeled():
+    header = ["Variable name", "Description", "Description_fr"]
+    rows = [header, ["mood", "ignored plain text", "Humeur actuelle"]]
+
+    groups = parse_excel_groups(_write_xlsx(rows), "codebook.xlsx")
+
+    assert groups["mood"]["mood"]["Description"] == {"fr": "Humeur actuelle"}

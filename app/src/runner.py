@@ -194,7 +194,7 @@ def _validate_dataset(
     issues.extend(
         (
             "INFO",
-            f"The local term {term_id} is now official: remove the local copy: "
+            f"The local term {term_id} is now official (use prism:{term_id.partition(':')[2]}): remove the local copy: "
             f'python prism_tools.py spec local remove --project "{os.path.abspath(root_dir)}" {term_id}',
         )
         for term_id in spec.ignored_local
@@ -976,7 +976,8 @@ def validate_subject_only(
 def _extract_task_from_filename(fname):
     """Extract the BIDS task- entity from a filename, if present."""
     if "_task-" in fname:
-        task_match = re.search(r"_task-([A-Za-z0-9]+)(?:_|$)", fname)
+        # [^_]+: PRISM task labels can hold hyphens (task-gold-dsi, task-pss-10), as in add_procedure_tasks
+        task_match = re.search(r"_task-([^_.]+)", fname)
         if task_match:
             return task_match.group(1)
     return None

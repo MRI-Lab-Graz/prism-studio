@@ -77,7 +77,7 @@ def test_add_term_then_list_then_propose_then_remove(client, tmp_path):
     added = client.post("/api/spec/local/add-term", json={"data_file": _tsv(project), "column": "dhea_s", "label": "DHEA-S"})
     assert added.status_code == 200 and added.get_json()["success"]
     listing = client.get("/api/spec/local").get_json()
-    assert [(i["id"], i["status"]) for i in listing["items"]] == [("prism:dhea-s", "local"), ("prism:dhea-s.saliva", "local")]
+    assert [(i["id"], i["status"]) for i in listing["items"]] == [("local:dhea-s", "local"), ("local:dhea-s.saliva", "local")]
     assert listing["unknown_metrics"] == []
     proposed = client.post("/api/spec/propose", json={"id": "prism:dhea-s"}).get_json()
     assert proposed["success"] and proposed["problems"] == [] and proposed["issue_url"].startswith(FORM)
@@ -509,3 +509,14 @@ def test_check_kind_name_answers_before_sharing(client):
     assert client.post("/api/spec/check-kind-name", json={"name": "skintemp"}).get_json()["success"]
     response = client.post("/api/spec/check-kind-name", json={"name": "func"})
     assert response.status_code == 400 and "already taken" in response.get_json()["error"]
+
+
+def test_add_term_takes_the_same_links_as_the_cli(client, tmp_path):
+    project = _project(tmp_path / "p")
+    _open(client, project)
+    body = {"data_file": _tsv(project), "column": "dhea_s", "links": ["loinc=https://loinc.org/2191-5"]}
+    assert client.post("/api/spec/local/add-term", json=body).get_json()["success"]
+    mapping = project / "code" / "specification" / "mappings" / "biosample" / "dhea-s.json"
+    assert json.loads(mapping.read_text(encoding="utf-8")) == {"local:dhea-s.saliva": {"SameAs": {"loinc": "https://loinc.org/2191-5"}}}
+    bad = client.post("/api/spec/local/add-term", json={**body, "column": "x", "links": ["loinc"]})
+    assert bad.status_code == 400 and "--link" in bad.get_json()["error"]

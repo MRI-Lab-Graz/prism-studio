@@ -70,9 +70,18 @@
       + badge('FAIR', fair, 'bg-warning text-dark');
   }
 
-  // Descriptive fields of the Study section (not same-named item fields) are English only (a stored translation object still displays; only the offer to convert goes).
-  const ENGLISH_ONLY = ['Description', 'Construct', 'Reliability', 'Validity', 'Norming', 'Notes', 'PermissionsNote', 'Keywords', 'Citation', 'LicenseTerms'];
-  const offersMultilingual = (sectionKey, fieldName) => !(sectionKey === 'Study' && ENGLISH_ONLY.includes(fieldName));
+  // Descriptive fields are English only (a stored translation object still displays; only the offer to add or convert a language goes).
+  // Instructions, OriginalName, items and Levels stay free: they are the instrument's own text.
+  const ENGLISH_ONLY = {
+    Study: ['ShortName', 'Description', 'Construct', 'Reliability', 'Validity', 'Norming', 'Notes', 'PermissionsNote', 'Keywords', 'Citation', 'LicenseTerms', 'RecallPeriod',
+      'ExclusionCriteria', 'TargetPopulation', 'WarmupProtocol'],
+    Technical: ['Equipment'],
+    Scoring: ['ScoringMethod', 'CutoffsSource', 'NormsSource'],
+    Normative: ['ReferencePopulation', 'ReferenceSource'],
+  };
+  // Outside surveys the item-level Description describes a column (metadata); in a survey an item is the instrument's own text.
+  const offersMultilingual = (sectionKey, fieldName, modality = 'survey') =>
+    !(ENGLISH_ONLY[sectionKey] || []).includes(fieldName) && !(sectionKey === 'ITEM' && fieldName === 'Description' && modality !== 'survey');
 
   // Long text (a citation, a description): a full-width text area that grows with its text, never a one-line input.
   // It starts at 6 rows (a citation 4), grows to 25 rows and scrolls inside the box from there.

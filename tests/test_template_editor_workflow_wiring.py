@@ -41,6 +41,19 @@ class TestTemplateEditorWorkflowWiring(unittest.TestCase):
         self.assertIn("selectedItemPanelEl.classList.toggle('d-none', !itemsPanelVisible)", visibility)
         self.assertIn("bulkEditPanelEl.classList.toggle('d-none', !itemsPanelVisible)", visibility)
 
+    def test_the_alert_area_is_visible_before_a_template_is_loaded(self):
+        # A failed first import used to show its error inside the hidden workspace.
+        page = TEMPLATE_EDITOR_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertLess(page.index('id="alertArea"'), page.index('id="templateWorkspace"'))
+
+    def test_the_excel_group_picker_stays_after_loading_one_group(self):
+        script = TEMPLATE_EDITOR_SOURCE_WORKFLOW_SCRIPT.read_text(encoding="utf-8")
+        body = script[script.index("async function loadExcelGroup") :]
+        body = body[: body.index("\n}\n")]
+
+        self.assertNotIn("hideExcelGroupPicker", body)
+
     def test_questionnaire_info_is_the_only_layout_of_study_and_technical(self):
         # A translation edit used to re-render a section with the old Technical sub-groups
         # inside a Questionnaire info section, duplicating its fields.

@@ -121,3 +121,29 @@ def test_the_flag_without_a_name_asks_for_the_list():
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     assert module._build_parser().parse_args(["-rp"]).recent_project == ""
+
+
+def test_last_project_flag_is_on_the_parser():
+    spec = importlib.util.spec_from_file_location("ps_lp", REPO / "app" / "prism-studio.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    parser = module._build_parser()
+    assert parser.parse_args(["-lp"]).last_project is True
+    assert parser.parse_args([]).last_project is False
+
+
+def test_the_last_project_is_the_first_recent_one_even_when_names_repeat():
+    from src.recent_projects import last_recent_name
+
+    recent = [{"name": "study", "path": "/p/new"}, {"name": "study", "path": "/p/old"}]
+    assert find_recent_project(recent, last_recent_name(recent))["path"] == "/p/new"
+    assert last_recent_name([]) is None
+
+
+def test_the_recent_file_lives_in_the_settings_folder_tests_redirect(tmp_path):
+    """Tests wrote their temp projects into the developer's real recent list (and pushed the real ones out)."""
+    from src.web.blueprints import projects_helpers
+
+    assert "PRISM Studio" not in str(projects_helpers._recent_projects_file()) or "pytest" in str(
+        projects_helpers._recent_projects_file()
+    )
