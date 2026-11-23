@@ -61,11 +61,20 @@ document.addEventListener('DOMContentLoaded', function () {
     // does not edit is lost (modules/recipe-builder/recipe-merge.js).
     let buildRecipe, metadataFieldText, splitIrvScore;
     // Formula scores and Transforms.Derived (modules/recipe-builder/formula-score.js).
-    let scoreLockReasons, scoreHasFormula, itemsUsedIn, derivedToEntry, entryToDerived;
+    let scoreLockReasons, scoreHasFormula, itemsUsedIn, derivedToEntry, entryToDerived, DERIVED_METHODS;
     const formulaScoreReady = import(
         new URL('./modules/recipe-builder/formula-score.js', recipeBuilderScriptUrl).href
     ).then(mod => {
-        ({ scoreLockReasons, scoreHasFormula, itemsUsedIn, derivedToEntry, entryToDerived } = mod);
+        ({ scoreLockReasons, scoreHasFormula, itemsUsedIn, derivedToEntry, entryToDerived, DERIVED_METHODS } = mod);
+    });
+    // Formula box helpers and the green-chip widget of the project page.
+    let insertAtCursor, addItemOnce, debounce, mountChipArea;
+    const formulaCardReady = Promise.all([
+        import(new URL('./modules/recipe-builder/formula-card.js', recipeBuilderScriptUrl).href),
+        import(new URL('./modules/projects/chip-list.js', recipeBuilderScriptUrl).href),
+    ]).then(([card, chips]) => {
+        ({ insertAtCursor, addItemOnce, debounce } = card);
+        ({ mountChipArea } = chips);
     });
     const recipeMergeReady = import(
         new URL('./modules/recipe-builder/recipe-merge.js', recipeBuilderScriptUrl).href
@@ -252,6 +261,7 @@ document.addEventListener('DOMContentLoaded', function () {
         state.itemInfoLanguage = '';
         state.loadedRecipe = null;
         state.derived = null;
+        renderDerivedSection();
         document.getElementById('rbIncludeIrv').checked = false;
         state.selectedItems = new Set();
         state.activeScaleId = null;
@@ -578,7 +588,7 @@ document.addEventListener('DOMContentLoaded', function () {
         compatibilityNotice.innerHTML = '';
 
         try {
-            await Promise.all([missingDataReady, recipeMergeReady, formulaScoreReady]);
+            await Promise.all([missingDataReady, recipeMergeReady, formulaScoreReady, formulaCardReady]);
             const [itemsResponse, recipeResponse] = await Promise.all([
                 fetchWithApiFallback(
                     '/api/recipe-builder/items?task=' + encodeURIComponent(task) +
@@ -688,6 +698,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Scale range is auto-detected from the template — ignore recipe's stored Scale
         (inv.Items || []).forEach(it => state.inverted.add(it));
         state.derived = ((recipe.Transforms || {}).Derived || []).map(derivedToEntry);
+        renderDerivedSection();
 
         const { scores: ownScores, hasIrv } = splitIrvScore(recipe.Scores);
         document.getElementById('rbIncludeIrv').checked = hasIrv;
@@ -743,6 +754,7 @@ document.addEventListener('DOMContentLoaded', function () {
             score.Formula = scale.formula;
             // the formula engine leaves a score empty when an item is missing; Missing/MinValid stay as loaded
         } else {
+            delete score.Formula;
             score = applyPolicyToScore(score, { policy: scale.policy, minValid: scale.minValid });
         }
         if (scale.description) score.Description = scale.description;
@@ -1034,6 +1046,228 @@ document.addEventListener('DOMContentLoaded', function () {
         renderItemList();
     });
 
+    // ── Formula box (text, item pull-down, example values, check line, rendered math) ──
+    // Nothing here parses or evaluates a formula: the text goes to the backend and its answer is shown.
+    const FORMULA_DEBOUNCE_MS = 300;
+
+    function derivedNames() {
+        return (state.derived || []).map(d => d.name).filter(Boolean);
+    }
+
+    async function postFormula(url, body) {
+        const response = await fetchWithApiFallback(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        return parseApiJsonResponse(response, 'Formula request failed.');
+    }
+
+    function buildFormulaBox(scale) {
+        const el = document.createElement('div');
+        el.className = 'rb-formula-box mt-2';
+
+        const textarea = document.createElement('textarea');
+        textarea.className = 'form-control form-control-sm font-monospace';
+        textarea.rows = 2;
+        textarea.placeholder = '({LEFT_1}+{LEFT_2})/{RIGHT_1}';
+        textarea.value = scale.formula || '';
+        textarea.disabled = scale.isLocked;
+
+        const picker = document.createElement('select');
+        picker.className = 'form-select form-select-sm mt-1';
+        picker.disabled = scale.isLocked;
+        picker.setAttribute('aria-label', 'Insert an item into the formula');
+
+        const chips = document.createElement('div');
+        chips.className = 'mt-1';
+        const area = mountChipArea(chips, { onChange: (values) => { scale.items = [...values]; refresh(); renderItemList(); } });
+
+        const samples = document.createElement('div');
+        samples.className = 'd-flex flex-wrap gap-1 mt-1';
+        const sampleValues = {};
+
+        const checkLine = document.createElement('div');
+        checkLine.className = 'small mt-1';
+        const math = document.createElement('div');
+        math.className = 'rb-formula-math mt-1';
+
+        function fillPicker() {
+            picker.innerHTML = '';
+            const first = document.createElement('option');
+            first.value = '';
+            first.textContent = 'Insert an item…';
+            picker.appendChild(first);
+            [...state.allItems, ...derivedNames()]
+                .filter((name, i, all) => !scale.items.includes(name) && all.indexOf(name) === i)
+                .forEach(name => {
+                    const opt = document.createElement('option');
+                    opt.value = name;
+                    opt.textContent = name;
+                    picker.appendChild(opt);
+                });
+        }
+
+        function fillSamples() {
+            samples.innerHTML = '';
+            scale.items.forEach(name => {
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'form-control form-control-sm';
+                input.style.width = '110px';
+                input.placeholder = name;
+                input.title = 'Example value for ' + name;
+                input.setAttribute('aria-label', 'Example value for ' + name);
+                input.value = sampleValues[name] || '';
+                input.addEventListener('input', () => { sampleValues[name] = input.value; runCheck(); });
+                samples.appendChild(input);
+            });
+        }
+
+        let latexToken = 0;
+        let checkToken = 0;
+        async function runLatex() {
+            const token = ++latexToken;
+            if (!textarea.value.trim()) { math.textContent = ''; return; }
+            try {
+                const data = await postFormula('/api/recipe-builder/formula-latex', { formula: textarea.value });
+                if (token !== latexToken) return;
+                if (data.ok && window.katex) {
+                    window.katex.render(String(data.latex), math, { throwOnError: false });
+                } else {
+                    math.textContent = data.ok ? String(data.latex) : String(data.message || '');
+                }
+            } catch (error) {
+                if (token === latexToken) math.textContent = error.message;
+            }
+        }
+        async function runCheck() {
+            const token = ++checkToken;
+            if (!textarea.value.trim()) { checkLine.textContent = ''; return; }
+            try {
+                const data = await postFormula('/api/recipe-builder/formula-check', {
+                    formula: textarea.value, items: scale.items, values: sampleValues,
+                });
+                if (token !== checkToken) return;
+                checkLine.className = 'small mt-1 ' + (data.ok ? 'text-success' : 'text-danger');
+                checkLine.textContent = data.ok ? 'Result: ' + data.result : String(data.message || '');
+            } catch (error) {
+                if (token === checkToken) {
+                    checkLine.className = 'small mt-1 text-danger';
+                    checkLine.textContent = error.message;
+                }
+            }
+        }
+        const runCheckSoon = debounce(runCheck, FORMULA_DEBOUNCE_MS);
+        const runLatexSoon = debounce(runLatex, FORMULA_DEBOUNCE_MS);
+
+        function refresh() {
+            fillPicker();
+            fillSamples();
+            runCheckSoon();
+            runLatexSoon();
+        }
+
+        textarea.addEventListener('input', () => {
+            scale.formula = textarea.value;
+            runCheckSoon();
+            runLatexSoon();
+        });
+        picker.addEventListener('mousedown', fillPicker); // derived names may have changed since the card was built
+        picker.addEventListener('change', () => {
+            const name = picker.value;
+            if (!name) return;
+            const { text, cursor } = insertAtCursor(textarea.value, textarea.selectionStart, textarea.selectionEnd, name);
+            textarea.value = text;
+            textarea.setSelectionRange(cursor, cursor);
+            scale.formula = text;
+            scale.items = addItemOnce(scale.items, name);
+            area.setValues(scale.items);
+            refresh();
+            renderItemList();
+            textarea.focus();
+        });
+
+        area.setValues(scale.items);
+        el.append(textarea, picker, chips, samples, checkLine, math);
+        return { el, refresh };
+    }
+
+    // ── Best-of-N section (Transforms.Derived: max/min of several items, usable as items in formulas) ──
+    function renderDerivedSection() {
+        const host = document.getElementById('rbDerivedList');
+        if (!host) return;
+        host.innerHTML = '';
+        (state.derived || []).forEach((entry, index) => {
+            const row = document.createElement('div');
+            row.className = 'd-flex flex-wrap align-items-start gap-1 mb-2';
+
+            const name = document.createElement('input');
+            name.type = 'text';
+            name.className = 'form-control form-control-sm';
+            name.style.width = '150px';
+            name.placeholder = 'name';
+            name.value = entry.name;
+            name.addEventListener('input', () => { entry.name = name.value; });
+
+            const method = document.createElement('select');
+            method.className = 'form-select form-select-sm';
+            method.style.width = 'auto';
+            DERIVED_METHODS.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m;
+                opt.textContent = m;
+                opt.selected = m === entry.method;
+                method.appendChild(opt);
+            });
+            method.addEventListener('change', () => { entry.method = method.value; });
+
+            const picker = document.createElement('select');
+            picker.className = 'form-select form-select-sm';
+            picker.style.width = 'auto';
+            const fillPicker = () => {
+                picker.innerHTML = '';
+                const first = document.createElement('option');
+                first.value = '';
+                first.textContent = 'Add an item…';
+                picker.appendChild(first);
+                state.allItems.filter(it => !entry.items.includes(it)).forEach(it => {
+                    const opt = document.createElement('option');
+                    opt.value = it;
+                    opt.textContent = it;
+                    picker.appendChild(opt);
+                });
+            };
+            const chips = document.createElement('div');
+            chips.className = 'flex-grow-1';
+            const area = mountChipArea(chips, { onChange: (values) => { entry.items = [...values]; fillPicker(); } });
+            picker.addEventListener('change', () => {
+                if (!picker.value) return;
+                entry.items = addItemOnce(entry.items, picker.value);
+                area.setValues(entry.items);
+                fillPicker();
+            });
+            fillPicker();
+            area.setValues(entry.items);
+
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.className = 'btn btn-sm btn-outline-danger';
+            remove.title = 'Remove this entry';
+            remove.innerHTML = '<i class="fas fa-times"></i>';
+            remove.addEventListener('click', () => { state.derived.splice(index, 1); renderDerivedSection(); });
+
+            row.append(name, method, picker, chips, remove);
+            host.appendChild(row);
+        });
+    }
+
+    document.getElementById('rbAddDerivedBtn')?.addEventListener('click', () => {
+        if (!state.derived) state.derived = [];
+        state.derived.push(derivedToEntry({ Name: '', Method: DERIVED_METHODS[0], Items: [] }));
+        renderDerivedSection();
+    });
+
     // ── Scale canvas ──────────────────────────────────────────────────────
     function renderScaleCanvas() {
         scaleCanvas.innerHTML = '';
@@ -1176,7 +1410,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const methodSelect   = document.createElement('select');
         methodSelect.className = 'form-select form-select-sm rb-scale-method';
-        const methodOptions = ['mean', 'sum'];
+        const methodOptions = ['mean', 'sum', 'formula'];
         if (scale.method && !methodOptions.includes(scale.method)) methodOptions.unshift(scale.method);
         methodOptions.forEach(m => {
             const opt   = document.createElement('option');
@@ -1253,7 +1487,7 @@ document.addEventListener('DOMContentLoaded', function () {
         let shownMethod = scale.method;
         methodSelect.addEventListener('change', () => {
             // an untouched default follows the method: a sum needs every item, a mean uses the answered ones
-            if (scale.policy === defaultPolicyFor(shownMethod)) {
+            if (scale.method !== 'formula' && scale.policy === defaultPolicyFor(shownMethod)) {
                 scale.policy = defaultPolicyFor(scale.method);
                 policySelect.value = scale.policy;
             }
@@ -1332,7 +1566,17 @@ document.addEventListener('DOMContentLoaded', function () {
         descInput.disabled  = scale.isLocked;
         descInput.addEventListener('input', () => { scale.description = descInput.value; });
 
-        body.append(nameRow, methodRow, missingNote, dropZone, addSelBtn, descInput);
+        const formulaBox = buildFormulaBox(scale);
+        const syncMethodView = () => {
+            const isFormula = scale.method === 'formula';
+            formulaBox.el.classList.toggle('d-none', !isFormula);
+            [policyWrap, missingNote, dropZone, addSelBtn].forEach(el => el.classList.toggle('d-none', isFormula));
+            if (isFormula) formulaBox.refresh();
+        };
+        methodSelect.addEventListener('change', syncMethodView);
+        syncMethodView();
+
+        body.append(nameRow, methodRow, missingNote, formulaBox.el, dropZone, addSelBtn, descInput);
         if (scale.isLocked && scale.lockReason) {
             const lockNote = document.createElement('div');
             lockNote.className = 'rb-scale-lock-note';
