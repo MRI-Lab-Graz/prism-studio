@@ -133,7 +133,7 @@
 
 - [ ] **Step 1: Write the failing tests:** a vitest for the pure part of the card (insert-at-cursor helper returns the new string and cursor; an item name is added to `items` once); a wiring test asserting the template includes the KaTeX asset and the builder calls only `/api/recipe-builder/formula-check` and `/formula-latex` (no `eval`, no formula regex in JS).
 - [ ] **Step 2: Run** both; expect FAIL.
-- [ ] **Step 3: Implement** the UI with the project-page widgets; debounce check/latex calls (about 300 ms); vendor KaTeX (check size; if KaTeX is not acceptable, fall back to native MathML from the same LaTeX is NOT allowed here, use the spec's other option only by asking the user).
+- [ ] **Step 3: Implement** the UI with the project-page widgets; debounce check/latex calls (about 300 ms); vendor KaTeX (the spec allows MathML instead if KaTeX proves too large; switching needs the user's OK).
 - [ ] **Step 4: Run** `npx vitest run`, `pytest tests/test_recipe_builder_workflow_wiring.py tests/test_studio_theme_parity.py -q`; then start Studio (`run` skill), build the Y Balance recipe (three `max` entries, one composite formula, one relative formula) in the browser, save, and compare the saved file with `docs/RECIPES.md`'s example; expect equal Scores/Derived.
 - [ ] **Step 5: Commit** `feat(recipe-builder): formula box with check and rendered math, Best-of-N section`.
 
