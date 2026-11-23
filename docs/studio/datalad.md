@@ -5,9 +5,9 @@ The DataLad page switches DataLad on for the open project and saves snapshots of
 to it counts the changes that are not saved yet.
 
 Sending your saves to a server, getting what others saved, getting the data of a copy and opening a project
-from a server are done in [Worldline Desktop](https://worldline-desktop.readthedocs.io/), the app for
+from a server are done in Worldline Desktop, the app for
 version control of research data. It checks your data with `prism-validator` before every save, and it will
-not send a project that tracks `sourcedata/` to a public host.
+not send a project that tracks `sourcedata/` to a public host. [Install Worldline Desktop](https://worldline-desktop.readthedocs.io/en/latest/install.html) to use it; PRISM does not open it for you.
 
 The page shows **one next step** for the project. Which step that is, is decided by the backend:
 `prism_tools.py datalad status --project <root>` prints the same advice (`--json` gives what the page reads).

@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Sending, syncing and getting data moved to Worldline Desktop.** `prism_tools publish` and `prism_tools datalad sync | update | put-on-server | open-from-server | get-data` are gone, with their Studio routes (Sync now, Put on server, Open from server, Get data, Publish). Use [Worldline Desktop](https://worldline-desktop.readthedocs.io/) (0.6.3 or later refuses to send a project that tracks `sourcedata/` to a public host). The DataLad page keeps Enable DataLad and Save; `datalad enable | save | status | doctor | identity` and `save-gate` stay.
 - If you installed the old pre-push hook (`publish --install-hook`), run `prism_tools save-gate --install-hooks --project <root>`: it removes that hook, which would otherwise block every push.
 - `datalad status` no longer takes `--check-server` or `--validate` and no longer reports `reachable`, `other_servers`, `valid` or `error_count` (use `datalad doctor`). The save audit log is now `.git/prism/save.jsonl`; an existing `publish.jsonl` is renamed on the next save.
+- The DataLad page and the server-backup note now tell people to install Worldline Desktop and link to its install guide (before: its docs front page). PRISM does not launch the app.
 
 ## [1.26.1] - 2026-11-20
 

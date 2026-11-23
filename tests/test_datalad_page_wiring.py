@@ -47,7 +47,7 @@ def test_page_opens_without_a_project(rendered):
     assert "js/main.js" in html
 
 
-WORLDLINE_URL = "https://worldline-desktop.readthedocs.io/"
+WORLDLINE_URL = "https://worldline-desktop.readthedocs.io/en/latest/install.html"
 GONE_IDS = (
     "dataladLocationForm", "dataladLocationStartBtn", "dataladLocationCancelBtn", "dataladTarget",
     "dataladJobProgress", "dataladJobCancelBtn", "dataladGetDataForm", "dataladGetDataStartBtn",
@@ -67,7 +67,7 @@ def test_page_has_no_server_or_get_data_parts_and_points_to_worldline(rendered):
     _, html = rendered
     for element_id in GONE_IDS:
         assert f'id="{element_id}"' not in html, element_id
-    assert "Sync, server copies and getting data: use Worldline Desktop" in html
+    assert "To sync, share with a server and get data, install Worldline Desktop (download)" in html
     assert WORLDLINE_URL in html
 
 
