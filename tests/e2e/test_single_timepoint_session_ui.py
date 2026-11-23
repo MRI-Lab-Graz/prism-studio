@@ -36,7 +36,7 @@ def test_survey_session_stays_editable_in_a_longitudinal_project(app_page, studi
     open_survey_tab(app_page, studio_url)
 
     expect(app_page.locator("#convertSessionSelect")).to_be_enabled()
-    expect(app_page.locator("#convertSessionBadge")).to_have_text("REQUIRED")
+    expect(app_page.locator("#convertSessionBadge")).to_have_text("OPTIONAL")  # Force session is optional since 581bfe33
 
 
 def test_biometrics_session_is_greyed_out(app_page, studio_url):

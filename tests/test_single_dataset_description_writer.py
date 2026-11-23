@@ -16,6 +16,7 @@ ALLOWED = {
     ("src/modality_contribution.py", "write_minimal_dataset"): "scratch dataset in a temp folder, not a project",
     ("app/src/cli/commands/dataset.py", "cmd_dataset_build_biometrics_smoketest"): "smoke-test dataset, not a project",
     ("src/recipes_surveys.py", "_write_recipes_dataset_description"): "a derivative's own description under derivatives/",
+    ("src/batch_convert.py", "_physio_report_dir"): "the physio-report derivative's own description under derivatives/",
 }
 
 

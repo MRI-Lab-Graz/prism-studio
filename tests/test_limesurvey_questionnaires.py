@@ -244,7 +244,7 @@ def test_colliding_task_names_are_deduped_in_listing_and_templates():
     keys = [q["key"] for q in list_limesurvey_questionnaires(xml)]
     names = [limesurvey_questionnaire_template(xml, k)["Study"]["TaskName"] for k in keys]
 
-    assert names[1:3] == ["stress1", "stress1-2"]
+    assert names[1:3] == ["stress1", "stress12"]
     assert len(set(names)) == len(names)
     assert all(re.fullmatch(pattern, n) for n in names)
 
