@@ -85,9 +85,11 @@ def cmd_terms_resolve(args) -> None:
     except (OSError, ValueError) as exc:
         _emit(args, {"success": False, "error": str(exc)}, f"Error: cannot read {args.sidecar}: {exc}")
         sys.exit(1)
-    result = resolve_survey_sidecar(sidecar)
-    _emit(args, {"success": True, **result},
-          "\n".join(f"{c['column']}\t{c['term'] or '-'}\t{c['reason']}" for c in result["columns"]))
+    result = resolve_survey_sidecar(sidecar, project_root=getattr(args, "project", None))
+    lines = [f"warning: {m}" for m in result["problems"]]
+    lines += [f"{c['column']}\t{c['term'] or '-'}\t{c['reason']}\t{c['source']}" for c in result["columns"]]
+    payload = {"success": True, **result}
+    _emit(args, payload, "\n".join(lines))
 
 
 def cmd_terms_show(args) -> None:

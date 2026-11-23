@@ -222,30 +222,57 @@ def _item_reason(column: dict, item: dict, column_language: str, library_languag
     return ""
 
 
-def resolve_survey_sidecar(sidecar: dict, library_dir: Path | None = None, recipe_dir: Path | None = None) -> dict:
+def resolve_survey_sidecar(sidecar: dict, library_dir: Path | None = None, recipe_dir: Path | None = None, project_root=None) -> dict:
     """Give each column of a project's survey sidecar its official item ID, or the reason it has none.
 
-    {"instrument": TermID | None, "columns": [{"column", "term", "reason"}]}; reason is "" with a term, else one of
-    unknown instrument, unknown item, alias, changed scale, changed wording. An edited item loses its official ID.
-    Nothing is written anywhere.
+    {"instrument": TermID | None, "columns": [{"column", "term", "reason", "source"}], "problems": [...]}; problems
+    are the messages about the project's invalid fingerprint files ([] without project_root); reason is "" with a term, else one
+    of unknown instrument, unknown item, alias, changed scale, changed wording, language not registered. source is
+    "library", "local" (the project's own fingerprints, only with project_root) or "" without a term. A local
+    fingerprint never overrides the library result, except for a language the library item does not carry.
+    An edited item loses its official ID. Nothing is written anywhere.
     """
+    from src.spec_overlay import load_local_survey  # lazily: spec_overlay imports the term machinery
+    from src.survey_fingerprints import item_matches
+
     library_dir = Path(library_dir or terms_root().parent / "survey")
     study = sidecar.get("Study") if isinstance(sidecar.get("Study"), dict) else {}
     technical = sidecar.get("Technical") if isinstance(sidecar.get("Technical"), dict) else {}
+    language = str(technical.get("Language") or "en")
     task = _slug(str(study.get("TaskName") or "").strip())
     template = next((t for _, name, t in _templates(library_dir, []) if name == task), None) if task else None
+    # an invalid project file is skipped and reported in problems
+    loaded, problems = load_local_survey(project_root) if project_root is not None else ({}, [])
+    local = loaded.get(task) if task else None
+    local_items = local["Items"] if local else {}
     columns = []
     for key, column in sidecar.items():
         if key in _NOT_ITEMS:
             continue
         item = template.get(key) if template else None
-        if template is None:
+        source = ""
+        if template is None and local is None:
             term, reason = None, "unknown instrument"
+        elif template is None:
+            entry = local_items.get(key)
+            if entry is None or not isinstance(column, dict):
+                term, reason = None, "unknown item"
+            else:
+                reason = item_matches(entry, column, language)
+                term = None if reason else f"local:{item_local_id(task, key)}"
+                source = "" if reason else "local"
         elif not isinstance(item, dict) or "AliasOf" in item or not isinstance(column, dict):
             term, reason = None, "unknown item"
         else:
             library_language = (template.get("Technical") or {}).get("Language") or "en"
-            reason = _item_reason(column, item, str(technical.get("Language") or "en"), str(library_language))
+            entry = local_items.get(key)
+            reason = _item_reason(column, item, language, str(library_language))  # the library's own check always runs first
+            source = "" if reason else "library"
+            if not reason and entry and language not in _texts(item.get("Description"), str(library_language)):
+                local_reason = item_matches(entry, column, language)  # a language only the project registered
+                if local_reason != "language not registered":  # else the clean library result stands
+                    reason, source = local_reason, "" if local_reason else "local"
             term = None if reason else f"prism:{item_local_id(task, key)}"
-        columns.append({"column": key, "term": term, "reason": reason})
-    return {"instrument": f"prism:{task}" if template else None, "columns": columns}
+        columns.append({"column": key, "term": term, "reason": reason, "source": source})
+    instrument = f"prism:{task}" if template else f"local:{task}" if local else None
+    return {"instrument": instrument, "columns": columns, "problems": problems}

@@ -77,19 +77,13 @@ from src.cli.commands.participants import (
     cmd_participants_save_schema,
 )
 from src.cli.commands.merge_versions import cmd_merge_versions
-from src.cli.commands.publish import cmd_publish
 from src.cli.commands.save_gate import cmd_save_gate
 from src.cli.commands.datalad import (
     cmd_datalad_doctor,
     cmd_datalad_enable,
     cmd_datalad_identity,
-    cmd_datalad_get_data,
-    cmd_datalad_open_from_server,
-    cmd_datalad_put_on_server,
     cmd_datalad_save,
     cmd_datalad_status,
-    cmd_datalad_sync,
-    cmd_datalad_update,
 )
 from src.cli.commands.sessions import (
     cmd_sessions_forget_import,
@@ -179,6 +173,8 @@ from src.cli.commands.spec import (
     cmd_spec_local_list,
     cmd_spec_local_remove,
     cmd_spec_local_remove_values,
+    cmd_spec_local_add_survey,
+    cmd_spec_local_remove_survey,
     cmd_spec_propose,
 )
 from src.cli.commands.lookup import cmd_doi_lookup, cmd_orcid_search
@@ -232,6 +228,8 @@ def main() -> None:
             "spec_local_remove": cmd_spec_local_remove,
             "spec_local_add_values": cmd_spec_local_add_values,
             "spec_local_remove_values": cmd_spec_local_remove_values,
+            "spec_local_add_survey": cmd_spec_local_add_survey,
+            "spec_local_remove_survey": cmd_spec_local_remove_survey,
             "spec_propose": cmd_spec_propose,
             "spec_catalog": cmd_spec_catalog,
             "spec_example": cmd_spec_example,
@@ -285,7 +283,6 @@ def main() -> None:
             "participants_save_schema": cmd_participants_save_schema,
             "participants_fix_bids": cmd_participants_fix_bids,
             "datalad_doctor": cmd_datalad_doctor,
-            "datalad_sync": cmd_datalad_sync,
             "preregistration_draft": cmd_preregistration_draft,
             "methods_generate": cmd_methods_generate,
             "project_generate_readme": cmd_project_generate_readme,
@@ -296,11 +293,7 @@ def main() -> None:
             "datalad_enable": cmd_datalad_enable,
             "datalad_identity": cmd_datalad_identity,
             "datalad_save": cmd_datalad_save,
-            "datalad_update": cmd_datalad_update,
             "datalad_status": cmd_datalad_status,
-            "datalad_put_on_server": cmd_datalad_put_on_server,
-            "datalad_open_from_server": cmd_datalad_open_from_server,
-            "datalad_get_data": cmd_datalad_get_data,
             "project_set_schema_version": cmd_project_set_schema_version,
             "rsync_config": cmd_rsync_config,
             "rsync_sync": cmd_rsync_sync,
@@ -329,7 +322,6 @@ def main() -> None:
             "sessions_set": cmd_sessions_set,
             "sessions_unset": cmd_sessions_unset,
             "sessions_forget-import": cmd_sessions_forget_import,
-            "publish": cmd_publish,
             "save_gate": cmd_save_gate,
             "merge_versions": cmd_merge_versions,
             "survey_import_lsq": cmd_survey_import_lsq,

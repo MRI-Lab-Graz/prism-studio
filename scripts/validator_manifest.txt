@@ -55,9 +55,12 @@ src/spec_overlay.py
 src/specification.py
 src/survey_answer_codes.py
 src/survey_existing.py
+src/survey_fingerprints.py
 src/survey_localize.py
+src/survey_terms.py
 src/survey_template_drift.py
 src/term_proposal.py
+src/template_languages.py
 src/term_registry.py
 src/text_sanitizer.py
 src/validation_library_resolution.py

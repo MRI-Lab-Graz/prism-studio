@@ -777,11 +777,6 @@ modular_blueprints = [
         "projects_export",
     ),
     (
-        "src.web.blueprints.projects_datalad_server_blueprint",
-        "projects_datalad_server_bp",
-        "projects_datalad_server",
-    ),
-    (
         "src.web.blueprints.projects_rsync_server_blueprint",
         "projects_rsync_server_bp",
         "projects_rsync_server",

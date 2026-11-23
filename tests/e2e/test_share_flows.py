@@ -1,9 +1,7 @@
 """Share & Archive page: export a project the way a user does."""
 
-import shutil
 import zipfile
 
-import pytest
 
 from playwright.sync_api import expect
 
@@ -41,18 +39,3 @@ def test_standard_export_without_validation_writes_a_zip_with_the_project_files(
     assert len(zips) == 1, app_page.inner_text("#exportProjectCard")[-400:]
     with zipfile.ZipFile(zips[0]) as z:
         assert "dataset_description.json" in " ".join(z.namelist())
-
-
-@pytest.mark.skipif(not shutil.which("ssh"), reason="ssh is not installed")
-def test_check_this_computer_reports_an_unreachable_server_in_plain_words(app_page, studio_url):
-    # "Check this computer" moved from the Share page to the DataLad page's "More"
-    app_page.goto(f"{studio_url}/projects/datalad")
-    app_page.locator('#dataladStepCard [data-action="open-from-server"]').click()
-    app_page.fill("#dataladLocation", "nobody@no-such-host.invalid:/store")
-    check = app_page.locator('#dataladMore [data-action="doctor"]')
-
-    check.click()
-
-    result = app_page.locator("#dataladDoctorResult")
-    expect(result).to_contain_text("Cannot reach the server", timeout=30000)
-    expect(check).to_be_enabled()

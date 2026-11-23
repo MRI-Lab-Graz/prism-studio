@@ -153,10 +153,10 @@ is derived entirely from the template and the filename:
 2. **BIDS filename entity**: `acq-<version>` on multi-variant outputs.
 
 ```json
-{ "Study": { "TaskName": "demo-multi", "Versions": ["10-likert", "7-likert", "10-vas"], "Version": "10-likert" } }
+{ "Study": { "TaskName": "demomulti", "Versions": ["10-likert", "7-likert", "10-vas"], "Version": "10-likert" } }
 ```
 
-produces `sub-001_ses-01_task-demo-multi_acq-10-likert_survey.tsv`. A
+produces `sub-001_ses-01_task-demomulti_acq-10-likert_survey.tsv`. A
 single-version template gets no `acq` entity at all.
 
 At validation and scoring time, the version resolves from the filename's `acq`

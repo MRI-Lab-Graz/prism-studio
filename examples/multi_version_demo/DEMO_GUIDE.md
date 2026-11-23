@@ -9,7 +9,7 @@ This guide shows how to import data for a multi-variant questionnaire using the 
 
 ## Variants in This Demo
 
-Template: `code/library/survey/survey-demo-multi.json`
+Template: `code/library/survey/survey-demomulti.json`
 
 | Variant ID | Items | Scale | Range |
 |---|---|---|---|
@@ -21,7 +21,7 @@ Template: `code/library/survey/survey-demo-multi.json`
 
 - PRISM Studio is running
 - Project `multi_version_demo` is open
-- Template file exists at `code/library/survey/survey-demo-multi.json`
+- Template file exists at `code/library/survey/survey-demomulti.json`
 - Raw files are in `code/rawdata/`
 
 ## Where To Set The Version
@@ -33,7 +33,7 @@ Example:
 ```json
 {
   "Study": {
-    "TaskName": "demo-multi",
+    "TaskName": "demomulti",
     "Versions": ["10-likert", "7-likert", "10-vas"],
     "Version": "10-likert"
   }
@@ -42,7 +42,7 @@ Example:
 
 For multi-variant templates, conversion emits filenames like:
 
-`sub-P01_ses-01_task-demo-multi_acq-10-likert_survey.tsv`
+`sub-P01_ses-01_task-demomulti_acq-10-likert_survey.tsv`
 
 ## Scenario 1: Single Version For Whole Study
 
@@ -100,7 +100,7 @@ Recommended converter settings:
 2. Set `ID column = Code`.
 3. Set `Session column = session`.
 4. Set `Run column = run`.
-5. Keep the survey filter empty so `demo-multi` is auto-detected.
+5. Keep the survey filter empty so `demomulti` is auto-detected.
 
 Expected selector mapping:
 
@@ -120,7 +120,7 @@ Why this file is useful:
 
 Expected outcome:
 
-- The wizard should detect `demo-multi` as multi-version
+- The wizard should detect `demomulti` as multi-version
 - The wizard should render contextual selectors because the file contains both multiple sessions and multiple runs
 - Preview/convert should emit different `acq-*` labels per context after you choose the matching versions
 

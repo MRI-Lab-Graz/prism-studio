@@ -366,7 +366,7 @@ function syncMriScrubControls() {
 
 /**
  * The scope the content filters choose (includes/projects/content_scope_filters.html): the include_* and exclude_*
- * options the export and the DataLad page's Get data both send (the backend's filters_from_options reads them).
+ * options the export sends (the backend's filters_from_options reads them).
  */
 export function readContentScope() {
     return {

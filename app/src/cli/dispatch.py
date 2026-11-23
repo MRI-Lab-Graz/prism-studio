@@ -73,7 +73,7 @@ def dispatch_prism_tools(
         else:
             parsers["modality"].print_help()
     elif args.command == "spec":
-        if args.action == "local" and getattr(args, "local_action", None) in ("list", "add-term", "remove", "add-values", "remove-values"):
+        if args.action == "local" and getattr(args, "local_action", None) in ("list", "add-term", "remove", "add-values", "remove-values", "add-survey", "remove-survey"):
             handlers[f"spec_local_{args.local_action.replace('-', '_')}"](args)
         elif args.action == "propose":
             handlers["spec_propose"](args)
@@ -181,8 +181,6 @@ def dispatch_prism_tools(
             parsers["sessions"].print_help()
     elif args.command == "merge-versions":
         handlers["merge_versions"](args)
-    elif args.command == "publish":
-        handlers["publish"](args)
     elif args.command == "save-gate":
         handlers["save_gate"](args)
     elif args.command == "datalad":
@@ -190,9 +188,7 @@ def dispatch_prism_tools(
             handlers["datalad_doctor"](args)
         elif args.action == "identity":
             handlers["datalad_identity"](args)
-        elif args.action == "sync":
-            handlers["datalad_sync"](args)
-        elif args.action in ("enable", "save", "update", "status", "put-on-server", "open-from-server", "get-data"):
+        elif args.action in ("enable", "save", "status"):
             handlers[f"datalad_{args.action.replace('-', '_')}"](args)
         else:
             parsers["datalad"].print_help()

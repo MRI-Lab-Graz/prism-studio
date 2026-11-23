@@ -11,8 +11,9 @@ from __future__ import annotations
 import copy
 import re
 
-from src.converters.template_import import TEMPLATE_SECTIONS
 
+# Top-level keys of a template that are not items. Defined here (no heavy imports): the validator reads it too.
+TEMPLATE_SECTIONS = {"Technical", "Study", "Metadata", "I18n", "LimeSurvey", "Scoring", "Normative"}
 NOT_ITEMS = TEMPLATE_SECTIONS | {"@context", "_aliases", "_reverse_aliases"}
 LANG_CODE_RE = re.compile(r"^[a-z]{2}(-[A-Z]{2})?$")
 

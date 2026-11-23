@@ -12,11 +12,10 @@ from pathlib import Path
 
 from src.converters.library_wording_match import apply_library_template, public_library_match
 from src.item_map import _root, check_project_map, load_item_map, save_item_map, template_items
+from src.template_languages import TEMPLATE_SECTIONS  # noqa: F401 - re-exported, defined with no heavy imports
 from src.utils.naming import sanitize_task_name
 from src.prism_template_validation import strip_template_editor_internal_keys
 
-# Top-level keys of a template that are not items.
-TEMPLATE_SECTIONS = {"Technical", "Study", "Metadata", "I18n", "LimeSurvey", "Scoring", "Normative"}
 
 
 def task_name(name):

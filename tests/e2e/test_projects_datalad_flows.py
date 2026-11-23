@@ -65,7 +65,6 @@ def test_enabling_datalad_tracks_the_project(bare_page, studio_url, project):
     assert messages and "DataLad" in messages[0]
     assert (project / ".datalad").is_dir() and (project / ".git").is_dir()
     expect(action(bare_page, "enable")).to_have_count(0)
-    expect(action(bare_page, "put-on-server")).to_be_enabled()
     expect(action(bare_page, "save")).to_be_enabled()
 
 
@@ -195,34 +194,11 @@ def test_init_on_a_bids_dataset_with_datalad_switched_on_tracks_it(bare_page, st
     assert_tracked_and_text_is_not_annexed(root, "project.json", "participants.tsv", "dataset_description.json")
 
 
-def test_put_on_an_unreachable_server_explains_what_is_wrong(bare_page, studio_url, project):
-    if not shutil.which("ssh"):
-        pytest.skip("ssh is not installed")
-    open_datalad_card(bare_page, studio_url, project)
-    enable_datalad(bare_page)
-    action(bare_page, "put-on-server").click()
-    bare_page.fill("#dataladLocation", "nobody@no-such-host.invalid:/srv/x")
-
-    bare_page.click("#dataladLocationStartBtn")
-
-    # The test project has a validation error: the errors are listed first, with the acknowledgement button.
-    send_anyway = bare_page.locator("#dataladSendAnywayBtn")
-    expect(send_anyway).to_have_text("Send anyway, I understand this dataset has 1 errors", timeout=120000)
-    send_anyway.click()
-
-    result = bare_page.locator("#dataladJobResult .alert-danger")
-    expect(result).to_be_visible(timeout=120000)
-    expect(result).not_to_be_empty()
-    expect(action(bare_page, "put-on-server")).to_be_enabled()  # the step is still offered, nothing is locked
-
-
-def test_without_a_project_the_page_leads_with_open_from_server(bare_page, studio_url):
+def test_without_a_project_the_page_offers_no_server_action_and_points_to_worldline(bare_page, studio_url):
     bare_page.goto(f"{studio_url}/projects/datalad")
 
     expect(bare_page.locator("#dataladStepTitle")).to_have_text("No project open")
-    expect(action(bare_page, "open-from-server")).to_have_text("Open from server...")
-    action(bare_page, "open-from-server").click()
-    expect(bare_page.locator("#dataladTarget")).to_be_visible()  # asks where to put the copy
-    for more in ("get-latest", "get-data", "doctor"):
-        expect(bare_page.locator(f'#dataladMore [data-action="{more}"]')).to_be_visible()
+    expect(bare_page.locator("#dataladPrimary [data-action]")).to_have_count(0)
+    expect(bare_page.locator('#dataladMore [data-action="doctor"]')).to_be_visible()
+    expect(bare_page.get_by_role("link", name="Sync, server copies and getting data: use Worldline Desktop")).to_be_visible()
     expect(bare_page.locator("#navbarDataladToggle")).to_be_visible()  # the navbar item shows without a project

@@ -332,9 +332,10 @@ extension, anywhere in the project, including `sourcedata/`.
 
 Consequence to keep in mind: because `sourcedata/` (raw, possibly identifiable
 participant data) is plain git, it travels with every push and stays in history.
-It is for the **internal lab server only**; `src/share_publish.publish_to_server`
-refuses http(s)/public-host targets while `sourcedata/` is tracked. Any new push
-or publish path must go through that guard or repeat it.
+It is for the **internal lab server only**. Studio and the CLI have **no push path** (sending, syncing, publishing and
+getting data are Worldline Desktop's job, since 2026-11-21); the public-host guard lives there
+(`src/datalad/sourcedata-guard.js` in Worldline-desktop). Do not add a push or publish path to this repo; if one is
+ever needed, port that guard first.
 
 ## Session IDs are free-form strings — never normalize them
 

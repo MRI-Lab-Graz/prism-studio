@@ -544,7 +544,7 @@ class TestParseLssXmlByGroups:
         result = parse_lss_xml_by_groups(text.encode("utf-8"))
 
         keys = [k for k in result if k.startswith("stress")]
-        assert keys == ["stress1", "stress1-2"]
+        assert keys == ["stress1", "stress12"]
         assert all(result[k]["Study"]["TaskName"] == k for k in keys)
         items = [{i for i in result[k] if i.startswith(("WHO", "ADS"))} for k in keys]
         assert items[0] and items[1] and items[0].isdisjoint(items[1])

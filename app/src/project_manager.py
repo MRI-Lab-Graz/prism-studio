@@ -2108,71 +2108,6 @@ class ProjectManager:
         result["error"] = save_result.get("message") or "DataLad save failed."
         return result
 
-    def update_datalad_from_server(
-        self,
-        path: Union[str, Path],
-        *,
-        sibling_name: Optional[str] = None,
-    ) -> Dict[str, Any]:
-        """"Get latest": bring in what the server has saved, if that is safe.
-
-        Skipped (success) when the project has no server yet. Refused while the project has unsaved changes,
-        and never merges: when both sides changed, the update stops and says so.
-        """
-        project_path = Path(path)
-        with self._datalad_lock_for(project_path):
-            return self._update_datalad_from_server_locked(project_path, sibling_name=sibling_name)
-
-    def _update_datalad_from_server_locked(
-        self, project_path: Path, *, sibling_name: Optional[str]
-    ) -> Dict[str, Any]:
-        from src.datalad_execution import run_datalad_sibling_exists, run_datalad_update
-
-        status = self.get_datalad_status(project_path)
-        result: Dict[str, Any] = {"success": False, "path": str(project_path), "updated": False, "skipped": False}
-        if not status.get("enabled") or not status.get("available"):
-            result["error"] = status.get("message") or "Current project is not a DataLad dataset."
-            return result
-
-        sibling = str(sibling_name or "").strip() or "origin"
-        executable = status.get("executable") or ""
-        if not run_datalad_sibling_exists(
-            project_path, sibling_name=sibling, datalad_executable=executable
-        ).get("exists"):
-            result.update(success=True, skipped=True, message="No server is connected to this project yet.")
-            return result
-
-        clean = self.check_datalad_clean_status(project_path)
-        if not clean.get("checked") or not clean.get("clean"):
-            result["error"] = (
-                f"{clean.get('dirty_count') or 'Some'} unsaved change(s) in this project. "
-                "Save them first, then get the latest from the server."
-            )
-            return result
-
-        before = self._git_head(project_path)
-        update = run_datalad_update(project_path, sibling_name=sibling, datalad_executable=executable)
-        # datasets the update could not bring in; "." when the output names none
-        failed = re.findall(r"^update\((?:impossible|error)\): (.+) \(dataset\)", update["output"], re.M) or ["."]
-        if not update["success"] and not any(self._server_has_something_for(project_path / path, sibling) for path in failed):
-            # a dataset with no server copy yet (a new subject before its first sync) or an empty one just created
-            # (put-on-server whose first send was interrupted) has nothing to get: the next push fills it
-            if failed == ["."]:
-                result.update(success=True, message="The server has nothing saved yet.")
-                return result
-            update["success"] = True
-        if not update["success"]:
-            if "not possible to fast-forward" in update["output"].lower():  # git's own ff-only refusal
-                hint = "If you and someone else both saved changes, ask your data steward to combine them."
-            else:
-                hint = "If this keeps happening, ask your data steward."
-            result["error"] = f"{update['message']}\n\nNothing was changed. {hint}"
-            return result
-        result["updated"] = self._git_head(project_path) != before
-        result["success"] = True
-        result["message"] = "Got the latest changes from the server." if result["updated"] else "Already up to date."
-        return result
-
     def export_project_to_plain_folder(
         self,
         path: Union[str, Path],
@@ -5586,28 +5521,6 @@ git push -u origin main
 
         result["message"] = f"DataLad save failed: {detail or 'Unknown DataLad error.'}"
         return result
-
-    @classmethod
-    def _server_has_something_for(cls, dataset: Path, sibling: str) -> bool:
-        """False when `dataset` has no copy on the server yet, or an empty one; True when unsure (fail safe)."""
-        from src.share_publish import has_sibling
-
-        return has_sibling(dataset, sibling) and cls._server_has_saved_branch(dataset, sibling)
-
-    @staticmethod
-    def _server_has_saved_branch(project_path: Path, sibling: str) -> bool:
-        """Does the server itself have a branch besides git-annex? True when it cannot be asked (fail safe)."""
-        env = {**os.environ, "GIT_TERMINAL_PROMPT": "0", "GIT_SSH_COMMAND": os.environ.get("GIT_SSH_COMMAND", "ssh -o BatchMode=yes")}
-        try:
-            process = subprocess.run(
-                ["git", "ls-remote", "--heads", sibling],
-                cwd=str(project_path), capture_output=True, text=True, check=False, timeout=30, env=env,
-            )
-        except (subprocess.TimeoutExpired, OSError):
-            return True
-        if process.returncode != 0:
-            return True
-        return any(not line.endswith("refs/heads/git-annex") for line in process.stdout.splitlines() if line.strip())
 
     @staticmethod
     def _git_head(project_path: Path) -> Optional[str]:

@@ -114,13 +114,3 @@ def test_rsync_argv_has_double_dash_before_paths(tmp_path, monkeypatch):
     cmd = seen[0]
     i = cmd.index("--")
     assert cmd[i + 1].endswith("/") and cmd[i + 2] == "me@host:/d/"
-
-
-def test_datalad_sibling_urls_starting_with_dash_are_rejected(tmp_path, no_subprocess):
-    from src import datalad_execution as de
-
-    plain = de.run_datalad_create_sibling_plain(
-        tmp_path, remote_url="-oProxyCommand=x", datalad_executable="/usr/bin/datalad"
-    )
-    assert plain["success"] is False and plain["attempted"] is False
-    assert no_subprocess == []

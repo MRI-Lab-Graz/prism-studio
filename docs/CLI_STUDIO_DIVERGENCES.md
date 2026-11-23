@@ -120,7 +120,7 @@ Studio uses them (a first sort by file, not yet a line-by-line read of each):
 
 **Only project setup is exempt**: creating a project and its study metadata (including the DOI and ORCID lookups that fill the
 metadata form). Everything else in this baseline is a divergence to fix, not "infrastructure":
-- DataLad server publish and sync, remote browse and rsync, project structure and the sessions/participants pages, project
+- Remote browse and rsync, project structure and the sessions/participants pages, project
   registration, session logging.
 - Pure UI state needs no command (icons, which card is open, the dedicated terminal window, the version check): confirm each
   and list it in the baseline with that reason.

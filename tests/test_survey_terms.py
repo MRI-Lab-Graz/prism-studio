@@ -193,7 +193,7 @@ def _one(out):
 
 def test_an_unchanged_item_resolves_to_its_official_id(tmp_path):
     out = _resolve(tmp_path, _sidecar(TIPI01=copy.deepcopy(TIPI["TIPI01"])))
-    assert out == {"instrument": "prism:tipi", "columns": [{"column": "TIPI01", "term": "prism:tipi.tipi01", "reason": ""}]}
+    assert out == {"instrument": "prism:tipi", "problems": [], "columns": [{"column": "TIPI01", "term": "prism:tipi.tipi01", "reason": "", "source": "library"}]}
 
 
 @pytest.mark.parametrize("change,reason", [
@@ -205,7 +205,7 @@ def test_an_unchanged_item_resolves_to_its_official_id(tmp_path):
 ])
 def test_an_edited_item_loses_the_official_id(tmp_path, change, reason):
     column = {**copy.deepcopy(TIPI["TIPI01"]), **change}
-    assert _one(_resolve(tmp_path, _sidecar(TIPI01=column))) == {"column": "TIPI01", "term": None, "reason": reason}
+    assert _one(_resolve(tmp_path, _sidecar(TIPI01=column))) == {"column": "TIPI01", "term": None, "reason": reason, "source": ""}
 
 
 def test_other_whitespace_and_a_missing_scale_still_resolve(tmp_path):
@@ -224,9 +224,9 @@ def test_a_plain_string_is_compared_in_the_sidecars_language(tmp_path):
 
 
 def test_unknown_item_and_unknown_instrument(tmp_path):
-    assert _one(_resolve(tmp_path, _sidecar(NOPE01={"Description": "x"}))) == {"column": "NOPE01", "term": None, "reason": "unknown item"}
+    assert _one(_resolve(tmp_path, _sidecar(NOPE01={"Description": "x"}))) == {"column": "NOPE01", "term": None, "reason": "unknown item", "source": ""}
     out = _resolve(tmp_path, {"Study": {"TaskName": "other"}, "TIPI01": {}})
-    assert out["instrument"] is None and _one(out) == {"column": "TIPI01", "term": None, "reason": "unknown instrument"}
+    assert out["instrument"] is None and _one(out) == {"column": "TIPI01", "term": None, "reason": "unknown instrument", "source": ""}
 
 
 @pytest.mark.parametrize("study", [None, [], "tipi", {}])
@@ -298,3 +298,105 @@ def test_empty_en_falls_back_to_the_first_other_language(tmp_path):
     lib, rec = _lib(tmp_path, {"x": _x({"RecallPeriod": {"en": "", "de": "letzte 2 Wochen"}})})
     registry, _ = build_survey_registry(lib, rec)
     assert registry["x"]["RecallPeriod"] == "letzte 2 Wochen"
+
+
+# --- a project's own survey fingerprints ------------------------------------------
+
+from src.spec_overlay import write_local_survey
+from src.survey_fingerprints import fingerprint_sidecar, item_matches
+
+
+def _project(tmp_path, sidecar, language=None):
+    root = tmp_path / "proj"
+    root.mkdir(exist_ok=True)
+    write_local_survey(root, fingerprint_sidecar(sidecar, language))
+    return root
+
+
+def _mine(**columns):
+    return {"Study": {"TaskName": "mine"}, "Technical": {"Language": "en"}, **columns}
+
+
+_Q = {"Description": {"en": "Slept well"}, "Levels": {"1": "no", "2": "yes"}, "MinValue": 1, "MaxValue": 2}
+
+
+def _res(tmp_path, sidecar, root):
+    return resolve_survey_sidecar(sidecar, library_dir=_lib(tmp_path, {})[0], project_root=root)
+
+
+def test_project_only_task_resolves_from_local_fingerprints(tmp_path):
+    root = _project(tmp_path, _mine(Q1=copy.deepcopy(_Q)))
+    out = _res(tmp_path, _mine(Q1=copy.deepcopy(_Q), Q2=copy.deepcopy(_Q)), root)
+    assert out["instrument"] == "local:mine"
+    assert out["columns"] == [{"column": "Q1", "term": "local:mine.q1", "reason": "", "source": "local"},
+                              {"column": "Q2", "term": None, "reason": "unknown item", "source": ""}]
+
+
+def test_changed_wording_and_scale_keep_their_reasons(tmp_path):
+    root = _project(tmp_path, _mine(Q1=copy.deepcopy(_Q)))
+    out = _res(tmp_path, _mine(Q1={**_Q, "Description": {"en": "Other"}}), root)
+    assert _one(out)["reason"] == "changed wording" and _one(out)["term"] is None
+    out = _res(tmp_path, _mine(Q1={**_Q, "MaxValue": 9}), root)
+    assert _one(out)["reason"] == "changed scale"
+
+
+def test_unregistered_language_gets_no_term(tmp_path):
+    root = _project(tmp_path, _mine(Q1=copy.deepcopy(_Q)))
+    out = _res(tmp_path, {**_mine(Q1={**_Q, "Description": {"de": "Gut geschlafen"}}), "Technical": {"Language": "de"}}, root)
+    assert _one(out) == {"column": "Q1", "term": None, "reason": "language not registered", "source": ""}
+
+
+def test_local_never_overrides_the_library(tmp_path):
+    other = {**TIPI["TIPI01"], "Description": {"en": "Different"}}
+    root = _project(tmp_path, {"Study": {"TaskName": "tipi"}, "Technical": {"Language": "en"}, "TIPI01": other})
+    column = copy.deepcopy(other)
+    out = resolve_survey_sidecar(_sidecar(TIPI01=column), *_lib(tmp_path, {"tipi": TIPI})[:1], project_root=root)
+    assert _one(out)["reason"] == "changed wording" and _one(out)["term"] is None
+
+
+def test_library_item_in_a_local_language_keeps_prism_id(tmp_path):
+    de = {**TIPI["TIPI02"], "Description": {"de": "Kritisch"}}
+    root = _project(tmp_path, {"Study": {"TaskName": "tipi"}, "Technical": {"Language": "de"}, "TIPI02": de})
+    sidecar = {**_sidecar(TIPI02=copy.deepcopy(de)), "Technical": {"Language": "de"}}
+    out = resolve_survey_sidecar(sidecar, *_lib(tmp_path, {"tipi": TIPI})[:1], project_root=root)
+    assert out["instrument"] == "prism:tipi"
+    assert _one(out) == {"column": "TIPI02", "term": "prism:tipi.tipi02", "reason": "", "source": "local"}
+
+
+def test_local_german_works_with_a_library_english_task(tmp_path):
+    de = {**TIPI["TIPI02"], "Description": {"de": "Kritisch"}}
+    root = _project(tmp_path, {"Study": {"TaskName": "tipi"}, "Technical": {"Language": "de"}, "TIPI02": de})
+    sidecar = {**_sidecar(TIPI02=copy.deepcopy(de)), "Technical": {"Language": "de"}}
+    out = resolve_survey_sidecar(sidecar, *_lib(tmp_path, {"tipi": TIPI})[:1], project_root=root)
+    assert _one(out) == {"column": "TIPI02", "term": "prism:tipi.tipi02", "reason": "", "source": "local"}
+    assert resolve_survey_sidecar(sidecar, *_lib(tmp_path, {"tipi": TIPI})[:1])["columns"][0]["source"] == "library"
+
+
+def test_without_project_root_nothing_changes(tmp_path):
+    out = _resolve(tmp_path, _sidecar(TIPI01=copy.deepcopy(TIPI["TIPI01"])))
+    assert out["columns"] == [{"column": "TIPI01", "term": "prism:tipi.tipi01", "reason": "", "source": "library"}]
+    assert _res(tmp_path, _mine(Q1=_Q), None)["instrument"] is None
+
+
+def test_invalid_local_file_does_not_stop_resolve(tmp_path):
+    root = tmp_path / "proj"
+    (root / "code" / "specification" / "survey").mkdir(parents=True)
+    (root / "code" / "specification" / "survey" / "mine.json").write_text("{not json", encoding="utf-8")
+    out = _res(tmp_path, _mine(Q1=_Q), root)
+    assert out["instrument"] is None and _one(out)["reason"] == "unknown instrument"
+
+
+def test_an_item_without_description_matches_on_scale_alone():
+    entry = fingerprint_sidecar(_mine(Q1={"Levels": {"1": "a"}, "MinValue": 1, "MaxValue": 1}))["Items"]["Q1"]
+    column = {"Description": "Now described", "Levels": {"1": "a"}, "MinValue": 1, "MaxValue": 1}
+    assert item_matches(entry, column, "en") == ""
+    assert item_matches(entry, {**column, "MaxValue": 2}, "en") == "changed scale"
+
+
+def test_a_local_fingerprint_cannot_verify_a_changed_library_wording(tmp_path):
+    de = {**TIPI["TIPI02"], "Description": {"de": "Kritisch"}}
+    root = _project(tmp_path, {"Study": {"TaskName": "tipi"}, "Technical": {"Language": "de"}, "TIPI02": de})
+    column = {**de, "Description": {"de": "Kritisch", "en": "Edited English"}}
+    sidecar = {**_sidecar(TIPI02=column), "Technical": {"Language": "de"}}
+    out = resolve_survey_sidecar(sidecar, *_lib(tmp_path, {"tipi": TIPI})[:1], project_root=root)
+    assert _one(out) == {"column": "TIPI02", "term": None, "reason": "changed wording", "source": ""}

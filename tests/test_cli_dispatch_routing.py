@@ -14,6 +14,9 @@ from src.cli.dispatch import dispatch_prism_tools
 # handler directly in dispatch_prism_tools.
 DISPATCH_CASES = [
     (dict(command="anonymize"), "anonymize"),
+    (dict(command="datalad", action="enable"), "datalad_enable"),
+    (dict(command="datalad", action="save"), "datalad_save"),
+    (dict(command="datalad", action="status"), "datalad_status"),
     (dict(command="template-export"), "template_export"),
     (dict(command="modality", action="propose"), "modality_propose"),
     (dict(command="doi", action="lookup"), "doi_lookup"),
@@ -27,6 +30,8 @@ DISPATCH_CASES = [
     (dict(command="spec", action="local", local_action="remove"), "spec_local_remove"),
     (dict(command="spec", action="local", local_action="add-values"), "spec_local_add_values"),
     (dict(command="spec", action="local", local_action="remove-values"), "spec_local_remove_values"),
+    (dict(command="spec", action="local", local_action="add-survey"), "spec_local_add_survey"),
+    (dict(command="spec", action="local", local_action="remove-survey"), "spec_local_remove_survey"),
     (dict(command="spec", action="propose"), "spec_propose"),
     (dict(command="spec", action="catalog"), "spec_catalog"),
     (dict(command="spec", action="example"), "spec_example"),
