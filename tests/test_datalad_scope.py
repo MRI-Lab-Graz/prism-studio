@@ -82,4 +82,4 @@ def test_the_datalad_page_renders_in_process_and_links_to_worldline(rules):
     module = sys.modules["prism_studio_routes"]
     response = module.app.test_client().get("/projects/datalad")
     assert response.status_code == 200
-    assert b"use Worldline Desktop" in response.data
+    assert b"install Worldline Desktop (download)" in response.data

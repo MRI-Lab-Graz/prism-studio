@@ -884,7 +884,7 @@ python prism_tools.py datalad doctor --url user@server.example.org:/data/study -
 ```
 
 Sending your saves to a server, getting the latest, opening a copy from a server and getting data are done in
-[Worldline Desktop](https://worldline-desktop.readthedocs.io/); `prism_tools.py` has no commands for them.
+[Worldline Desktop](https://worldline-desktop.readthedocs.io/en/latest/install.html); `prism_tools.py` has no commands for them.
 
 `status` shows how many changes are unsaved and the one next step the DataLad page offers
 (`install_datalad`, `enable`, `put_on_server`, `save` or `sync`; `save` also when the unsaved changes cannot be counted, `checked: false`). `--check-nested` also counts subject datasets not registered yet, `--json` prints what Studio's `GET /api/projects/datalad/state`

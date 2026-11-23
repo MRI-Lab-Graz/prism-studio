@@ -200,5 +200,5 @@ def test_without_a_project_the_page_offers_no_server_action_and_points_to_worldl
     expect(bare_page.locator("#dataladStepTitle")).to_have_text("No project open")
     expect(bare_page.locator("#dataladPrimary [data-action]")).to_have_count(0)
     expect(bare_page.locator('#dataladMore [data-action="doctor"]')).to_be_visible()
-    expect(bare_page.get_by_role("link", name="Sync, server copies and getting data: use Worldline Desktop")).to_be_visible()
+    expect(bare_page.get_by_role("link", name="To sync, share with a server and get data, install Worldline Desktop (download)")).to_be_visible()
     expect(bare_page.locator("#navbarDataladToggle")).to_be_visible()  # the navbar item shows without a project
