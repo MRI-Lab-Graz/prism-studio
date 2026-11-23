@@ -83,7 +83,7 @@ backup. Each sync is additive: local files are kept, and files already copied ar
 destination. `sourcedata/` is part of the copy, so use the internal lab server only, never a public host.
 
 Snapshots are on the [DataLad page](datalad.md); sending them to the lab's DataLad server is done in
-[Worldline Desktop](https://worldline-desktop.readthedocs.io/).
+[Worldline Desktop](https://worldline-desktop.readthedocs.io/en/latest/install.html).
 
 ## CLI equivalents
 

@@ -107,7 +107,7 @@ save again. Text files (`.tsv`, `.json`, `.csv`, ...) are always kept in plain g
 The intended setup for a lab: everybody has their own copy of the project and works with their own account;
 one shared DataLad server holds the newest valid state. PRISM Studio makes the project DataLad-ready and edits it
 safely; **sending, getting the latest, opening a copy from the server and getting data are done in
-[Worldline Desktop](https://worldline-desktop.readthedocs.io/)**, which also checks the dataset with
+[Worldline Desktop](https://worldline-desktop.readthedocs.io/en/latest/install.html)**, which also checks the dataset with
 `prism-validator` before every save.
 
 - **`sourcedata/`** (raw data, possibly with names or emails) is tracked in plain git and travels with every
