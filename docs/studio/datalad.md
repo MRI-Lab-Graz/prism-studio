@@ -48,7 +48,7 @@ for the cases where a known error must not block the team.
 ## CLI equivalents
 
 ```bash
-python prism_tools.py datalad status --project /path/to/project --check-nested --validate
+python prism_tools.py datalad status --project /path/to/project --check-nested
 python prism_tools.py datalad enable --project /path/to/project --yes
 python prism_tools.py datalad save --project /path/to/project --message "After pilot week 1"
 python prism_tools.py datalad doctor

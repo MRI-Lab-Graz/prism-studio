@@ -92,13 +92,16 @@ def has_sibling(project_root, sibling_name: str) -> bool:
 def audit_path(project_root) -> Path | None:
     """Audit log under the git dir (never dirties the tree); None if not a git repo."""
     git_dir = _git(Path(project_root), "rev-parse", "--absolute-git-dir")
-    return Path(git_dir) / "prism" / "publish.jsonl" if git_dir else None
+    return Path(git_dir) / "prism" / "save.jsonl" if git_dir else None
 
 
 def _audit(root: Path, *, identity: Identity | None, sibling: str, result: str, error_count: int) -> None:
     path = audit_path(root)
     if path is None:
         return
+    legacy = path.with_name("publish.jsonl")  # the log's name before sending moved to Worldline Desktop
+    if legacy.exists() and not path.exists():
+        legacy.rename(path)
     entry = {
         "timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "identity": f"{identity.name} <{identity.email}>" if identity else None,
