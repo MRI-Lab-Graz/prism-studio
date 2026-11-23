@@ -109,7 +109,13 @@ def _validate_score_entries(
         )
 
         method = str(score.get("Method", "sum")).strip().lower()
-        if method not in ALLOWED_SCORE_METHODS:
+        if method in {"max", "min"}:
+            errors.append(
+                prefix
+                + f'{list_label}[{idx}] "{score_name}": Method "{method}" works only in '
+                "Transforms.Derived; use a formula or move it there"
+            )
+        elif method not in ALLOWED_SCORE_METHODS:
             errors.append(
                 prefix
                 + f"{list_label}[{idx}].Method must be one of {sorted(ALLOWED_SCORE_METHODS)}"
