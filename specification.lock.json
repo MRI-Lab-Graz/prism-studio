@@ -26,6 +26,7 @@
     "app/schemas/archive/survey/2.1.3.schema.json": "4ac49e1b42c69bc945b11f3625fcd838a9ce8e87aea94925773b1e6683cd819e",
     "app/schemas/archive/survey/2.1.4.schema.json": "5b078e965b31e0da954993457ba7014ce3598093296722f3ab21b9666572e964",
     "app/schemas/archive/survey/2.1.5.schema.json": "40a8f9a540f8175c26e186aa780fedfb787027993619d41bcfd26c0d0ac8faba",
+    "app/schemas/archive/survey/2.1.6.schema.json": "b159c9b56ab417294752226f095ea87da4990c136be176330cf65c5aab27aba1",
     "app/schemas/stable/biometrics.schema.json": "720c48cc19a72ab83549caac88b8289e60917c4744970e931aa4fa975300dac3",
     "app/schemas/stable/biosample.schema.json": "613b560dd422532d98d3ea541dc9a0b250fd89f8a065aa784a43a949fee366d3",
     "app/schemas/stable/dataset_description.schema.json": "5e9eed8c5092cb4cf5e902d714d76e0db27f946330fe3254c724ca13cb249b22",
@@ -34,7 +35,7 @@
     "app/schemas/stable/events.schema.json": "1b2cd87d95b16e210ce2070d3029c9b680dc5ee3b89caf266e50d13971202ec2",
     "app/schemas/stable/physio.schema.json": "4be861d6a1cf0cf3c6bd4efb49e4f71b8338de400f740cd3d6ec2d460f30711c",
     "app/schemas/stable/recipe.survey.schema.json": "eb189c53b0e5b1312958fa118054f67fc66726fcdc35a4a97cd186115bba1237",
-    "app/schemas/stable/survey.schema.json": "b159c9b56ab417294752226f095ea87da4990c136be176330cf65c5aab27aba1",
+    "app/schemas/stable/survey.schema.json": "76509232d671cc23a2af4523586511b91ecf3e6799e0a9860b5dcca8cdf490f2",
     "app/schemas/v0.1/dataset_description.schema.json": "4adbaad54bad705f37fb6d3a41b34af85ef732fd2248067ae0b5fd25185ebd87",
     "app/schemas/v0.1/survey.schema.json": "00d3da4d4a38c42fc3db87e1a861e937a7280169dfd90ff4d6c6fe36188e5900",
     "app/schemas/v0.2/biometrics.schema.json": "0cc1bb62ac743817929500baf30154240861111a3948de94dddae1ab2b18f632",
@@ -52,7 +53,7 @@
     "docs/specs/instrument-ids.md": "afe69cbbac6b035d6f928d43f2d35fe2ceef23514332313f41853c20b0bb5f82",
     "docs/specs/mappings.md": "c7cb7a01537de06fbb3e21eda53b2cff19f2127b1106a0e1aebb0471ff8e1295",
     "docs/specs/physio.md": "b9a08f26b9d73c94e1bb513b82248493236da9bef98c9ae19a35035a0f83e9fd",
-    "docs/specs/survey.md": "7e012cb2c426e1bb66f0b710c936bd0e673905399964eee21b8f91bb4f0b502b",
+    "docs/specs/survey.md": "183a46130402f7200a85f2bf1de71622ca4305eea1573b006ca80084b3839935",
     "official/library/NOTICE_SPECIFICATION.md": "9f272dcd569b51b287fda46a73c3dca7bcfaf9dca9fe604b1f3d651cc025ea04",
     "official/library/mappings/biosample/crp.json": "aac16faacb4fe112824d3878915af3c2d02ae21bc43366678ca374eb1cb1b02c",
     "official/library/mappings/biosample/estradiol.json": "0d914d0a3591041de639c66a5aec7ea21bd742943b1e3a1605a0808721f0d179",
@@ -279,5 +280,5 @@
     "scripts/specification/term_proposal.py": "e6a2561c6b3bb8d1bbb1698f04d896dea83805c43d3e32a60286bf90858ce1ab"
   },
   "repository": "MRI-Lab-Graz/prism-specification",
-  "tag": "v1.5.24"
+  "tag": "v1.5.25"
 }
