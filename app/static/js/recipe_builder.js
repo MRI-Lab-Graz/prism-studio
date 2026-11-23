@@ -60,6 +60,13 @@ document.addEventListener('DOMContentLoaded', function () {
     // Assembles the saved JSON on top of the loaded recipe so nothing the builder
     // does not edit is lost (modules/recipe-builder/recipe-merge.js).
     let buildRecipe, metadataFieldText, splitIrvScore;
+    // Formula scores and Transforms.Derived (modules/recipe-builder/formula-score.js).
+    let scoreLockReasons, scoreHasFormula, itemsUsedIn, derivedToEntry, entryToDerived;
+    const formulaScoreReady = import(
+        new URL('./modules/recipe-builder/formula-score.js', recipeBuilderScriptUrl).href
+    ).then(mod => {
+        ({ scoreLockReasons, scoreHasFormula, itemsUsedIn, derivedToEntry, entryToDerived } = mod);
+    });
     const recipeMergeReady = import(
         new URL('./modules/recipe-builder/recipe-merge.js', recipeBuilderScriptUrl).href
     ).then(mod => {
@@ -153,6 +160,7 @@ document.addEventListener('DOMContentLoaded', function () {
         itemDescriptionLanguages: [],    // language keys available in template descriptions
         itemInfoLanguage: '',            // selected language key for hover info
         loadedRecipe:     null,         // the saved recipe as loaded (null for a new one)
+        derived:          null,         // Transforms.Derived entries; null = not loaded, saved as loaded
         selectedItems:    new Set(),    // items checked in the item pool
         activeScaleId:    null,         // id of the currently focused scale card (or null)
         expandedScaleIds: new Set(),    // scale cards manually expanded for visual comparison
@@ -164,8 +172,6 @@ document.addEventListener('DOMContentLoaded', function () {
     function newId() { return ++_idCounter; }
     function cloneJson(value) { return structuredClone(value || {}); }
 
-    const EDITABLE_METHODS = new Set(['sum', 'mean']);
-    const SAFE_SCORE_KEYS = new Set(['Name', 'Method', 'Description', 'Items', 'Missing', 'Range', 'MinValid']);
 
     async function fetchWithApiFallback(
         url,
@@ -245,6 +251,7 @@ document.addEventListener('DOMContentLoaded', function () {
         state.itemDescriptionLanguages = [];
         state.itemInfoLanguage = '';
         state.loadedRecipe = null;
+        state.derived = null;
         document.getElementById('rbIncludeIrv').checked = false;
         state.selectedItems = new Set();
         state.activeScaleId = null;
@@ -571,7 +578,7 @@ document.addEventListener('DOMContentLoaded', function () {
         compatibilityNotice.innerHTML = '';
 
         try {
-            await Promise.all([missingDataReady, recipeMergeReady]);
+            await Promise.all([missingDataReady, recipeMergeReady, formulaScoreReady]);
             const [itemsResponse, recipeResponse] = await Promise.all([
                 fetchWithApiFallback(
                     '/api/recipe-builder/items?task=' + encodeURIComponent(task) +
@@ -680,6 +687,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const inv = (recipe.Transforms || {}).Invert || {};
         // Scale range is auto-detected from the template — ignore recipe's stored Scale
         (inv.Items || []).forEach(it => state.inverted.add(it));
+        state.derived = ((recipe.Transforms || {}).Derived || []).map(derivedToEntry);
 
         const { scores: ownScores, hasIrv } = splitIrvScore(recipe.Scores);
         document.getElementById('rbIncludeIrv').checked = hasIrv;
@@ -696,21 +704,14 @@ document.addEventListener('DOMContentLoaded', function () {
         const rawScore = cloneJson(score);
         const method = String(rawScore.Method || 'mean').trim().toLowerCase() || 'mean';
         const { policy, minValid } = policyFromScore(rawScore);
-        const unsupportedKeys = Object.keys(rawScore).filter(key => !SAFE_SCORE_KEYS.has(key));
-        const lockReasons = [];
-
-        if (!EDITABLE_METHODS.has(method)) {
-            lockReasons.push(`Method "${method}" is not editable here.`);
-        }
-        if (unsupportedKeys.length > 0) {
-            lockReasons.push(`Uses advanced fields: ${unsupportedKeys.join(', ')}.`);
-        }
+        const lockReasons = scoreLockReasons(rawScore, method);
 
         return {
             id:          newId(),
             name:        rawScore.Name        || '',
             method:      method,
             description: rawScore.Description || '',
+            formula:     rawScore.Formula     || '',
             items:       Array.isArray(rawScore.Items) ? [...rawScore.Items] : [],
             policy:      policy,
             minValid:    minValid,
@@ -738,7 +739,12 @@ document.addEventListener('DOMContentLoaded', function () {
         score.Name = scale.name;
         score.Method = scale.method;
         score.Items = [...scale.items];
-        score = applyPolicyToScore(score, { policy: scale.policy, minValid: scale.minValid });
+        if (scoreHasFormula(score)) {
+            score.Formula = scale.formula;
+            // the formula engine leaves a score empty when an item is missing; Missing/MinValid stay as loaded
+        } else {
+            score = applyPolicyToScore(score, { policy: scale.policy, minValid: scale.minValid });
+        }
         if (scale.description) score.Description = scale.description;
         else delete score.Description;
         return score;
@@ -1435,6 +1441,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 citation: document.getElementById('rbMetaCitation').value.trim(),
             },
             invertTransform,
+            derivedTransform: state.derived && state.derived.map(entryToDerived),
             scores: (state.scales[''] || []).map(scaleToScore),
             irvItems: document.getElementById('rbIncludeIrv').checked ? state.allItems : null,
             versionedScores,
