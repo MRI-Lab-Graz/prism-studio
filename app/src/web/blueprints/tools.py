@@ -1667,13 +1667,13 @@ def api_recipe_builder_save():
 @tools_bp.route("/api/recipe-builder/formula-check", methods=["POST"])
 def api_recipe_builder_formula_check():
     """Evaluate a score formula on sample values."""
-    return handle_api_recipe_builder_formula_check(data=request.get_json(silent=True) or {})
+    return handle_api_recipe_builder_formula_check(data=request.get_json(silent=True))
 
 
 @tools_bp.route("/api/recipe-builder/formula-latex", methods=["POST"])
 def api_recipe_builder_formula_latex():
     """Show a score formula as LaTeX."""
-    return handle_api_recipe_builder_formula_latex(data=request.get_json(silent=True) or {})
+    return handle_api_recipe_builder_formula_latex(data=request.get_json(silent=True))
 
 
 @tools_bp.route("/api/recipes-surveys", methods=["POST"])

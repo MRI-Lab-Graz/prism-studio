@@ -132,15 +132,26 @@ def handle_api_recipe_builder_save(data: dict):
     return jsonify(result), 200
 
 
-def handle_api_recipe_builder_formula_check(data: dict):
+def handle_api_recipe_builder_formula_check(data):
     """Evaluate a score formula on sample values (same function as `recipes formula-check`)."""
-    from src.recipes_formula_tools import check_formula
+    from src.recipes_formula_tools import check_formula, validate_formula_args
 
-    return jsonify(check_formula(data.get("formula"), data.get("items") or [], data.get("values") or {}))
+    if not isinstance(data, dict):
+        return jsonify({"error": "The request body must be a JSON object."}), 400
+    formula, items, values = data.get("formula"), data.get("items", []), data.get("values", {})
+    error = validate_formula_args(formula, items, values)
+    if error:
+        return jsonify({"error": error}), 400
+    return jsonify(check_formula(formula, items, values))
 
 
-def handle_api_recipe_builder_formula_latex(data: dict):
+def handle_api_recipe_builder_formula_latex(data):
     """A score formula as LaTeX (same function as `recipes formula-latex`)."""
-    from src.recipes_formula_tools import formula_to_latex
+    from src.recipes_formula_tools import formula_to_latex, validate_formula_args
 
-    return jsonify(formula_to_latex(data.get("formula")))
+    if not isinstance(data, dict):
+        return jsonify({"error": "The request body must be a JSON object."}), 400
+    error = validate_formula_args(data.get("formula"))
+    if error:
+        return jsonify({"error": error}), 400
+    return jsonify(formula_to_latex(data["formula"]))

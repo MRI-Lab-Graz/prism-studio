@@ -73,3 +73,41 @@ def test_unreadable_values_exit_1(capsys):
     with pytest.raises(SystemExit) as exc:
         recipes_cmds.cmd_recipes_formula_check(SimpleNamespace(formula="{a}", items="a", values="not json"))
     assert exc.value.code == 1
+
+
+BAD = [
+    ({"formula": 5, "items": [], "values": {}}, "formula"),
+    ({"formula": "{a}", "items": "a", "values": {}}, "items"),
+    ({"formula": "{a}", "items": [1], "values": {}}, "items"),
+    ({"formula": "{a}", "items": ["a"], "values": [1]}, "values"),
+    ({"formula": "{a}", "items": ["a"], "values": {"a": 1}}, "values"),
+]
+
+
+def test_bad_input_gives_400_with_one_sentence(client):
+    for body, word in BAD:
+        r = client.post("/api/recipe-builder/formula-check", json=body)
+        assert r.status_code == 400, body
+        assert word in r.get_json()["error"]
+    for url in ("formula-check", "formula-latex"):
+        r = client.post(f"/api/recipe-builder/{url}", data="[1]", content_type="application/json")
+        assert r.status_code == 400
+        assert "object" in r.get_json()["error"]
+    r = client.post("/api/recipe-builder/formula-latex", json={"formula": 5})
+    assert r.status_code == 400
+
+
+def test_cli_bad_values_say_the_same_sentence_as_the_route(client, capsys):
+    with pytest.raises(SystemExit) as exc:
+        recipes_cmds.cmd_recipes_formula_check(SimpleNamespace(formula="{a}", items="a", values='{"a": 1}'))
+    assert exc.value.code == 1
+    sentence = client.post(
+        "/api/recipe-builder/formula-check", json={"formula": "{a}", "items": ["a"], "values": {"a": 1}}
+    ).get_json()["error"]
+    assert sentence in capsys.readouterr().out
+
+
+def test_formula_with_leading_minus_parses_with_equals_form():
+    parser, _ = build_prism_tools_parsers(APP_ROOT)
+    a = parser.parse_args(["recipes", "formula-latex", "--formula=-{a}+1"])
+    assert a.formula == "-{a}+1"

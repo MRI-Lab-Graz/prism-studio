@@ -131,7 +131,7 @@ as Studio's Recipe Builder "Save" action:
 python prism_tools.py recipes save --project /path/to/project --recipe recipe-demo.json
 ```
 
-**`recipes formula-check`** / **`recipes formula-latex`** — evaluate a score formula on sample values, or show it as LaTeX (JSON; the Recipe Builder formula helper calls the same functions):
+**`recipes formula-check`** / **`recipes formula-latex`** — evaluate a score formula on sample values, or show it as LaTeX (JSON; the Recipe Builder formula helper calls the same functions). `--items` is comma-separated (item names have no commas); write a formula that starts with `-` as `--formula=-{a}+1`:
 
 ```bash
 python prism_tools.py recipes formula-check --formula 'max({a}, {b})' --items a,b --values '{"a": "65", "b": "70"}'

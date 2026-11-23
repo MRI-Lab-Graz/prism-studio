@@ -181,3 +181,16 @@ def formula_to_latex(formula: str) -> dict:
     except Exception as exc:  # e.g. RecursionError, never let the helper raise
         msg = f"The formula cannot be shown ({type(exc).__name__})."
     return {"ok": False, "latex": None, "message": msg}
+
+
+def validate_formula_args(formula, items=(), values=None) -> str | None:
+    """One English sentence when the arguments have the wrong shape, else None (CLI and Studio share it)."""
+    if not isinstance(formula, str):
+        return "The formula must be a string."
+    if not isinstance(items, (list, tuple)) or not all(isinstance(i, str) for i in items):
+        return "The items must be a list of strings."
+    if not isinstance(values or {}, dict) or not all(
+        isinstance(k, str) and isinstance(v, str) for k, v in (values or {}).items()
+    ):
+        return "The values must be an object of strings."
+    return None
