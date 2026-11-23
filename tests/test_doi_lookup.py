@@ -135,3 +135,10 @@ def test_redirects_are_not_followed():
     req = urllib.request.Request("https://api.crossref.org/works/10.1000/x1")
     with pytest.raises(urllib.error.HTTPError):
         d._NoRedirect().redirect_request(req, None, 302, "Found", {}, "https://evil.example/")
+
+
+def test_double_slash_doi_is_valid():
+    """Real DOIs exist with '//' (Hogrefe: 10.1026//0012-1924.47.4.208); only a trailing '/' is invalid."""
+    with mock.patch("src.doi_lookup._open", return_value=_resp({"message": {"title": ["T"]}})) as o:
+        assert d.lookup_doi("10.1026//0012-1924.47.4.208")["status"] == "ok"
+    assert "10.1026//0012-1924.47.4.208" in o.call_args[0][0].full_url
