@@ -50,8 +50,15 @@ offers these as one choice per scale, "If answers are missing".
 
 ## Formulas (`Method: "formula"`)
 
-When a score is more than a sum or mean, write it as a formula. In the Recipe Builder open the
-recipe JSON; there is no formula editor yet.
+When a score is more than a sum or mean, write it as a formula.
+
+**In the Recipe Builder:** set a score's Method to `formula`, pick items from the pull-down (they move into
+chips and insert `{ITEM}` in the formula box), and type the formula. Under the box you see the rendered
+formula and a check line: enter example values and it shows the result, or why the score would be empty
+(unknown item, missing value, division by zero). The "Best of N" section writes `Transforms.Derived`
+entries (`max`/`min`), whose names can then be used as items in a formula. The same check and rendering run
+from the command line: `prism_tools recipes formula-check` and `recipes formula-latex`.
+Rendering is display only; the recipe always stores the plain `Formula` string.
 
 ```json
 { "Name": "bmi", "Method": "formula", "Items": ["weight_kg", "height_m"],
