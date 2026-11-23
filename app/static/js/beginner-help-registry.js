@@ -53,6 +53,9 @@
         rbMetaDesc: 'One sentence on what the scale measures, e.g. "Depressive symptoms over the last two weeks."',
         lsWelcomeText: 'Shown on the first page. It usually covers the study purpose, duration, and that participation is voluntary. The templates above are a good starting point.',
         lsEndText: 'Shown after submitting. Thank participants and give a contact for questions.',
+        field_Study_OriginalName: 'The name as printed on the instrument, in its own language (e.g. "Allgemeine Depressions-Skala"). Any language is fine; no English needed here.',
+        field_Study_Instructions: 'The text participants read before answering, in the instrument\'s own language. No English version is required.',
+        field_Study_Description: 'This is PRISM\'s own metadata, so write it in English (a plain English text is enough). Only the instrument\'s name, its instructions and its items stay in the original language.',
         openmindsEnableExport: 'Only needed if a repository or collaborator asks for openMINDS metadata (e.g. EBRAINS). Otherwise leave it off.'
     };
 
