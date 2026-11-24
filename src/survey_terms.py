@@ -88,6 +88,28 @@ def _templates(library_dir: Path, problems: list[str]) -> list[tuple[Path, str, 
     return found
 
 
+def deprecated_ids(path: Path | None = None) -> tuple[dict[str, str], list[str]]:
+    """({deprecated ID: its replacement}, problems) from `deprecated.json` next to term-ids.txt; no file is none.
+
+    The file is `{"prism:x.y": {"ReplacedBy": "prism:x.z"}}`, as terms use `Status: deprecated` and `ReplacedBy`.
+    An entry without a `ReplacedBy` is skipped and reported."""
+    path = Path(path or terms_root().parent / "survey" / "deprecated.json")
+    if not path.is_file():
+        return {}, []
+    problems: list[str] = []
+    data = _read_object(path, problems)
+    if data is None:
+        return {}, problems
+    found: dict[str, str] = {}
+    for term_id, entry in data.items():
+        new = entry.get("ReplacedBy") if isinstance(entry, dict) else None
+        if isinstance(new, str) and new:
+            found[term_id] = new
+        else:
+            problems.append(f"{path.name}: {term_id} needs a ReplacedBy")
+    return found, problems
+
+
 def build_survey_registry(library_dir: Path | None = None, recipe_dir: Path | None = None) -> tuple[dict[str, dict], list[str]]:
     """(local ID -> term, problems) for every instrument, item and score; bad files and names are reported, never raised."""
     library_dir = Path(library_dir or terms_root().parent / "survey")
@@ -145,6 +167,16 @@ def build_survey_registry(library_dir: Path | None = None, recipe_dir: Path | No
                                    "Status": "official"}
                 for key in ("HigherMeans", "LowerMeans"):
                     _set_text(registry[local], key, score.get(key))
+
+    deprecated, notes = deprecated_ids(library_dir / "deprecated.json")
+    problems += notes
+    known = {t["TermID"] for t in registry.values()} | released_ids(library_dir / "term-ids.txt")
+    by_id = {t["TermID"]: t for t in registry.values()}
+    for old, new in deprecated.items():
+        if new not in known:
+            problems.append(f"deprecated.json: {old} is replaced by {new}, which is not a released ID")
+        if old in by_id:  # a deprecated ID may have left the template: the ID stays released, nothing to mark
+            by_id[old].update({"Status": "deprecated", "ReplacedBy": new})
     return registry, problems
 
 
@@ -160,12 +192,12 @@ def released_ids(path: Path | None = None) -> set[str]:
         return set()
 
 
-def freeze_report(registry: dict[str, dict], released: set[str]) -> tuple[list[str], list[str]]:
+def freeze_report(registry: dict[str, dict], released: set[str], deprecated=frozenset()) -> tuple[list[str], list[str]]:
     """(problems, not_shipped). A released ID whose instrument is in the registry but which is gone is a problem (an ID
     is frozen once released); a released ID of an instrument with no template here (third-party templates are not
     always shipped) is only listed in `not_shipped`."""
     now = {t.get("TermID") for t in registry.values()}
-    gone = sorted(released - now)
+    gone = sorted(released - now - set(deprecated))  # a deprecated ID may leave the template; it stays released
     absent = [t for t in gone if t.partition('.')[0] not in now]
     problems = [f"{t}: released ID is gone (an ID is frozen; restore the item, score or task name)" for t in gone if t not in absent]
     return problems, absent

@@ -15,7 +15,7 @@ from src.term_proposal import (
     deliver_proposal,
     load_inherited_sidecar,
 )
-from src.survey_terms import build_survey_registry, freeze_report, released_ids, resolve_survey_sidecar, write_released_ids
+from src.survey_terms import build_survey_registry, deprecated_ids, freeze_report, released_ids, resolve_survey_sidecar, write_released_ids
 from src.term_registry import (
     context_value,
     find_term,
@@ -65,7 +65,7 @@ def cmd_terms_freeze(args) -> None:
               "Error: only the survey registry is frozen this way")
         sys.exit(1)
     registry, problems = build_survey_registry()
-    gone, not_shipped = freeze_report(registry, released_ids())
+    gone, not_shipped = freeze_report(registry, released_ids(), deprecated_ids()[0])
     if gone:
         _emit(args, {"success": False, "problems": problems + gone}, "\n".join(problems + gone))
         sys.exit(1)
