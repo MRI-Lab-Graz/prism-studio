@@ -57,6 +57,15 @@ document.addEventListener('DOMContentLoaded', function () {
         } = mod);
     });
 
+    // What the modality list says: failed vs. empty (modules/recipe-builder/modality-state.js).
+    let modalityListState;
+    const modalityStateReady = import(
+        new URL('./modules/recipe-builder/modality-state.js', recipeBuilderScriptUrl).href
+    ).then(mod => {
+        ({ modalityListState } = mod);
+    });
+    let modalityState = { text: '', disabled: false };
+
     // Assembles the saved JSON on top of the loaded recipe so nothing the builder
     // does not edit is lost (modules/recipe-builder/recipe-merge.js).
     let buildRecipe, metadataFieldText, splitIrvScore;
@@ -468,6 +477,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // ── Modality picker: the project's modalities (data or templates), from the backend ──
     async function loadModalities() {
+        await modalityStateReady;
         const path = resolveProjectPath();
         const keep = modalityPicker.value;
         let modalities = [];
@@ -475,16 +485,28 @@ document.addEventListener('DOMContentLoaded', function () {
             try {
                 const response = await fetchWithApiFallback('/api/recipe-builder/modalities?dataset_path=' + encodeURIComponent(path));
                 modalities = (await parseApiJsonResponse(response, 'Failed to load modalities.')).modalities || [];
-            } catch (_error) { /* an empty list; the template list says what is missing */ }
+            } catch (_error) {
+                modalities = null; // shown as a failure, not as an empty project
+            }
         }
+        modalityState = modalityListState(modalities);
         modalityPicker.innerHTML = '';
-        modalities.forEach(m => {
+        (modalities || []).forEach(m => {
             const opt = document.createElement('option');
             opt.value = m.value;
             opt.textContent = m.value;
             modalityPicker.appendChild(opt);
         });
-        if (modalities.some(m => m.value === keep)) modalityPicker.value = keep;
+        if (modalityState.disabled) {
+            const opt = document.createElement('option');
+            opt.value = '';
+            opt.textContent = modalityState.text;
+            opt.disabled = true;
+            opt.selected = true;
+            modalityPicker.appendChild(opt);
+        }
+        modalityPicker.disabled = modalityState.disabled;
+        if ((modalities || []).some(m => m.value === keep)) modalityPicker.value = keep;
     }
 
     async function reloadAll() {
@@ -502,7 +524,13 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
         if (!modalityPicker.value) {
-            surveyPicker.innerHTML = '<option value="" disabled selected>— no survey or biometrics data or templates in this project —</option>';
+            surveyPicker.innerHTML = '';
+            const note = document.createElement('option');
+            note.value = '';
+            note.textContent = modalityState.text;
+            note.disabled = true;
+            note.selected = true;
+            surveyPicker.appendChild(note);
             return;
         }
         const includeGlobal = includeGlobalToggle && includeGlobalToggle.checked ? '&include_global=1' : '';

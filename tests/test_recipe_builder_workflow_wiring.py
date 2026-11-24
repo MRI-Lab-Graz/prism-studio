@@ -24,6 +24,12 @@ class TestRecipeBuilderWorkflowWiring(unittest.TestCase):
         self.assertNotIn('<option value="survey" selected>', content)
         self.assertNotIn('<option value="biometrics">', content)
 
+    def test_recipe_builder_script_shows_modality_load_failure_via_modality_state(self):
+        content = RECIPE_BUILDER_SCRIPT.read_text(encoding="utf-8")
+
+        self.assertIn("modules/recipe-builder/modality-state.js", content)
+        self.assertIn("modalityListState(", content)
+
     def test_recipe_builder_template_links_to_projects_page_when_no_project_loaded(
         self,
     ):
