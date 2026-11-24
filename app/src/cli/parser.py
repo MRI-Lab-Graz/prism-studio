@@ -2198,6 +2198,7 @@ def build_prism_tools_parsers(
         ("resolve", "Give a project's survey sidecar columns their official item IDs (or the reason for none)"),
         ("suggest", "Relate a column name to the registry (similar official terms)"),
         ("check-links", "Check your own mapping files (links from PRISM IDs to external vocabularies) with the specification's checker"),
+        ("coverage", "Count which IDs have a link to an outside vocabulary (direct, via the parent, none), per modality"),
         ("export-links", "Write the links of mappings/ as SSSOM, the standard form a reasoner reads (official links, plus a project's own)"),
         ("propose", "Build a proposal for a new metric from a sidecar column (sends nothing unless --open)"),
     ):
@@ -2208,6 +2209,9 @@ def build_prism_tools_parsers(
             _where = _p.add_mutually_exclusive_group(required=True)
             _where.add_argument("--dir", help="A folder of mapping files: <modality>/<family>.json")
             _where.add_argument("--project", help="A PRISM project: its local links (code/specification/mappings) are checked")
+        if _name == "coverage":
+            _p.add_argument("--project", help="Count this project's own terms and links too")
+            _p.add_argument("--missing", action="store_true", help="List the IDs that have no link at all")
         if _name == "export-links":
             _p.add_argument("--project", help="Also export this project's own links (code/specification/mappings)")
             _p.add_argument("--out", help="Write the table to this file instead of printing it")
@@ -2231,8 +2235,9 @@ def build_prism_tools_parsers(
             _p.add_argument("--open", action="store_true", help="Open the prefilled proposal form in the browser")
             _p.add_argument("--out", help="Also save the proposal to this file (to send it to a maintainer without GitHub)")
         _p.add_argument(
-            "--modality", default="biosample", choices=sorted(_rules.term_modalities) if _name == "propose" else None,
-            help="Modality of the registry",
+            "--modality", default=None if _name == "coverage" else "biosample",
+            choices=sorted(_rules.term_modalities) if _name == "propose" else None,
+            help="Modality of the registry (coverage: every modality when omitted)",
         )
         _p.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
 

@@ -96,7 +96,7 @@ def dispatch_prism_tools(
     elif args.command == "orcid":
         handlers["orcid_search"](args)
     elif args.command == "terms":
-        if args.action in ("list", "show", "suggest", "propose", "freeze", "resolve", "check-links", "export-links"):
+        if args.action in ("list", "show", "suggest", "propose", "freeze", "resolve", "check-links", "export-links", "coverage"):
             handlers[f"terms_{args.action.replace('-', '_')}"](args)
         else:
             parsers["terms"].print_help()
