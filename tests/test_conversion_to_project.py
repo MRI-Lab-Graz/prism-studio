@@ -215,18 +215,14 @@ def test_template_copies_are_planned_for_the_used_tasks_the_project_lacks(tmp_pa
     assert plan_template_copies("biometrics", library, [], project) == []
 
 
-def _physio_world(tmp_path, with_descriptions=False):
+def _physio_world(tmp_path):
     project = tmp_path / "proj"
     project.mkdir()
-    if with_descriptions:
-        (project / "dataset_description.json").write_text(GOOD_DD, encoding="utf-8")
     (project / "project.json").write_text(json.dumps({"Sessions": []}), encoding="utf-8")
     staged = tmp_path / "staged"
     folder = staged / "sub-001" / "ses-1" / "physio"
     folder.mkdir(parents=True)
     (folder / "sub-001_ses-1_task-rest_physio.tsv.gz").write_text("x", encoding="utf-8")
-    if with_descriptions:
-        (staged / "dataset_description.json").write_text(PLACEHOLDER_DD, encoding="utf-8")
     converted = [SimpleNamespace(success=True, session="1", target_folder="physio", task="rest")]
     return project, staged, converted
 
@@ -234,7 +230,7 @@ def _physio_world(tmp_path, with_descriptions=False):
 def _save_physio(tmp_path, **overrides):
     from src.conversion_to_project import save_physio_batch_to_project
 
-    project, staged, converted = _physio_world(tmp_path, overrides.pop("with_descriptions", False))
+    project, staged, converted = _physio_world(tmp_path)
     kwargs = dict(
         project_root=project, staged_root=staged, converted=converted, dataset_name="demo", dest_root="root",
         flat_structure=False, modality_filter="all", subject_rewrite_mode="keep",
@@ -335,6 +331,15 @@ def test_a_conversion_never_replaces_the_projects_dataset_description(world):
     assert (project / "dataset_description.json").read_text(encoding="utf-8") == GOOD_DD
     assert "PRISM Biometrics" not in (project / "project.json").read_text(encoding="utf-8")
     assert "dataset_description.json" not in result.copied_paths
+    assert (staged / "dataset_description.json").read_text(encoding="utf-8") == PLACEHOLDER_DD  # validation still reads it
+
+
+def test_a_dangling_dataset_description_link_in_the_project_is_kept_too(world):
+    project, staged, _source = world
+    (project / "dataset_description.json").symlink_to(project / "gone.json")
+    (staged / "dataset_description.json").write_text(PLACEHOLDER_DD, encoding="utf-8")
+    _save(world)
+    assert (project / "dataset_description.json").is_symlink() and not (project / "gone.json").exists()
 
 
 def test_a_project_without_dataset_description_gets_the_staged_one(world):
@@ -343,7 +348,3 @@ def test_a_project_without_dataset_description_gets_the_staged_one(world):
     _save(world)
     assert (project / "dataset_description.json").read_text(encoding="utf-8") == PLACEHOLDER_DD
 
-
-def test_a_physio_save_keeps_the_projects_dataset_description(tmp_path):
-    project, _saved = _save_physio(tmp_path, with_descriptions=True)
-    assert (project / "dataset_description.json").read_text(encoding="utf-8") == GOOD_DD

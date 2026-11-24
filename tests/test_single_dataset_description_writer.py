@@ -128,7 +128,7 @@ def test_the_guard_catches_every_way_the_file_was_written_before():
 
 
 def test_no_save_path_copies_a_staged_dataset_description_over_the_projects(tmp_path):
-    """Converters stage a placeholder dataset_description.json; a save into the project must not copy it over."""
+    """Converters stage a placeholder dataset_description.json; the saves into the project must not copy it over."""
     from types import SimpleNamespace
 
     from src.conversion_to_project import save_conversion_to_project, save_physio_batch_to_project
