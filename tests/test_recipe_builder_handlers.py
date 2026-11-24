@@ -23,13 +23,8 @@ def _build_app_and_handlers():
 
 
 def _import_recipe_modules():
-    app_root = Path(__file__).resolve().parents[1] / "app"
-    src_root = app_root / "src"
-    if str(src_root) not in sys.path:
-        sys.path.insert(0, str(src_root))
-
-    recipe_validation = importlib.import_module("recipe_validation")
-    recipes_surveys = importlib.import_module("recipes_surveys")
+    recipe_validation = importlib.import_module("src.recipe_validation")
+    recipes_surveys = importlib.import_module("src.recipes_surveys")
     return recipe_validation, recipes_surveys
 
 
