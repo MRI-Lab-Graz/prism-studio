@@ -1088,7 +1088,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
         fill();
         area.setValues(get());
-        return { fill };
+        return fill;
     }
 
     function buildFormulaBox(scale) {
@@ -1108,7 +1108,7 @@ document.addEventListener('DOMContentLoaded', function () {
         picker.setAttribute('aria-label', 'Insert an item into the formula');
         const chips = document.createElement('div');
         chips.className = 'mt-1';
-        const { fill: fillPicker } = mountItemPicker(picker, chips, {
+        const fillPicker = mountItemPicker(picker, chips, {
             options: () => [...state.allItems, ...derivedNames()],
             get: () => scale.items,
             set: (items) => { scale.items = items; },

@@ -153,7 +153,7 @@ def _call(node: ast.Call, names) -> str:
     if len(node.args) < lo or (hi is not None and len(node.args) > hi):
         raise ValueError(f"Wrong number of arguments for {fname}()")
     args = [_tex(a, names) for a in node.args]
-    if fname == "ifelse" and len(args) == 3:
+    if fname == "ifelse":
         return _cases(node.args[0], node.args[1], node.args[2], names)
     if fname == "sqrt" and len(args) == 1:
         return rf"\sqrt{{{args[0]}}}"
