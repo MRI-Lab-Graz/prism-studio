@@ -85,3 +85,15 @@ def test_check_deep_nesting_is_a_message(f):
 def test_check_unused_missing_item_empties_result():
     r = check_formula("{a}*2", ["a", "b"], {"a": "1", "b": ""})
     assert not r["ok"] and r["result"] is None and "b" in r["message"]
+
+
+def test_check_empty_example_value_says_what_to_type():
+    r = check_formula("{a}+{b}", ["a", "b"], {"a": "1", "b": ""})
+    assert not r["ok"] and r["result"] is None
+    assert r["message"] == "Type an example value for b in the box below the formula to test it."
+
+
+def test_check_typed_non_number_is_named():
+    r = check_formula("{a}+{b}", ["a", "b"], {"a": "1", "b": "abc"})
+    assert not r["ok"] and r["result"] is None
+    assert r["message"] == "The example value for b (abc) is not a number."

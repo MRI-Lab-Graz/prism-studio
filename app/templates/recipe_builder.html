@@ -1,5 +1,17 @@
 {% extends "base.html" %}
 {% from "includes/ui/macros.html" import page_header, help_panel %}
+{% set formula_examples = [
+  {"title": "Y Balance Test: best trial per direction", "formula": "({ybt_ant_left}+{ybt_pm_left}+{ybt_pl_left})/3",
+   "items": ["ybt_ant_left", "ybt_pm_left", "ybt_pl_left"], "values": {"ybt_ant_left": "65", "ybt_pm_left": "70", "ybt_pl_left": "72"}},
+  {"title": "Y Balance Test: relative to leg length", "formula": "({ybt_ant_left}+{ybt_pm_left}+{ybt_pl_left})/(3*{leg_length_left})*100",
+   "items": ["ybt_ant_left", "ybt_pm_left", "ybt_pl_left", "leg_length_left"], "values": {"ybt_ant_left": "65", "ybt_pm_left": "70", "ybt_pl_left": "72", "leg_length_left": "90"}},
+  {"title": "BMI", "formula": "{weight_kg}/{height_m}**2",
+   "items": ["weight_kg", "height_m"], "values": {"weight_kg": "70", "height_m": "1.75"}},
+  {"title": "Threshold", "formula": "ifelse({total}>=30, 1, 0)",
+   "items": ["total"], "values": {"total": "31"}},
+  {"title": "Mean of both sides", "formula": "({ybt_comp_left}+{ybt_comp_right})/2",
+   "items": ["ybt_comp_left", "ybt_comp_right"], "values": {"ybt_comp_left": "1.02", "ybt_comp_right": "0.98"}}
+] %}
 {% block title %}PRISM Studio – Recipe Builder{% endblock %}
 
 {% block styles %}
@@ -148,12 +160,26 @@
         <i class="fas fa-plus me-1"></i>Add Scale
       </button>
 
+      {% call help_panel('How formulas and best-of work', 'info', false, 'fas fa-circle-question', 'py-2', 'mb-3') %}
+      <div class="small">
+        <p class="mb-2"><strong>A formula</strong> calculates a score from items. Write each item in curly brackets, e.g. <code>{weight_kg}/{height_m}**2</code>. Use <code>+ - * / **</code> (** is "to the power of"), brackets, and the functions <code>min max sum abs round sqrt exp log ifelse</code>.</p>
+        <p class="mb-2"><strong>Empty rule:</strong> if any item the score lists is empty, the score is empty.</p>
+        <p class="mb-2"><strong>Best of several items:</strong> add one entry per group of trials (a name, max or min, and the trial items). The entry's name then appears in a formula score's "Add an item..." pull-down like an item. Entries apply to the whole recipe.</p>
+        <p class="mb-2"><strong>Testing:</strong> type example numbers in the boxes under the formula (for an entry, its best value). The check line shows the result or why it would be empty.</p>
+        <p class="mb-1"><strong>Examples</strong> (entries <code>ybt_ant_left</code>, <code>ybt_pm_left</code>, <code>ybt_pl_left</code> are each the max of three trials):</p>
+        {% for ex in formula_examples %}
+        <div class="mb-1">{{ ex.title }}<pre class="mb-1 border rounded px-2 py-1"><code>{{ ex.formula }}</code></pre></div>
+        {% endfor %}
+        <p class="mb-0 text-muted">More: docs/RECIPES.md, section "Formulas".</p>
+      </div>
+      {% endcall %}
+
       <div class="card mt-3" id="rbDerivedCard">
         <div class="card-header py-2 fw-semibold small">
           <i class="fas fa-trophy me-1 text-secondary"></i>Best of several items (max / min)
         </div>
         <div class="card-body p-2">
-          <div class="form-text mt-0 mb-2">Takes the highest or lowest of several items. The name can then be used like an item in a formula score.</div>
+          <div class="form-text mt-0 mb-2">Takes the highest or lowest of several items. The name can then be used like an item in a formula score (see 'How formulas and best-of work').</div>
           <div id="rbDerivedList"></div>
           <button class="btn btn-outline-primary btn-sm" id="rbAddDerivedBtn" type="button" disabled>
             <i class="fas fa-plus me-1"></i>Add entry

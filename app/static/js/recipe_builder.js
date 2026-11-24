@@ -1191,17 +1191,23 @@ document.addEventListener('DOMContentLoaded', function () {
 
         function fillSamples() {
             samples.innerHTML = '';
+            if (!scale.items.length) return;
+            const heading = document.createElement('div');
+            heading.className = 'form-text w-100 mb-0';
+            heading.textContent = 'Example values (to test the formula; the check below uses them)';
+            samples.appendChild(heading);
             scale.items.forEach(name => {
+                const label = document.createElement('label');
+                label.className = 'small d-flex flex-column';
+                label.textContent = name;
                 const input = document.createElement('input');
                 input.type = 'text';
                 input.className = 'form-control form-control-sm';
-                input.style.width = '110px';
-                input.placeholder = name;
-                input.title = 'Example value for ' + name;
                 input.setAttribute('aria-label', 'Example value for ' + name);
                 input.value = sampleValues[name] || '';
                 input.addEventListener('input', () => { sampleValues[name] = input.value; runCheck(); });
-                samples.appendChild(input);
+                label.appendChild(input);
+                samples.appendChild(label);
             });
         }
 
