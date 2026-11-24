@@ -317,3 +317,34 @@ def test_a_conversion_leaves_a_bidsignore_that_hides_the_prism_folders(world):
     project, _staged, _source = world
     _save(world)
     assert "survey/" in (project / ".bidsignore").read_text(encoding="utf-8").splitlines()
+
+
+GOOD_DD = '{"Name": "Dance_and_Brain", "BIDSVersion": "1.10.1"}'
+PLACEHOLDER_DD = '{"Name": "PRISM Biometrics Dataset", "BIDSVersion": "1.8.0"}'
+
+
+def test_a_conversion_never_replaces_the_projects_dataset_description(world):
+    project, staged, _source = world
+    (project / "dataset_description.json").write_text(GOOD_DD, encoding="utf-8")
+    (staged / "dataset_description.json").write_text(PLACEHOLDER_DD, encoding="utf-8")
+    result = _save(world)
+    assert (project / "dataset_description.json").read_text(encoding="utf-8") == GOOD_DD
+    assert "PRISM Biometrics" not in (project / "project.json").read_text(encoding="utf-8")
+    assert "dataset_description.json" not in result.copied_paths
+    assert (staged / "dataset_description.json").read_text(encoding="utf-8") == PLACEHOLDER_DD  # validation still reads it
+
+
+def test_a_dangling_dataset_description_link_in_the_project_is_kept_too(world):
+    project, staged, _source = world
+    (project / "dataset_description.json").symlink_to(project / "gone.json")
+    (staged / "dataset_description.json").write_text(PLACEHOLDER_DD, encoding="utf-8")
+    _save(world)
+    assert (project / "dataset_description.json").is_symlink() and not (project / "gone.json").exists()
+
+
+def test_a_project_without_dataset_description_gets_the_staged_one(world):
+    project, staged, _source = world
+    (staged / "dataset_description.json").write_text(PLACEHOLDER_DD, encoding="utf-8")
+    _save(world)
+    assert (project / "dataset_description.json").read_text(encoding="utf-8") == PLACEHOLDER_DD
+

@@ -125,3 +125,31 @@ def test_the_guard_catches_every_way_the_file_was_written_before():
     assert _flags('def f(r, d):\n    p = os.path.join(r, "dataset_description.json")\n    with open(p, "w") as f:\n        json.dump(d, f)')
     assert not _flags('def f(r, d):\n    names = ["dataset_description.json"]\n    json.dump(d, open(r / "report.json", "w"))')
     assert not _flags('def f(r, d):\n    write_dataset_description(r, d)')
+
+
+def test_no_save_path_copies_a_staged_dataset_description_over_the_projects(tmp_path):
+    """Converters stage a placeholder dataset_description.json; the saves into the project must not copy it over."""
+    from types import SimpleNamespace
+
+    from src.conversion_to_project import save_conversion_to_project, save_physio_batch_to_project
+
+    good = '{"Name": "Mine", "BIDSVersion": "1.10.1"}'
+    for kind in ("conversion", "physio"):
+        project, staged = tmp_path / kind / "proj", tmp_path / kind / "staged"
+        (staged / "sub-001").mkdir(parents=True)
+        project.mkdir(parents=True)
+        (staged / "sub-001" / "x.tsv").write_text("a\n", encoding="utf-8")
+        (staged / "dataset_description.json").write_text('{"Name": "PRISM Survey Dataset"}', encoding="utf-8")
+        (project / "project.json").write_text("{}", encoding="utf-8")
+        (project / "dataset_description.json").write_text(good, encoding="utf-8")
+        if kind == "conversion":
+            save_conversion_to_project(
+                project_root=project, staged_root=staged, convert_result=SimpleNamespace(detected_sessions=[], tasks_included=[]),
+                source_path=None, source_name="x.xlsx", session_override=None, template_version_overrides=None,
+            )
+        else:
+            save_physio_batch_to_project(
+                project_root=project, staged_root=staged, converted=[], dataset_name="d", dest_root="root",
+                flat_structure=False, modality_filter="all", subject_rewrite_mode="keep",
+            )
+        assert (project / "dataset_description.json").read_text(encoding="utf-8") == good, kind

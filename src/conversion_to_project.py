@@ -7,6 +7,7 @@ and sync the recipe offsets.
 
 from __future__ import annotations
 
+import os
 import re
 import shutil
 from dataclasses import dataclass, field
@@ -144,6 +145,12 @@ def _merge_participants_into_staged(project_root: Path, staged_root: Path, log) 
     )
 
 
+def _is_kept_dataset_description(project_root: Path, staged_root: Path, item: Path) -> bool:
+    """The staged root dataset_description.json holds placeholders (the staging folder has no project.json), so it is
+    not copied when the project already has the file (a dangling link counts): a conversion never replaces it."""
+    return item == staged_root / "dataset_description.json" and os.path.lexists(project_root / "dataset_description.json")
+
+
 def _stage_bidsignore(project_root: Path, staged_root: Path) -> None:
     """Stage the project's .bidsignore with the PRISM-only folders listed, so BIDS validators skip them and the
     DataLad-aware copy saves it with the conversion."""
@@ -179,7 +186,7 @@ def save_conversion_to_project(
     _stage_bidsignore(project_root, staged_root)
     pairs: list[tuple[Path, Path]] = []
     for item in sorted(staged_root.rglob("*")):
-        if item.is_file() and filter_system_files([item.name]):
+        if item.is_file() and filter_system_files([item.name]) and not _is_kept_dataset_description(project_root, staged_root, item):
             pairs.append((item, project_root / item.relative_to(staged_root)))
     output_rel = {dest.relative_to(project_root).as_posix() for _src, dest in pairs} - {".bidsignore"}
     pairs.extend(extra_pairs or [])  # e.g. the templates the conversion used: copied, but not "converted output"
@@ -292,7 +299,7 @@ def save_physio_batch_to_project(
         _merge_participants_into_staged(project_root, staged_root, log_fn or _quiet)
         _stage_bidsignore(project_root, staged_root)
     for item in sorted(staged_root.rglob("*")):
-        if not item.is_file():
+        if not item.is_file() or (into_prism and _is_kept_dataset_description(project_root, staged_root, item)):
             continue
         if not into_prism and item.name in ("participants.tsv", "participants.json"):
             continue  # sourcedata/ and rawdata/ hold raw files, not the participants table
