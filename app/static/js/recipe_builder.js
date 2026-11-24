@@ -58,11 +58,11 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // What the modality list says: failed vs. empty (modules/recipe-builder/modality-state.js).
-    let modalityListState;
+    let modalityListState, modalityOptions;
     const modalityStateReady = import(
         new URL('./modules/recipe-builder/modality-state.js', recipeBuilderScriptUrl).href
     ).then(mod => {
-        ({ modalityListState } = mod);
+        ({ modalityListState, modalityOptions } = mod);
     });
     let modalityState = { text: '', disabled: false };
 
@@ -219,8 +219,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function selectedModality() {
-        const raw = String((modalityPicker && modalityPicker.value) || 'survey').trim().toLowerCase();
-        return raw === 'biometrics' ? 'biometrics' : 'survey';
+        return String((modalityPicker && modalityPicker.value) || '').trim().toLowerCase();
     }
 
     function selectedInfoKey() {
@@ -232,7 +231,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function modalityTemplateLabel() {
-        return selectedModality() === 'biometrics' ? 'biometrics' : 'survey';
+        return selectedModality() || 'modality';
     }
 
     function updateEmptyStateCopy() {
@@ -476,10 +475,10 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ── Modality picker: the project's modalities (data or templates), from the backend ──
-    async function loadModalities() {
+    async function loadModalities(carried) {
         await modalityStateReady;
         const path = resolveProjectPath();
-        const keep = modalityPicker.value;
+        const keep = carried || modalityPicker.value;
         let modalities = [];
         if (path) {
             try {
@@ -489,15 +488,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 modalities = null; // shown as a failure, not as an empty project
             }
         }
-        modalityState = modalityListState(modalities);
+        modalityState = modalityListState(modalities, !!path);
+        const options = path ? modalityOptions(modalities || [], carried) : [];
         modalityPicker.innerHTML = '';
-        (modalities || []).forEach(m => {
+        options.forEach(m => {
             const opt = document.createElement('option');
             opt.value = m.value;
-            opt.textContent = m.value;
+            opt.textContent = m.label;
             modalityPicker.appendChild(opt);
         });
-        if (modalityState.disabled) {
+        if (modalityState.disabled && !options.length) {
             const opt = document.createElement('option');
             opt.value = '';
             opt.textContent = modalityState.text;
@@ -505,8 +505,8 @@ document.addEventListener('DOMContentLoaded', function () {
             opt.selected = true;
             modalityPicker.appendChild(opt);
         }
-        modalityPicker.disabled = modalityState.disabled;
-        if ((modalities || []).some(m => m.value === keep)) modalityPicker.value = keep;
+        modalityPicker.disabled = modalityState.disabled && !options.length;
+        if (options.some(m => m.value === keep)) modalityPicker.value = keep;
     }
 
     async function reloadAll() {
@@ -1591,8 +1591,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
             await parseApiJsonResponse(response, 'Failed to import recipe.');
 
-            await loadModalities();
-            modalityPicker.value = modality;
+            await loadModalities(modality);
             resetBuilderState();
             await loadSurveyList();
             if (![...surveyPicker.options].some(o => o.value === task)) {

@@ -630,7 +630,12 @@ def list_builder_templates(dataset_path, *, modality: str = "survey", include_gl
 
 
 _MODALITY_LABELS = {"survey": "Survey", "biometrics": "Biometrics"}
-_DATA_FOLDERS = {"survey": ("survey", "beh"), "biometrics": ("biometrics",)}
+_DATA_FOLDERS = {"survey": ("survey", "beh")}  # any other modality: its own name
+
+
+def modality_label(modality: str) -> str:
+    """Display name of a modality (the capitalised name when none is set)."""
+    return _MODALITY_LABELS.get(modality, modality.capitalize())
 
 
 def project_has_modality_data(root, modality: str) -> bool:
@@ -638,7 +643,7 @@ def project_has_modality_data(root, modality: str) -> bool:
     root = Path(root)
     return any(
         any(root.glob(f"sub-*/{ses}{folder}/*.tsv"))
-        for folder in _DATA_FOLDERS.get(modality, ())
+        for folder in _DATA_FOLDERS.get(modality, (modality,))
         for ses in ("ses-*/", "")
     )
 
@@ -646,7 +651,7 @@ def project_has_modality_data(root, modality: str) -> bool:
 def list_builder_modalities(dataset_path) -> list[dict]:
     """The modalities the Recipe Builder offers: those with data or a template in the project's own library."""
     return [
-        {"value": m, "label": _MODALITY_LABELS[m]}
+        {"value": m, "label": modality_label(m)}
         for m in _SUPPORTED_MODALITIES
         if project_has_modality_data(dataset_path, m)
         or list_builder_templates(dataset_path, modality=m, include_global=False)

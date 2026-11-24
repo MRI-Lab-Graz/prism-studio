@@ -30,6 +30,12 @@ class TestRecipeBuilderWorkflowWiring(unittest.TestCase):
         self.assertIn("modules/recipe-builder/modality-state.js", content)
         self.assertIn("modalityListState(", content)
 
+    def test_selected_modality_never_falls_back_to_survey(self):
+        content = RECIPE_BUILDER_SCRIPT.read_text(encoding="utf-8")
+
+        self.assertNotIn("=== 'biometrics' ? 'biometrics' : 'survey'", content)
+        self.assertIn("modalityOptions(", content)
+
     def test_recipe_builder_template_links_to_projects_page_when_no_project_loaded(
         self,
     ):

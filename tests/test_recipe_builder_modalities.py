@@ -68,3 +68,14 @@ def test_cli_and_studio_list_the_same_modalities(case, capsys):
 def test_the_page_has_no_hard_coded_modality_options():
     html = (Path(__file__).resolve().parents[1] / "app" / "templates" / "recipe_builder.html").read_text(encoding="utf-8")
     assert '<option value="survey" selected>' not in html and '<option value="biometrics">' not in html
+
+
+def test_a_new_supported_modality_gets_a_label_and_data_folder(tmp_path, monkeypatch):
+    monkeypatch.setattr(rb, "_SUPPORTED_MODALITIES", ("survey", "eyetrack"))
+    _tsv(tmp_path, "eyetrack")
+    assert rb.list_builder_modalities(tmp_path) == [{"value": "eyetrack", "label": "Eyetrack"}]
+
+
+def test_the_run_page_detector_uses_the_same_labels():
+    handlers = importlib.import_module("src.web.blueprints.tools_pages_handlers")
+    assert "modality_labels" not in Path(handlers.__file__).read_text(encoding="utf-8")
