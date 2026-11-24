@@ -42,14 +42,22 @@ def _check(expr: str, items: list[str], values: dict[str, str]) -> dict:
     for name in dict.fromkeys(_PLACEHOLDER.findall(expr)):
         if name not in items:
             return _fail(f"{{{name}}} is not in this score's Items list.")
+    texts: dict[str, str] = {}
     for name in items:
         token = _resolve_formula_placeholder(name, values, set(), None, None)
         if token is None:
-            return _fail(f"Item {name} has no usable value (empty, n/a or not a number).")
+            typed = str(values.get(name) or "").strip()
+            if not typed or typed.lower() == "n/a":
+                return _fail(f"Type an example value for {name} in the box below the formula to test it.")
+            return _fail(f"The example value for {name} ({typed}) is not a number.")
+        if token.startswith('"'):  # typed text the engine keeps as a string
+            texts.setdefault(name, str(values.get(name)).strip())
         expr = expr.replace(f"{{{name}}}", token)
     result = _safe_eval_formula_expression(expr)
     if result is not None:
         return {"ok": True, "result": _format_numeric_cell(result), "message": ""}
+    for name, typed in texts.items():
+        return _fail(f"The example value for {name} ({typed}) is not a number.")
     try:  # the engine returns None for every failure; re-run to name the reason
         _evaluate_formula_ast(ast.parse(expr.strip(), mode="eval"))
     except ZeroDivisionError:

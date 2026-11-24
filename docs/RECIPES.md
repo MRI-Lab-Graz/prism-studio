@@ -59,12 +59,17 @@ formula and a check line: enter example values and it shows the result, or why t
 entries (`max`/`min`), whose names can then be used as items in a formula. The same check and rendering run
 from the command line: `prism_tools recipes formula-check` and `recipes formula-latex`.
 Rendering is display only; the recipe always stores the plain `Formula` string.
+The example-value boxes under the formula (one labelled box per item) feed the check; for a Best of N
+entry type its best value. Entries appear in the same "Add an item..." pull-down as ordinary items. The
+builder's help block "How formulas and best-of work" shows these examples.
 
 ```json
 { "Name": "bmi", "Method": "formula", "Items": ["weight_kg", "height_m"],
   "Formula": "{weight_kg} / {height_m} ** 2" }
 ```
 
+- **Examples:** BMI `{weight_kg} / {height_m} ** 2`; mean of both sides
+  `({ybt_comp_left} + {ybt_comp_right}) / 2`.
 - **`Items`** lists every column the formula uses; **`{NAME}`** in `Formula` is replaced by that
   column's value. A name used in `Formula` but missing from `Items` is not replaced and the score
   is left empty.
