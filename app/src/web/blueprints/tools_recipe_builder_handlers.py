@@ -13,6 +13,7 @@ from src.constants import SUPPORTED_MODALITIES as _SUPPORTED_MODALITIES
 from src.recipe_builder import (  # noqa: F401 - RecipeSaveError re-exported
     RecipeSaveError,
     draft_from_template,
+    list_builder_modalities,
     list_builder_templates,
     load_recipe,
     save_recipe_to_project,
@@ -31,6 +32,13 @@ def _global_library_root() -> Path | None:
 # ---------------------------------------------------------------------------
 # Public handlers
 # ---------------------------------------------------------------------------
+
+
+def handle_api_recipe_builder_modalities(dataset_path: str):
+    """Return the modalities the Recipe Builder offers for the project."""
+    if not dataset_path or not os.path.isdir(dataset_path):
+        return jsonify({"modalities": []}), 200
+    return jsonify({"modalities": list_builder_modalities(dataset_path)}), 200
 
 
 def handle_api_recipe_builder_surveys(

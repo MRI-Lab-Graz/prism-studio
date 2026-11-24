@@ -401,6 +401,13 @@ def cmd_recipes_templates(args) -> None:
     })
 
 
+def cmd_recipes_modalities(args) -> None:
+    """The modalities the Recipe Builder offers for the project (JSON)."""
+    from src.recipe_builder import list_builder_modalities
+
+    _print_json({"modalities": list_builder_modalities(Path(args.project).resolve())})
+
+
 def cmd_recipes_draft(args) -> None:
     """What a new recipe for a task starts from: items, descriptions, scale ranges, reversed items (JSON)."""
     from src.recipe_builder import draft_from_template

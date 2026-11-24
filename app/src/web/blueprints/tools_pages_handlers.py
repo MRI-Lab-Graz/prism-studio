@@ -5,6 +5,7 @@ from flask import jsonify, render_template
 
 from src.biosample_template import specimen_types
 from src.constants import SUPPORTED_MODALITIES
+from src.recipe_builder import modality_label, project_has_modality_data
 
 from .tools_helpers import _default_library_root_for_templates, _global_recipes_root
 
@@ -14,22 +15,8 @@ _RECIPE_FILENAME_GLOB = "recipe-*.json"
 
 def _detect_available_recipe_modalities(project_root: Path) -> tuple[list[dict], str]:
     """Detect recipe modalities available for the current project."""
-    roots = [project_root]
-
     def _has_data(modality: str) -> bool:
-        for root in roots:
-            if modality == "survey":
-                for folder in ("survey", "beh"):
-                    if any(root.glob(f"sub-*/ses-*/{folder}/*.tsv")):
-                        return True
-                    if any(root.glob(f"sub-*/{folder}/*.tsv")):
-                        return True
-            elif modality == "biometrics":
-                if any(root.glob("sub-*/ses-*/biometrics/*.tsv")):
-                    return True
-                if any(root.glob("sub-*/biometrics/*.tsv")):
-                    return True
-        return False
+        return project_has_modality_data(project_root, modality)
 
     def _has_recipes(modality: str) -> bool:
         # Project-local paths first (YODA then legacy)
@@ -50,18 +37,13 @@ def _detect_available_recipe_modalities(project_root: Path) -> tuple[list[dict],
                 return True
         return False
 
-    modality_labels = {
-        "survey": "Survey",
-        "biometrics": "Biometrics",
-    }
-
     available: list[dict] = []
     for modality in SUPPORTED_MODALITIES:
         if _has_data(modality) and _has_recipes(modality):
-            available.append({"value": modality, "label": modality_labels[modality]})
+            available.append({"value": modality, "label": modality_label(modality)})
 
     if not available:
-        available = [{"value": "survey", "label": "Survey"}]
+        available = [{"value": "survey", "label": modality_label("survey")}]
 
     default_modality = available[0]["value"]
     return available, default_modality
@@ -115,7 +97,7 @@ def handle_converter(project_path: str | None):
 
 
 def handle_recipes(project_path: str):
-    available_modalities = [{"value": "survey", "label": "Survey"}]
+    available_modalities = [{"value": "survey", "label": modality_label("survey")}]
     default_modality = "survey"
 
     if project_path and Path(project_path).is_dir():
@@ -155,7 +137,7 @@ def handle_api_recipes_modalities(dataset_path: str):
         return (
             jsonify(
                 {
-                    "modalities": [{"value": "survey", "label": "Survey"}],
+                    "modalities": [{"value": "survey", "label": modality_label("survey")}],
                     "default": "survey",
                 }
             ),

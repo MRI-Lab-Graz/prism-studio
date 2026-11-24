@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - `max` or `min` as a score `Method` was silently left empty (`n/a`); the validator now rejects it and points to `Transforms.Derived`.
+- Recipe Builder only lists modalities that exist in the project and says 'no project loaded' instead of 'failed to load templates'. New command `recipes modalities --project P`.
 
 ### Removed (breaking)
 - **Sending, syncing and getting data moved to Worldline Desktop.** `prism_tools publish` and `prism_tools datalad sync | update | put-on-server | open-from-server | get-data` are gone, with their Studio routes (Sync now, Put on server, Open from server, Get data, Publish). Use [Worldline Desktop](https://worldline-desktop.readthedocs.io/) (0.6.3 or later refuses to send a project that tracks `sourcedata/` to a public host). The DataLad page keeps Enable DataLad and Save; `datalad enable | save | status | doctor | identity` and `save-gate` stay.

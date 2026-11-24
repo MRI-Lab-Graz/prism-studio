@@ -57,6 +57,15 @@ document.addEventListener('DOMContentLoaded', function () {
         } = mod);
     });
 
+    // What the modality list says: failed vs. empty (modules/recipe-builder/modality-state.js).
+    let modalityListState, modalityOptions;
+    const modalityStateReady = import(
+        new URL('./modules/recipe-builder/modality-state.js', recipeBuilderScriptUrl).href
+    ).then(mod => {
+        ({ modalityListState, modalityOptions } = mod);
+    });
+    let modalityState = { text: '', disabled: false };
+
     // Assembles the saved JSON on top of the loaded recipe so nothing the builder
     // does not edit is lost (modules/recipe-builder/recipe-merge.js).
     let buildRecipe, metadataFieldText, splitIrvScore;
@@ -221,8 +230,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function selectedModality() {
-        const raw = String((modalityPicker && modalityPicker.value) || 'survey').trim().toLowerCase();
-        return raw === 'biometrics' ? 'biometrics' : 'survey';
+        return String((modalityPicker && modalityPicker.value) || '').trim().toLowerCase();
     }
 
     function selectedInfoKey() {
@@ -234,7 +242,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function modalityTemplateLabel() {
-        return selectedModality() === 'biometrics' ? 'biometrics' : 'survey';
+        return selectedModality() || 'modality';
     }
 
     function updateEmptyStateCopy() {
@@ -479,6 +487,46 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    // ── Modality picker: the project's modalities (data or templates), from the backend ──
+    async function loadModalities(carried) {
+        await modalityStateReady;
+        const path = resolveProjectPath();
+        const keep = carried || modalityPicker.value;
+        let modalities = [];
+        if (path) {
+            try {
+                const response = await fetchWithApiFallback('/api/recipe-builder/modalities?dataset_path=' + encodeURIComponent(path));
+                modalities = (await parseApiJsonResponse(response, 'Failed to load modalities.')).modalities || [];
+            } catch (_error) {
+                modalities = null; // shown as a failure, not as an empty project
+            }
+        }
+        modalityState = modalityListState(modalities, !!path);
+        const options = path ? modalityOptions(modalities || [], carried) : [];
+        modalityPicker.innerHTML = '';
+        options.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m.value;
+            opt.textContent = m.label;
+            modalityPicker.appendChild(opt);
+        });
+        if (modalityState.disabled && !options.length) {
+            const opt = document.createElement('option');
+            opt.value = '';
+            opt.textContent = modalityState.text;
+            opt.disabled = true;
+            opt.selected = true;
+            modalityPicker.appendChild(opt);
+        }
+        modalityPicker.disabled = modalityState.disabled && !options.length;
+        if (options.some(m => m.value === keep)) modalityPicker.value = keep;
+    }
+
+    async function reloadAll() {
+        await loadModalities();
+        await loadSurveyList();
+    }
+
     // ── Survey picker ─────────────────────────────────────────────────────
     async function loadSurveyList() {
         const path = resolveProjectPath();
@@ -486,6 +534,16 @@ document.addEventListener('DOMContentLoaded', function () {
         const modalityLabel = modalityTemplateLabel();
         if (!path) {
             surveyPicker.innerHTML = '<option value="" disabled selected>— no project loaded —</option>';
+            return;
+        }
+        if (!modalityPicker.value) {
+            surveyPicker.innerHTML = '';
+            const note = document.createElement('option');
+            note.value = '';
+            note.textContent = modalityState.text;
+            note.disabled = true;
+            note.selected = true;
+            surveyPicker.appendChild(note);
             return;
         }
         const includeGlobal = includeGlobalToggle && includeGlobalToggle.checked ? '&include_global=1' : '';
@@ -566,7 +624,7 @@ document.addEventListener('DOMContentLoaded', function () {
         loadRequestToken += 1;
         projectPath = getCurrentProjectPath();
         resetBuilderState();
-        loadSurveyList();
+        reloadAll();
     });
 
     async function loadItemsAndRecipe(task) {
@@ -1774,7 +1832,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
             await parseApiJsonResponse(response, 'Failed to import recipe.');
 
-            modalityPicker.value = modality;
+            await loadModalities(modality);
             resetBuilderState();
             await loadSurveyList();
             if (![...surveyPicker.options].some(o => o.value === task)) {
@@ -1793,7 +1851,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // ── Init ──────────────────────────────────────────────────────────────
     showBuilderArea(false);
     updateEmptyStateCopy();
-    loadSurveyList();
+    reloadAll();
 
     modalityPicker && modalityPicker.addEventListener('change', () => {
         surveyListRequestToken += 1;

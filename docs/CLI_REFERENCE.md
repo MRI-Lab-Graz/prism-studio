@@ -113,6 +113,8 @@ python prism_tools.py recipes surveys --prism /path/to/dataset --format prism
 python prism_tools.py recipes biometrics --prism /path/to/dataset --format xlsx
 ```
 
+**`recipes modalities --project P`** — the modalities the Recipe Builder offers: those with `survey`/`beh`/`biometrics` data, or a template in `code/library/<modality>/` (JSON).
+
 **`recipes validate-file`** — validate a recipe JSON file's structure on its own,
 without running a scoring job. Matches the validation Studio's Recipe Builder
 "Save" action uses; pass `--known-items-from` a matched template to also catch
