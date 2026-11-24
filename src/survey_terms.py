@@ -89,11 +89,11 @@ def _templates(library_dir: Path, problems: list[str]) -> list[tuple[Path, str, 
 
 
 def deprecated_ids(path: Path | None = None) -> tuple[dict[str, str], list[str]]:
-    """({deprecated ID: its replacement}, problems) from `deprecated.json` next to term-ids.txt; no file is none.
+    """({deprecated ID: its replacement}, problems) from `ids/survey-deprecated.json`; no file is none.
 
     The file is `{"prism:x.y": {"ReplacedBy": "prism:x.z"}}`, as terms use `Status: deprecated` and `ReplacedBy`.
-    An entry without a `ReplacedBy` is skipped and reported."""
-    path = Path(path or terms_root().parent / "survey" / "deprecated.json")
+    An entry whose key is not a `prism:` ID or that has no `ReplacedBy` is skipped and reported."""
+    path = Path(path or terms_root().parent / "ids" / "survey-deprecated.json")
     if not path.is_file():
         return {}, []
     problems: list[str] = []
@@ -103,7 +103,9 @@ def deprecated_ids(path: Path | None = None) -> tuple[dict[str, str], list[str]]
     found: dict[str, str] = {}
     for term_id, entry in data.items():
         new = entry.get("ReplacedBy") if isinstance(entry, dict) else None
-        if isinstance(new, str) and new:
+        if not term_id.startswith("prism:"):
+            problems.append(f"{path.name}: {term_id} is not a prism: ID")
+        elif isinstance(new, str) and new:
             found[term_id] = new
         else:
             problems.append(f"{path.name}: {term_id} needs a ReplacedBy")
@@ -168,13 +170,15 @@ def build_survey_registry(library_dir: Path | None = None, recipe_dir: Path | No
                 for key in ("HigherMeans", "LowerMeans"):
                     _set_text(registry[local], key, score.get(key))
 
-    deprecated, notes = deprecated_ids(library_dir / "deprecated.json")
+    deprecated, notes = deprecated_ids(library_dir.parent / "ids" / "survey-deprecated.json")
     problems += notes
     known = {t["TermID"] for t in registry.values()} | released_ids(library_dir / "term-ids.txt")
     by_id = {t["TermID"]: t for t in registry.values()}
     for old, new in deprecated.items():
-        if new not in known:
-            problems.append(f"deprecated.json: {old} is replaced by {new}, which is not a released ID")
+        if new in deprecated:  # itself, or another deprecated ID: the replacement must be one to use
+            problems.append(f"survey-deprecated.json: {old} is replaced by {new}, which is deprecated itself (no valid replacement)")
+        elif new not in known:
+            problems.append(f"survey-deprecated.json: {old} is replaced by {new}, which is not a released ID")
         if old in by_id:  # a deprecated ID may have left the template: the ID stays released, nothing to mark
             by_id[old].update({"Status": "deprecated", "ReplacedBy": new})
     return registry, problems

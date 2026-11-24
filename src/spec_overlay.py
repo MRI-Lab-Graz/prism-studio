@@ -258,18 +258,8 @@ def load_local_links(project_root, modality: str = "biosample") -> dict[str, dic
     """{`prism:` ID: {vocabulary: URL}} of the project's local links (`code/specification/mappings/<modality>/<family>.json`).
 
     Project data is untrusted: a file or entry that is not the expected shape is skipped; the proposal check judges the rest."""
-    folder = _links_folder(project_root, modality)
-    links: dict[str, dict] = {}
-    for path in sorted(folder.glob("*.json")) if folder.is_dir() else []:
-        try:
-            data = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, ValueError, RecursionError):
-            continue
-        for term_id, entry in (data.items() if isinstance(data, dict) else ()):
-            same = entry.get("SameAs") if isinstance(entry, dict) else None
-            if _local_part(term_id) is not None and isinstance(same, dict):
-                links[f"prism:{_local_part(term_id)}"] = same
-    return links
+    return {f"prism:{_local_part(term_id)}": entry["SameAs"] for term_id, entry in load_local_mappings(project_root, modality).items()
+            if isinstance(entry.get("SameAs"), dict)}
 
 
 def load_local_mappings(project_root, modality: str = "biosample") -> dict[str, dict]:

@@ -2234,11 +2234,12 @@ def build_prism_tools_parsers(
             _p.add_argument("--link", action="append", help=_LINK_HELP)
             _p.add_argument("--open", action="store_true", help="Open the prefilled proposal form in the browser")
             _p.add_argument("--out", help="Also save the proposal to this file (to send it to a maintainer without GitHub)")
-        _p.add_argument(
-            "--modality", default=None if _name == "coverage" else "biosample",
-            choices=sorted(_rules.term_modalities) if _name == "propose" else None,
-            help="Modality of the registry (coverage: every modality when omitted)",
-        )
+        if _name != "export-links":  # it exports every modality
+            _p.add_argument(
+                "--modality", default=None if _name == "coverage" else "biosample",
+                choices=sorted(_rules.term_modalities) if _name == "propose" else None,
+                help="Modality of the registry (coverage: every modality when omitted)",
+            )
         _p.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
 
     parser_spec = subparsers.add_parser(

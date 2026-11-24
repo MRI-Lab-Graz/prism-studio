@@ -85,7 +85,8 @@ def load_specification(
     patched: list = []
     official_now: list = []
     rules = rules if rules is not None else load_entity_rules()
-    mappings = {folder.name: load_mappings(folder.name) for folder in sorted(mappings_root().iterdir()) if folder.is_dir()}
+    folders = sorted(mappings_root().iterdir()) if mappings_root().is_dir() else []  # a build may not carry mappings/
+    mappings = {folder.name: load_mappings(folder.name) for folder in folders if folder.is_dir()}
     for modality in rules.term_modalities:
         registry = load_registry(modality)
         if project_root is not None:
@@ -94,9 +95,11 @@ def load_specification(
             local |= in_use
             ignored += dropped
             problems += skipped
-            mappings[modality] = {**load_local_mappings(project_root, modality), **mappings.get(modality, {})}  # official wins
         terms[modality] = registry
     if project_root is not None:
+        for modality in (*rules.term_modalities, "survey"):  # survey IDs are derived from templates, not a term registry
+            if modality in rules.prism_modalities:
+                mappings[modality] = {**load_local_mappings(project_root, modality), **mappings.get(modality, {})}  # official wins
         names, skipped = local_patch_modalities(project_root, schemas)
         problems += skipped
         for modality in names:

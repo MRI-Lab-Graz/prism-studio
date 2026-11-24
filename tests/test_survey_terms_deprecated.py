@@ -1,4 +1,5 @@
-"""A survey ID can be deprecated (`deprecated.json` next to term-ids.txt): marked in the registry, allowed to leave the template."""
+"""A survey ID can be deprecated (`ids/survey-deprecated.json`, next to the library folder, not in it):
+marked in the registry, allowed to leave the template."""
 
 import json
 
@@ -10,7 +11,8 @@ def _with(tmp_path, deprecated, released=("prism:tipi", "prism:tipi.tipi01", "pr
     lib, rec = _lib(tmp_path, {"tipi": TIPI})
     (lib / "term-ids.txt").write_text("".join(f"{i}\n" for i in released), encoding="utf-8")
     if deprecated is not None:
-        (lib / "deprecated.json").write_text(json.dumps(deprecated), encoding="utf-8")
+        (tmp_path / "ids").mkdir(exist_ok=True)
+        (tmp_path / "ids" / "survey-deprecated.json").write_text(json.dumps(deprecated), encoding="utf-8")
     return lib, rec
 
 
@@ -23,7 +25,14 @@ def test_a_deprecated_item_is_marked_with_its_replacement(tmp_path):
 
 def test_a_replacement_that_was_never_released_is_a_problem(tmp_path):
     reg, problems = build_survey_registry(*_with(tmp_path, {"prism:tipi.tipi01": {"ReplacedBy": "prism:tipi.nope"}}))
-    assert problems == ["deprecated.json: prism:tipi.tipi01 is replaced by prism:tipi.nope, which is not a released ID"]
+    assert problems == ["survey-deprecated.json: prism:tipi.tipi01 is replaced by prism:tipi.nope, which is not a released ID"]
+
+
+def test_an_id_replaced_by_itself_or_by_another_deprecated_id_is_a_problem(tmp_path):
+    deprecated = {"prism:tipi.tipi01": {"ReplacedBy": "prism:tipi.tipi01"},
+                  "prism:tipi.tipi02": {"ReplacedBy": "prism:tipi.tipi01"}}
+    _, problems = build_survey_registry(*_with(tmp_path, deprecated))
+    assert len(problems) == 2 and all("deprecated" in p and "replacement" in p for p in problems)
 
 
 def test_an_entry_without_a_replacement_is_skipped_and_reported(tmp_path):
@@ -32,17 +41,23 @@ def test_an_entry_without_a_replacement_is_skipped_and_reported(tmp_path):
     assert reg["tipi.tipi01"]["Status"] == "official"
 
 
+def test_a_key_that_is_not_a_prism_id_is_reported(tmp_path):
+    _, problems = build_survey_registry(*_with(tmp_path, {"tipi.tipi01": {"ReplacedBy": "prism:tipi.tipi02"}}))
+    assert problems == ["survey-deprecated.json: tipi.tipi01 is not a prism: ID"]
+
+
 def test_without_the_file_nothing_is_deprecated(tmp_path):
     reg, problems = build_survey_registry(*_with(tmp_path, None))
     assert problems == [] and all(t["Status"] == "official" for t in reg.values())
-    assert deprecated_ids(tmp_path / "library" / "deprecated.json") == ({}, [])
+    assert deprecated_ids(tmp_path / "ids" / "survey-deprecated.json") == ({}, [])
 
 
 def test_a_broken_file_is_a_problem_not_a_crash(tmp_path):
     lib, rec = _with(tmp_path, None)
-    (lib / "deprecated.json").write_text("[1]", encoding="utf-8")
+    (tmp_path / "ids").mkdir()
+    (tmp_path / "ids" / "survey-deprecated.json").write_text("[1]", encoding="utf-8")
     _, problems = build_survey_registry(lib, rec)
-    assert problems == ["deprecated.json: must hold a JSON object"]
+    assert problems == ["survey-deprecated.json: must hold a JSON object"]
 
 
 def test_a_deprecated_released_id_may_leave_the_registry(tmp_path):

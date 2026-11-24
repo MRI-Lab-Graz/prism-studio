@@ -157,16 +157,22 @@ def cmd_terms_check_links(args) -> None:
         sys.exit(1)
 
 
-def cmd_terms_coverage(args) -> None:
-    """Count, per modality, which IDs have a link to an outside vocabulary and which have none yet."""
-    from src.mappings_coverage import coverage
+def _specification(args):
+    """The specification of the run: the official one, plus the project's own terms and links with --project."""
     from src.spec_overlay import OverlayError
     from src.specification import load_specification
 
     try:
-        spec = load_specification(project_root=args.project)
+        return load_specification(project_root=args.project)
     except (OverlayError, OSError, ValueError, RecursionError) as exc:
         _fail(args, str(exc) or type(exc).__name__)
+
+
+def cmd_terms_coverage(args) -> None:
+    """Count, per modality, which IDs have a link to an outside vocabulary and which have none yet."""
+    from src.mappings_coverage import coverage
+
+    spec = _specification(args)
     registries = {**spec.terms, "survey": build_survey_registry()[0]}
     if args.modality and args.modality not in registries:
         _fail(args, f"unknown modality {args.modality!r}; known: {', '.join(sorted(registries))}")
@@ -182,14 +188,8 @@ def cmd_terms_coverage(args) -> None:
 def cmd_terms_export_links(args) -> None:
     """Write the links of mappings/ (the official ones, plus a project's own) as SSSOM."""
     from src.mappings_export import sssom_table
-    from src.spec_overlay import OverlayError
-    from src.specification import load_specification
 
-    try:
-        spec = load_specification(project_root=args.project)
-    except (OverlayError, OSError, ValueError, RecursionError) as exc:
-        _fail(args, str(exc) or type(exc).__name__)
-    table = sssom_table(spec.mappings)
+    table = sssom_table(_specification(args).mappings)
     rows = sum(1 for line in table.splitlines() if not line.startswith("#")) - 1  # minus the column line
     if args.out:
         Path(args.out).write_text(table, encoding="utf-8")

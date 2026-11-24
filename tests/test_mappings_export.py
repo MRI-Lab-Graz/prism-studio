@@ -81,6 +81,18 @@ def test_one_vocabulary_with_two_address_shapes_gets_two_prefixes():
         "https://snomed.info/id/1234567", "https://snomed.info/sct/1234567"}
 
 
+def test_an_address_that_cannot_be_a_curie_stays_a_full_address():
+    entries = {"prism:t.a": {"Measures": [{"URL": "https://example.org/vocab/"}, {"URL": "https://example.org/ns#Term"}]}}
+    _, rows = _parse(sssom_table({"survey": entries}))
+    assert {r["object_id"] for r in rows} == {"https://example.org/vocab/", "https://example.org/ns#Term"}
+
+
+def test_a_source_or_date_that_is_not_text_is_left_empty():
+    entry = {"Measures": [{"URL": "https://snomed.info/id/1234567", "Source": {"a": 1}, "Checked": ["x"]}]}
+    _, rows = _parse(sssom_table({"survey": {"prism:t.a": entry}}))
+    assert rows[0]["author_label"] == "" and rows[0]["mapping_date"] == ""
+
+
 def test_every_shipped_link_survives_the_round_trip():
     spec = official_specification()
     header, rows = _parse(sssom_table(spec.mappings))

@@ -58,6 +58,18 @@ def test_the_official_link_wins_over_a_project_link_for_the_same_id(tmp_path):
     assert load_specification(project_root=project).mappings_for("prism:fsh")["SameAs"]["snomed"] == FSH_SNOMED
 
 
+def test_a_build_without_a_mappings_folder_still_loads(tmp_path, monkeypatch):
+    monkeypatch.setattr("src.specification.mappings_root", lambda: tmp_path / "no-such-folder")
+    assert load_specification().mappings == {}
+
+
+def test_a_projects_survey_links_are_part_of_its_run(tmp_path):
+    project = _project(tmp_path / "p", {
+        "mappings/survey/mine.json": {"local:mine.item01": {"SameAs": {"loinc": "https://loinc.org/2191-5"}}},
+    })
+    assert load_specification(project_root=project).mappings_for("local:mine.item01")["SameAs"]["loinc"]
+
+
 def test_a_broken_project_mapping_file_is_skipped_not_a_crash(tmp_path):
     project = _project(tmp_path / "p", {"mappings/biosample/bad.json": ["not", "an", "object"]})
     spec = load_specification(project_root=project)

@@ -55,6 +55,8 @@ class _Prefixes:
     def obj(self, url: str, vocabulary: str | None = None) -> str:
         vocabulary = vocabulary or next((k for k, p in self._patterns.items() if p.fullmatch(url)), "ext")
         base, _, local = url.rpartition("/")
+        if not re.fullmatch(r"[\w.\-]+", local):  # nothing after the last "/", or "#", "?", ":": no valid CURIE; the full address stands
+            return url
         return self.curie(vocabulary, f"{base}/", local)
 
 
@@ -71,8 +73,9 @@ def _links(entry: dict):
     measures = entry.get("Measures")
     for m in measures if isinstance(measures, list) else ():
         if isinstance(m, dict) and isinstance(m.get("URL"), str):
-            notes = [f"{k}: {m[k]}" for k in ("Status", "Higher") if m.get(k)]
-            yield m["URL"], None, PREDICATES.get(m.get("Match"), PREDICATES["related"]), m.get("Source"), m.get("Checked"), "; ".join(notes)
+            notes = [f"{k}: {m[k]}" for k in ("Status", "Higher") if isinstance(m.get(k), str) and m[k]]
+            text = lambda key: m[key] if isinstance(m.get(key), str) else ""  # project data is untrusted: text only  # noqa: E731
+            yield m["URL"], None, PREDICATES.get(m.get("Match"), PREDICATES["related"]), text("Source"), text("Checked"), "; ".join(notes)
 
 
 def sssom_table(mappings: dict[str, dict[str, dict]]) -> str:
