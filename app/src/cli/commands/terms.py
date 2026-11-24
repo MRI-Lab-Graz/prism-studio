@@ -157,6 +157,25 @@ def cmd_terms_check_links(args) -> None:
         sys.exit(1)
 
 
+def cmd_terms_export_links(args) -> None:
+    """Write the links of mappings/ (the official ones, plus a project's own) as SSSOM."""
+    from src.mappings_export import sssom_table
+    from src.spec_overlay import OverlayError
+    from src.specification import load_specification
+
+    try:
+        spec = load_specification(project_root=args.project)
+    except (OverlayError, OSError, ValueError, RecursionError) as exc:
+        _fail(args, str(exc) or type(exc).__name__)
+    table = sssom_table(spec.mappings)
+    rows = sum(1 for line in table.splitlines() if not line.startswith("#")) - 1  # minus the column line
+    if args.out:
+        Path(args.out).write_text(table, encoding="utf-8")
+        _emit(args, {"success": True, "rows": rows, "out": args.out}, f"Wrote {rows} links to {args.out}")
+    else:
+        print(json.dumps({"success": True, "rows": rows, "table": table}, ensure_ascii=False) if args.json else table, end="")
+
+
 def cmd_terms_propose(args) -> None:
     """Build a proposal for a new metric from a sidecar column; send nothing unless --open."""
     if getattr(args, "data", None):
