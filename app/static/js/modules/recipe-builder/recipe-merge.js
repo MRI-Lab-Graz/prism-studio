@@ -5,7 +5,7 @@
  * Authors / Version / ..., and so on).
  *
  * The builder owns: RecipeVersion/Kind, the info block's task key and
- * Name/Description/Citation, Transforms.Invert, Scores (incl. the optional IRV
+ * Name/Description/Citation, Transforms.Invert, Transforms.Derived (when given), Scores (incl. the optional IRV
  * score) and VersionedScores.
  */
 
@@ -46,6 +46,7 @@ export function buildRecipe({
     task,
     metadata,
     invertTransform,
+    derivedTransform,
     scores,
     versionedScores,
     irvItems,
@@ -64,6 +65,11 @@ export function buildRecipe({
     const transforms = recipe.Transforms && typeof recipe.Transforms === 'object' ? recipe.Transforms : {};
     if (invertTransform) transforms.Invert = invertTransform;
     else delete transforms.Invert;
+    // undefined = the builder did not touch Derived: keep what was loaded
+    if (Array.isArray(derivedTransform)) {
+        if (derivedTransform.length > 0) transforms.Derived = derivedTransform;
+        else delete transforms.Derived;
+    }
     if (Object.keys(transforms).length > 0) recipe.Transforms = transforms;
     else delete recipe.Transforms;
 

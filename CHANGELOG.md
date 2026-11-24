@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Recipe Builder: formula scores and Best of N.** A score can use Method `formula` (item pull-down, check with example values, rendered formula) and the new Best of N section writes `Transforms.Derived` `max`/`min` entries, so a recipe like the Y Balance Test needs no JSON editing. New commands `prism_tools recipes formula-check` and `recipes formula-latex` run the same check and rendering.
+
+### Fixed
+- `max` or `min` as a score `Method` was silently left empty (`n/a`); the validator now rejects it and points to `Transforms.Derived`.
+
 ### Removed (breaking)
 - **Sending, syncing and getting data moved to Worldline Desktop.** `prism_tools publish` and `prism_tools datalad sync | update | put-on-server | open-from-server | get-data` are gone, with their Studio routes (Sync now, Put on server, Open from server, Get data, Publish). Use [Worldline Desktop](https://worldline-desktop.readthedocs.io/) (0.6.3 or later refuses to send a project that tracks `sourcedata/` to a public host). The DataLad page keeps Enable DataLad and Save; `datalad enable | save | status | doctor | identity` and `save-gate` stay.
 - If you installed the old pre-push hook (`publish --install-hook`), run `prism_tools save-gate --install-hooks --project <root>`: it removes that hook, which would otherwise block every push.

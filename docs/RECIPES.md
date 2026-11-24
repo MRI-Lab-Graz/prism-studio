@@ -48,6 +48,68 @@ An answer is missing when the cell is empty, `n/a` or not a number.
 treated a missing item as 0, so an unanswered questionnaire scored 0). Recipe Builder
 offers these as one choice per scale, "If answers are missing".
 
+## Formulas (`Method: "formula"`)
+
+When a score is more than a sum or mean, write it as a formula.
+
+**In the Recipe Builder:** set a score's Method to `formula`, pick items from the pull-down (they move into
+chips and insert `{ITEM}` in the formula box), and type the formula. Under the box you see the rendered
+formula and a check line: enter example values and it shows the result, or why the score would be empty
+(unknown item, missing value, division by zero). The "Best of N" section writes `Transforms.Derived`
+entries (`max`/`min`), whose names can then be used as items in a formula. The same check and rendering run
+from the command line: `prism_tools recipes formula-check` and `recipes formula-latex`.
+Rendering is display only; the recipe always stores the plain `Formula` string.
+
+```json
+{ "Name": "bmi", "Method": "formula", "Items": ["weight_kg", "height_m"],
+  "Formula": "{weight_kg} / {height_m} ** 2" }
+```
+
+- **`Items`** lists every column the formula uses; **`{NAME}`** in `Formula` is replaced by that
+  column's value. A name used in `Formula` but missing from `Items` is not replaced and the score
+  is left empty.
+- **Operators:** `+ - * / ** %`, brackets, comparisons (`< <= > >= == !=`), `and`, `or`.
+- **Functions:** `min`, `max`, `sum`, `abs`, `round`, `sqrt`, `exp`, `log`, and
+  `ifelse(condition, value_if_true, value_if_false)`.
+- **Missing data:** the score is left empty if any column in `Items` is missing (see above).
+- **Chaining:** an item may be a `Transforms.Derived` entry or an earlier `Scores` entry. Derived
+  values are calculated first, scores in the order written.
+- Formulas are evaluated by a restricted calculator, never as code; anything else in a formula
+  leaves the score empty.
+
+### Worked example: Y Balance Test
+
+Each direction is tried three times per leg; the best trial counts, and the composite is the mean
+of the three best values, optionally relative to leg length (`leg_length_right`, one column per
+participant and session).
+
+```json
+"Transforms": { "Derived": [
+  { "Name": "ybt_ant_right", "Method": "max", "Items": ["ant_r_1", "ant_r_2", "ant_r_3"] },
+  { "Name": "ybt_pm_right",  "Method": "max", "Items": ["pm_r_1",  "pm_r_2",  "pm_r_3"] },
+  { "Name": "ybt_pl_right",  "Method": "max", "Items": ["pl_r_1",  "pl_r_2",  "pl_r_3"] }
+] },
+"Scores": [
+  { "Name": "ybt_composite_right", "Method": "formula",
+    "Items": ["ybt_ant_right", "ybt_pm_right", "ybt_pl_right"],
+    "Formula": "({ybt_ant_right} + {ybt_pm_right} + {ybt_pl_right}) / 3" },
+  { "Name": "ybt_composite_right_rel", "Method": "formula",
+    "Items": ["ybt_ant_right", "ybt_pm_right", "ybt_pl_right", "leg_length_right"],
+    "Formula": "({ybt_ant_right} + {ybt_pm_right} + {ybt_pl_right}) / (3 * {leg_length_right}) * 100" }
+]
+```
+
+Use a **`Transforms.Derived`** entry with `Method: "max"` (or `"min"`) for "best of N trials": it skips a missing
+trial. `max` as a *score* method is not supported (the score stays empty), and `max(...)` inside a
+formula is empty when any trial is missing. Use `Transforms.Derived` for best-of-N.
+
+### Choosing a condition: `ifelse`
+
+```json
+{ "Name": "high_fatigue", "Method": "formula", "Items": ["fatigue_total"],
+  "Formula": "ifelse({fatigue_total} >= 30, 1, 0)" }
+```
+
 ## Example and design process
 
 ```json

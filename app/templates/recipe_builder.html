@@ -3,6 +3,7 @@
 {% block title %}PRISM Studio – Recipe Builder{% endblock %}
 
 {% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/katex/katex.min.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/recipe_builder.css', v='20260401-1') }}">
 {% endblock %}
 
@@ -148,6 +149,19 @@
       <button class="btn btn-outline-primary btn-sm mt-2 w-100" id="rbAddScaleBtn">
         <i class="fas fa-plus me-1"></i>Add Scale
       </button>
+
+      <div class="card mt-3" id="rbDerivedCard">
+        <div class="card-header py-2 fw-semibold small">
+          <i class="fas fa-trophy me-1 text-secondary"></i>Best of several items (max / min)
+        </div>
+        <div class="card-body p-2">
+          <div class="form-text mt-0 mb-2">Takes the highest or lowest of several items. The name can then be used like an item in a formula score.</div>
+          <div id="rbDerivedList"></div>
+          <button class="btn btn-outline-primary btn-sm" id="rbAddDerivedBtn" type="button" disabled>
+            <i class="fas fa-plus me-1"></i>Add entry
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- RIGHT: recipe metadata + actions -->
@@ -289,5 +303,6 @@
 {% block scripts %}
 <script>window.currentProjectPath = {{ (current_project.path or '') | tojson }};</script>
 <script src="{{ url_for('static', filename='vendor/sortablejs/Sortable.min.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/katex/katex.min.js') }}"></script>
 <script src="{{ url_for('static', filename='js/recipe_builder.js', v=prism_static_asset_token) }}"></script>
 {% endblock %}

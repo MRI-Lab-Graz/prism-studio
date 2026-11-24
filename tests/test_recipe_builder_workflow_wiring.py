@@ -207,6 +207,20 @@ class TestRecipeBuilderWorkflowWiring(unittest.TestCase):
         self.assertIn("parseRecipeFile(", handler)
         self.assertIn("'/api/recipe-builder/save'", handler)
 
+    def test_formula_ui_loads_katex_and_only_calls_the_two_routes(self):
+        template = RECIPE_BUILDER_TEMPLATE.read_text(encoding="utf-8")
+        self.assertIn("vendor/katex/katex.min.css", template)
+        self.assertIn("vendor/katex/katex.min.js", template)
+        for name in ("katex.min.js", "katex.min.css", "LICENSE"):
+            self.assertTrue((REPO_ROOT / "app/static/vendor/katex" / name).exists(), name)
+
+        script = RECIPE_BUILDER_SCRIPT.read_text(encoding="utf-8")
+        self.assertIn("/api/recipe-builder/formula-check", script)
+        self.assertIn("/api/recipe-builder/formula-latex", script)
+        self.assertNotIn("eval(", script)
+        self.assertNotIn("new Function", script)
+        self.assertIn("katex.render(", script)
+
 
 if __name__ == "__main__":
     unittest.main()
