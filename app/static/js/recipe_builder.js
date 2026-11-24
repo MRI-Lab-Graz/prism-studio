@@ -1712,7 +1712,10 @@ document.addEventListener('DOMContentLoaded', function () {
             originalScore: null,
         };
         currentScales().push(scale);
+        state.expandedScaleIds.add(scale.id);
         renderScaleCard(scale);
+        const newCard = scaleCanvas.querySelector('[data-scale-id="' + scale.id + '"]');
+        if (newCard) newCard.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
         initSortable();
         renderCompatibilityNotice();
         scaleNameModal.hide();

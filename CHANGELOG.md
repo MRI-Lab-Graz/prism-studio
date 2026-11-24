@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Recipe Builder: the Inversion box can be folded (folded by default when no item is inverted).
+- Recipe Builder: a newly added scale opens expanded.
 
 ### Fixed
 - A conversion no longer replaces the project's `dataset_description.json` with placeholder values (survey, biometrics, physio saves).
