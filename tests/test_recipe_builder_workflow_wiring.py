@@ -234,5 +234,30 @@ class TestRecipeBuilderWorkflowWiring(unittest.TestCase):
         self.assertIn("katex.render(", script)
 
 
+    def test_inversion_box_is_foldable_with_an_accessible_toggle(self):
+        template = RECIPE_BUILDER_TEMPLATE.read_text(encoding="utf-8")
+        script = RECIPE_BUILDER_SCRIPT.read_text(encoding="utf-8")
+
+        self.assertRegex(
+            template,
+            r'<button[^>]*id="rbInversionToggle"[^>]*aria-expanded="false"',
+        )
+        self.assertIn('id="rbInversionBody"', template)
+        self.assertIn("rbInversionToggle", script)
+        self.assertIn("setInversionExpanded(state.inverted.size > 0)", script)
+        self.assertIn("Hide inversion", script)
+        self.assertIn("Show inversion", script)
+
+    def test_new_scale_from_the_dialog_opens_expanded_and_scrolls_into_view(self):
+        script = RECIPE_BUILDER_SCRIPT.read_text(encoding="utf-8")
+        start = script.index("scaleNameConfirm.addEventListener('click'")
+        block = script[start : script.index("scaleNameModal.hide();", start)]
+
+        self.assertLess(
+            block.index("state.expandedScaleIds.add(scale.id)"),
+            block.index("renderScaleCard(scale)"),
+        )
+        self.assertIn("scrollIntoView", block)
+
 if __name__ == "__main__":
     unittest.main()

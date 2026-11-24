@@ -122,6 +122,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const addVariationBtn    = document.getElementById('rbAddVariationBtn');
     const removeVariationBtn = document.getElementById('rbRemoveVariationBtn');
     const inversionBox        = document.getElementById('rbInversionBox');
+    const inversionToggle    = document.getElementById('rbInversionToggle');
+    const inversionBody      = document.getElementById('rbInversionBody');
     const infoLangWrap       = document.getElementById('rbInfoLangWrap');
     const infoLangSelect     = document.getElementById('rbInfoLangSelect');
     const invertScaleDisplay = document.getElementById('rbScaleRangeDisplay');
@@ -287,6 +289,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const metaNote = document.getElementById('rbMetaFromTemplate');
         if (metaNote) metaNote.classList.add('d-none');
         resetVariationSelect();
+        setInversionExpanded(false);
         renderInversionBox();
         showBuilderArea(false);
         updateEmptyStateCopy();
@@ -712,6 +715,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Now render with fully populated state
             resetVariationSelect();
+            setInversionExpanded(state.inverted.size > 0);
             renderInversionBox();
             renderItemList();
             renderScaleCanvas();
@@ -844,6 +848,7 @@ document.addEventListener('DOMContentLoaded', function () {
         state.selectedItems.clear();
         _applyScaleForVariation(key);
         renderInversionBox();
+        setInversionExpanded(state.inverted.size > 0);
         renderItemList();
         renderScaleCanvas();
     }
@@ -886,6 +891,16 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // ── Inversion box ─────────────────────────────────────────────────────
+    function setInversionExpanded(expanded) {
+        inversionBody.classList.toggle('d-none', !expanded);
+        inversionBox.classList.toggle('rb-scale-card--expanded', expanded);
+        inversionToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        inversionToggle.title = expanded ? 'Hide inversion' : 'Show inversion';
+    }
+    inversionToggle.addEventListener('click', () => {
+        setInversionExpanded(inversionToggle.getAttribute('aria-expanded') !== 'true');
+    });
+
     function renderInversionBox() {
         const filter = (invertSearch ? invertSearch.value : '').toLowerCase();
         const items  = state.allItems.filter(it => !filter || it.toLowerCase().includes(filter));
@@ -1691,7 +1706,14 @@ document.addEventListener('DOMContentLoaded', function () {
             originalScore: null,
         };
         currentScales().push(scale);
+        state.expandedScaleIds.add(scale.id);
         renderScaleCard(scale);
+        const newCard = scaleCanvas.querySelector('[data-scale-id="' + scale.id + '"]');
+        if (newCard) {
+            // Scroll once the modal is gone (an open modal locks the page scroll).
+            document.getElementById('rbScaleNameModal').addEventListener('hidden.bs.modal', () =>
+                newCard.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), { once: true });
+        }
         initSortable();
         renderCompatibilityNotice();
         scaleNameModal.hide();
