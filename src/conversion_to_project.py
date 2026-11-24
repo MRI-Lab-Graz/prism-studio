@@ -144,6 +144,13 @@ def _merge_participants_into_staged(project_root: Path, staged_root: Path, log) 
     )
 
 
+def _keep_project_dataset_description(project_root: Path, staged_root: Path) -> None:
+    """The project's dataset_description.json is never replaced by a conversion: the staged one holds placeholders
+    (the staging folder has no project.json), so it is dropped when the project already has the file."""
+    if (project_root / "dataset_description.json").is_file():
+        (staged_root / "dataset_description.json").unlink(missing_ok=True)
+
+
 def _stage_bidsignore(project_root: Path, staged_root: Path) -> None:
     """Stage the project's .bidsignore with the PRISM-only folders listed, so BIDS validators skip them and the
     DataLad-aware copy saves it with the conversion."""
@@ -176,6 +183,7 @@ def save_conversion_to_project(
 
     log(f"Saving output to project: {project_root.name} (into project root)", "info")
     _merge_participants_into_staged(project_root, staged_root, log)
+    _keep_project_dataset_description(project_root, staged_root)
     _stage_bidsignore(project_root, staged_root)
     pairs: list[tuple[Path, Path]] = []
     for item in sorted(staged_root.rglob("*")):
@@ -290,6 +298,7 @@ def save_physio_batch_to_project(
     into_prism = target_root == project_root
     if into_prism:  # the staged participants table is a bare ID list: merge it, never copy it over the project's
         _merge_participants_into_staged(project_root, staged_root, log_fn or _quiet)
+        _keep_project_dataset_description(project_root, staged_root)
         _stage_bidsignore(project_root, staged_root)
     for item in sorted(staged_root.rglob("*")):
         if not item.is_file():
