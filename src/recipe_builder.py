@@ -629,6 +629,30 @@ def list_builder_templates(dataset_path, *, modality: str = "survey", include_gl
     ]
 
 
+_MODALITY_LABELS = {"survey": "Survey", "biometrics": "Biometrics"}
+_DATA_FOLDERS = {"survey": ("survey", "beh"), "biometrics": ("biometrics",)}
+
+
+def project_has_modality_data(root, modality: str) -> bool:
+    """True when the project holds ``.tsv`` data of the modality under ``sub-*/[ses-*/]``."""
+    root = Path(root)
+    return any(
+        any(root.glob(f"sub-*/{ses}{folder}/*.tsv"))
+        for folder in _DATA_FOLDERS.get(modality, ())
+        for ses in ("ses-*/", "")
+    )
+
+
+def list_builder_modalities(dataset_path) -> list[dict]:
+    """The modalities the Recipe Builder offers: those with data or a template in the project's own library."""
+    return [
+        {"value": m, "label": _MODALITY_LABELS[m]}
+        for m in _SUPPORTED_MODALITIES
+        if project_has_modality_data(dataset_path, m)
+        or list_builder_templates(dataset_path, modality=m, include_global=False)
+    ]
+
+
 def draft_from_template(dataset_path, task: str, *, modality: str = "survey", include_global: bool = False, global_root=None) -> dict:
     """What a new recipe for ``task`` starts from: its items, descriptions, scale ranges, reversed items, study metadata."""
     templates = find_templates(str(dataset_path), modality=modality, include_global=include_global, global_root=global_root)

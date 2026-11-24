@@ -1653,6 +1653,10 @@ def build_prism_tools_parsers(
         if _name != "load":
             _p.add_argument("--include-global", action="store_true", help="Also offer the global template library")
 
+    recipes_subparsers.add_parser(
+        "modalities", help="List the modalities the Recipe Builder offers for the project (JSON)"
+    ).add_argument("--project", required=True, help="Project root folder")
+
     parser_biometrics_excel = biometrics_subparsers.add_parser(
         "import-excel", help="Import biometrics templates/library from Excel"
     )

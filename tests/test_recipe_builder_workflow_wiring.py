@@ -17,12 +17,12 @@ class TestRecipeBuilderWorkflowWiring(unittest.TestCase):
         self.assertIn("{{ page_header(", content)
         self.assertIn("{% call help_panel(", content)
 
-    def test_recipe_builder_template_has_modality_picker_with_survey_default(self):
+    def test_recipe_builder_template_has_modality_picker_filled_from_the_project(self):
         content = RECIPE_BUILDER_TEMPLATE.read_text(encoding="utf-8")
 
         self.assertIn('id="rbModalityPicker"', content)
-        self.assertIn('<option value="survey" selected>survey</option>', content)
-        self.assertIn('<option value="biometrics">biometrics</option>', content)
+        self.assertNotIn('<option value="survey" selected>', content)
+        self.assertNotIn('<option value="biometrics">', content)
 
     def test_recipe_builder_template_links_to_projects_page_when_no_project_loaded(
         self,

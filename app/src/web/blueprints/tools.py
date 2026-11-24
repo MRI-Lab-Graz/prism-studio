@@ -75,6 +75,7 @@ from .tools_recipes_surveys_handlers import (
     handle_download_recipes_output_file,
 )
 from .tools_recipe_builder_handlers import (
+    handle_api_recipe_builder_modalities,
     handle_api_recipe_builder_surveys,
     handle_api_recipe_builder_items,
     handle_api_recipe_builder_load,
@@ -1623,6 +1624,12 @@ def recipe_builder():
     """Interactive recipe builder page."""
     project = get_current_project()
     return handle_recipe_builder(project_path=(project.get("path") or "").strip())
+
+
+@tools_bp.route("/api/recipe-builder/modalities", methods=["GET"])
+def api_recipe_builder_modalities():
+    """The modalities with data or templates in the project."""
+    return handle_api_recipe_builder_modalities(dataset_path=(request.args.get("dataset_path") or "").strip())
 
 
 @tools_bp.route("/api/recipe-builder/surveys", methods=["GET"])

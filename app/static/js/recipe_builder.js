@@ -466,6 +466,32 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    // ── Modality picker: the project's modalities (data or templates), from the backend ──
+    async function loadModalities() {
+        const path = resolveProjectPath();
+        const keep = modalityPicker.value;
+        let modalities = [];
+        if (path) {
+            try {
+                const response = await fetchWithApiFallback('/api/recipe-builder/modalities?dataset_path=' + encodeURIComponent(path));
+                modalities = (await parseApiJsonResponse(response, 'Failed to load modalities.')).modalities || [];
+            } catch (_error) { /* an empty list; the template list says what is missing */ }
+        }
+        modalityPicker.innerHTML = '';
+        modalities.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m.value;
+            opt.textContent = m.value;
+            modalityPicker.appendChild(opt);
+        });
+        if (modalities.some(m => m.value === keep)) modalityPicker.value = keep;
+    }
+
+    async function reloadAll() {
+        await loadModalities();
+        await loadSurveyList();
+    }
+
     // ── Survey picker ─────────────────────────────────────────────────────
     async function loadSurveyList() {
         const path = resolveProjectPath();
@@ -473,6 +499,10 @@ document.addEventListener('DOMContentLoaded', function () {
         const modalityLabel = modalityTemplateLabel();
         if (!path) {
             surveyPicker.innerHTML = '<option value="" disabled selected>— no project loaded —</option>';
+            return;
+        }
+        if (!modalityPicker.value) {
+            surveyPicker.innerHTML = '<option value="" disabled selected>— no survey or biometrics data or templates in this project —</option>';
             return;
         }
         const includeGlobal = includeGlobalToggle && includeGlobalToggle.checked ? '&include_global=1' : '';
@@ -553,7 +583,7 @@ document.addEventListener('DOMContentLoaded', function () {
         loadRequestToken += 1;
         projectPath = getCurrentProjectPath();
         resetBuilderState();
-        loadSurveyList();
+        reloadAll();
     });
 
     async function loadItemsAndRecipe(task) {
@@ -1533,6 +1563,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
             await parseApiJsonResponse(response, 'Failed to import recipe.');
 
+            await loadModalities();
             modalityPicker.value = modality;
             resetBuilderState();
             await loadSurveyList();
@@ -1552,7 +1583,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // ── Init ──────────────────────────────────────────────────────────────
     showBuilderArea(false);
     updateEmptyStateCopy();
-    loadSurveyList();
+    reloadAll();
 
     modalityPicker && modalityPicker.addEventListener('change', () => {
         surveyListRequestToken += 1;

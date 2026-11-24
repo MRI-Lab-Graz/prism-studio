@@ -350,7 +350,7 @@ def dispatch_prism_tools(
             handlers["recipes_validate_file"](args)
         elif args.kind == "save":
             handlers["recipes_save"](args)
-        elif args.kind in {"templates", "draft", "load"}:
+        elif args.kind in {"templates", "draft", "load", "modalities"}:
             handlers[f"recipes_{args.kind}"](args)
         else:
             parsers["recipes"].print_help()

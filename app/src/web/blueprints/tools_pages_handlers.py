@@ -5,6 +5,7 @@ from flask import jsonify, render_template
 
 from src.biosample_template import specimen_types
 from src.constants import SUPPORTED_MODALITIES
+from src.recipe_builder import project_has_modality_data
 
 from .tools_helpers import _default_library_root_for_templates, _global_recipes_root
 
@@ -14,22 +15,8 @@ _RECIPE_FILENAME_GLOB = "recipe-*.json"
 
 def _detect_available_recipe_modalities(project_root: Path) -> tuple[list[dict], str]:
     """Detect recipe modalities available for the current project."""
-    roots = [project_root]
-
     def _has_data(modality: str) -> bool:
-        for root in roots:
-            if modality == "survey":
-                for folder in ("survey", "beh"):
-                    if any(root.glob(f"sub-*/ses-*/{folder}/*.tsv")):
-                        return True
-                    if any(root.glob(f"sub-*/{folder}/*.tsv")):
-                        return True
-            elif modality == "biometrics":
-                if any(root.glob("sub-*/ses-*/biometrics/*.tsv")):
-                    return True
-                if any(root.glob("sub-*/biometrics/*.tsv")):
-                    return True
-        return False
+        return project_has_modality_data(project_root, modality)
 
     def _has_recipes(modality: str) -> bool:
         # Project-local paths first (YODA then legacy)
