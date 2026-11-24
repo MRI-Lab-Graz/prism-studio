@@ -47,7 +47,7 @@ def _check(expr: str, items: list[str], values: dict[str, str]) -> dict:
         token = _resolve_formula_placeholder(name, values, set(), None, None)
         if token is None:
             typed = str(values.get(name) or "").strip()
-            if not typed:
+            if not typed or typed.lower() == "n/a":
                 return _fail(f"Type an example value for {name} in the box below the formula to test it.")
             return _fail(f"The example value for {name} ({typed}) is not a number.")
         if token.startswith('"'):  # typed text the engine keeps as a string

@@ -162,7 +162,7 @@
 
       {% call help_panel('How formulas and best-of work', 'info', false, 'fas fa-circle-question', 'py-2', 'mb-3') %}
       <div class="small">
-        <p class="mb-2"><strong>A formula</strong> calculates a score from items. Write each item in curly brackets, e.g. <code>{weight_kg}/{height_m}**2</code>. Use <code>+ - * / **</code> (** is "to the power of"), brackets, and the functions <code>min max sum abs round sqrt exp log ifelse</code>.</p>
+        <p class="mb-2"><strong>A formula</strong> calculates a score from items. Write each item in curly brackets, e.g. <code>{weight_kg}/{height_m}**2</code>. Use <code>+ - * / % **</code> (% is the remainder, ** is "to the power of"), brackets, comparisons <code>&lt; &lt;= &gt; &gt;= == !=</code> with <code>and</code> / <code>or</code> (for <code>ifelse</code> conditions), and the functions <code>min max sum abs round sqrt exp log ifelse</code>.</p>
         <p class="mb-2"><strong>Empty rule:</strong> if any item the score lists is empty, the score is empty.</p>
         <p class="mb-2"><strong>Best of several items:</strong> add one entry per group of trials (a name, max or min, and the trial items). The entry's name then appears in a formula score's "Add an item..." pull-down like an item. Entries apply to the whole recipe.</p>
         <p class="mb-2"><strong>Testing:</strong> type example numbers in the boxes under the formula (for an entry, its best value). The check line shows the result or why it would be empty.</p>

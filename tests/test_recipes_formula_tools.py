@@ -97,3 +97,10 @@ def test_check_typed_non_number_is_named():
     r = check_formula("{a}+{b}", ["a", "b"], {"a": "1", "b": "abc"})
     assert not r["ok"] and r["result"] is None
     assert r["message"] == "The example value for b (abc) is not a number."
+
+
+@pytest.mark.parametrize("na", ["n/a", "N/A", " n/A "])
+def test_check_typed_na_counts_as_missing(na):
+    r = check_formula("{a}+{b}", ["a", "b"], {"a": "1", "b": na})
+    assert not r["ok"] and r["result"] is None
+    assert r["message"] == "Type an example value for b in the box below the formula to test it."
