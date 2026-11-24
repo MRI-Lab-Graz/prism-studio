@@ -43,13 +43,6 @@ document.addEventListener('DOMContentLoaded', function () {
         })
         .catch(() => {});
 
-    // Inversion box fold: initial state from the inverted count (see
-    // modules/recipe-builder/inversion-fold.js). Page state only.
-    let initialInversionExpanded = (n) => n > 0;
-    import(new URL('./modules/recipe-builder/inversion-fold.js', recipeBuilderScriptUrl).href)
-        .then(mod => { initialInversionExpanded = mod.initialInversionExpanded; })
-        .catch(() => {});
-
     // Plain-language missing-data rules (see modules/recipe-builder/missing-data.js).
     // Awaited before a recipe is imported, so a saved Missing/MinValid can never
     // be read with the wrong (default) rules and then dropped on save.
@@ -296,7 +289,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const metaNote = document.getElementById('rbMetaFromTemplate');
         if (metaNote) metaNote.classList.add('d-none');
         resetVariationSelect();
-        setInversionExpanded(initialInversionExpanded(0));
+        setInversionExpanded(false);
         renderInversionBox();
         showBuilderArea(false);
         updateEmptyStateCopy();
@@ -722,7 +715,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Now render with fully populated state
             resetVariationSelect();
-            setInversionExpanded(initialInversionExpanded(state.inverted.size));
+            setInversionExpanded(state.inverted.size > 0);
             renderInversionBox();
             renderItemList();
             renderScaleCanvas();
@@ -855,6 +848,7 @@ document.addEventListener('DOMContentLoaded', function () {
         state.selectedItems.clear();
         _applyScaleForVariation(key);
         renderInversionBox();
+        setInversionExpanded(state.inverted.size > 0);
         renderItemList();
         renderScaleCanvas();
     }
@@ -1715,7 +1709,11 @@ document.addEventListener('DOMContentLoaded', function () {
         state.expandedScaleIds.add(scale.id);
         renderScaleCard(scale);
         const newCard = scaleCanvas.querySelector('[data-scale-id="' + scale.id + '"]');
-        if (newCard) newCard.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        if (newCard) {
+            // Scroll once the modal is gone (an open modal locks the page scroll).
+            document.getElementById('rbScaleNameModal').addEventListener('hidden.bs.modal', () =>
+                newCard.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), { once: true });
+        }
         initSortable();
         renderCompatibilityNotice();
         scaleNameModal.hide();

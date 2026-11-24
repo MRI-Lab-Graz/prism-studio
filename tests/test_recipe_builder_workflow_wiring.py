@@ -244,7 +244,7 @@ class TestRecipeBuilderWorkflowWiring(unittest.TestCase):
         )
         self.assertIn('id="rbInversionBody"', template)
         self.assertIn("rbInversionToggle", script)
-        self.assertIn("initialInversionExpanded", script)
+        self.assertIn("setInversionExpanded(state.inverted.size > 0)", script)
         self.assertIn("Hide inversion", script)
         self.assertIn("Show inversion", script)
 
