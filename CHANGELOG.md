@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Recipe Builder: help and worked examples for formulas and best-of entries; clearer example-value boxes and check messages.**
 - **Recipe Builder: formula scores and Best of N.** A score can use Method `formula` (item pull-down, check with example values, rendered formula) and the new Best of N section writes `Transforms.Derived` `max`/`min` entries, so a recipe like the Y Balance Test needs no JSON editing. New commands `prism_tools recipes formula-check` and `recipes formula-latex` run the same check and rendering.
 
+### Changed
+- Recipe Builder: the Inversion box can be folded (folded by default when no item is inverted).
+
 ### Fixed
 - A conversion no longer replaces the project's `dataset_description.json` with placeholder values (survey, biometrics, physio saves).
 - `max` or `min` as a score `Method` was silently left empty (`n/a`); the validator now rejects it and points to `Transforms.Derived`.

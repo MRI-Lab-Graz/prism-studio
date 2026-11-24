@@ -234,5 +234,19 @@ class TestRecipeBuilderWorkflowWiring(unittest.TestCase):
         self.assertIn("katex.render(", script)
 
 
+    def test_inversion_box_is_foldable_with_an_accessible_toggle(self):
+        template = RECIPE_BUILDER_TEMPLATE.read_text(encoding="utf-8")
+        script = RECIPE_BUILDER_SCRIPT.read_text(encoding="utf-8")
+
+        self.assertRegex(
+            template,
+            r'<button[^>]*id="rbInversionToggle"[^>]*aria-expanded="false"',
+        )
+        self.assertIn('id="rbInversionBody"', template)
+        self.assertIn("rbInversionToggle", script)
+        self.assertIn("initialInversionExpanded", script)
+        self.assertIn("Hide inversion", script)
+        self.assertIn("Show inversion", script)
+
 if __name__ == "__main__":
     unittest.main()

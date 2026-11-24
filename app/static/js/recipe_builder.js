@@ -43,6 +43,13 @@ document.addEventListener('DOMContentLoaded', function () {
         })
         .catch(() => {});
 
+    // Inversion box fold: initial state from the inverted count (see
+    // modules/recipe-builder/inversion-fold.js). Page state only.
+    let initialInversionExpanded = (n) => n > 0;
+    import(new URL('./modules/recipe-builder/inversion-fold.js', recipeBuilderScriptUrl).href)
+        .then(mod => { initialInversionExpanded = mod.initialInversionExpanded; })
+        .catch(() => {});
+
     // Plain-language missing-data rules (see modules/recipe-builder/missing-data.js).
     // Awaited before a recipe is imported, so a saved Missing/MinValid can never
     // be read with the wrong (default) rules and then dropped on save.
@@ -122,6 +129,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const addVariationBtn    = document.getElementById('rbAddVariationBtn');
     const removeVariationBtn = document.getElementById('rbRemoveVariationBtn');
     const inversionBox        = document.getElementById('rbInversionBox');
+    const inversionToggle    = document.getElementById('rbInversionToggle');
+    const inversionBody      = document.getElementById('rbInversionBody');
     const infoLangWrap       = document.getElementById('rbInfoLangWrap');
     const infoLangSelect     = document.getElementById('rbInfoLangSelect');
     const invertScaleDisplay = document.getElementById('rbScaleRangeDisplay');
@@ -287,6 +296,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const metaNote = document.getElementById('rbMetaFromTemplate');
         if (metaNote) metaNote.classList.add('d-none');
         resetVariationSelect();
+        setInversionExpanded(initialInversionExpanded(0));
         renderInversionBox();
         showBuilderArea(false);
         updateEmptyStateCopy();
@@ -712,6 +722,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Now render with fully populated state
             resetVariationSelect();
+            setInversionExpanded(initialInversionExpanded(state.inverted.size));
             renderInversionBox();
             renderItemList();
             renderScaleCanvas();
@@ -886,6 +897,16 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // ── Inversion box ─────────────────────────────────────────────────────
+    function setInversionExpanded(expanded) {
+        inversionBody.classList.toggle('d-none', !expanded);
+        inversionBox.classList.toggle('rb-scale-card--expanded', expanded);
+        inversionToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        inversionToggle.title = expanded ? 'Hide inversion' : 'Show inversion';
+    }
+    inversionToggle.addEventListener('click', () => {
+        setInversionExpanded(inversionToggle.getAttribute('aria-expanded') !== 'true');
+    });
+
     function renderInversionBox() {
         const filter = (invertSearch ? invertSearch.value : '').toLowerCase();
         const items  = state.allItems.filter(it => !filter || it.toLowerCase().includes(filter));
