@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 
@@ -51,5 +52,14 @@ def test_beginner_help_registry_keys_point_at_real_fields() -> None:
     templates = "".join(
         p.read_text(encoding="utf-8") for p in (REPO_ROOT / "app" / "templates").rglob("*.html")
     )
-    dead = [k for k in keys if not re.search(rf"""(id="{k}"|data-help-key="{k}"|'{k}')""", templates)]
+    editor = (REPO_ROOT / "app" / "static" / "js" / "template-editor.js").read_text(encoding="utf-8")
+    assert "input.id = `field_${sectionKey}_${name}`;" in editor
+    study = json.loads(
+        (REPO_ROOT / "app" / "schemas" / "stable" / "survey.schema.json").read_text(encoding="utf-8")
+    )["properties"]["Study"]["properties"]
+    built = {f"field_Study_{name}" for name in study}  # template editor fields, built in JavaScript
+    dead = [
+        k for k in keys
+        if k not in built and not re.search(rf"""(id="{k}"|data-help-key="{k}"|'{k}')""", templates)
+    ]
     assert not dead, f"Beginner hints for fields that no longer exist: {dead}"

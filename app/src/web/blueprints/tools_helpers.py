@@ -37,21 +37,9 @@ def _global_survey_library_root() -> Path | None:
 
 def _global_recipes_root() -> Path | None:
     """Get the global recipes path from configuration."""
-    base_dir = Path(current_app.root_path)
-    from src.config import get_effective_library_paths
+    from src.library_roots import global_recipes_root
 
-    lib_paths = get_effective_library_paths(app_root=str(base_dir))
-
-    if lib_paths["global_recipe_path"]:
-        candidate = _safe_expand_path(lib_paths["global_recipe_path"])
-        if not candidate.is_absolute():
-            try:
-                candidate = (base_dir / candidate).resolve()
-            except (OSError, ValueError):
-                candidate = base_dir / candidate
-        if candidate.exists() and candidate.is_dir():
-            return candidate
-    return None
+    return global_recipes_root(Path(current_app.root_path))
 
 
 def _resolve_library_root(library_path: str | None) -> Path:

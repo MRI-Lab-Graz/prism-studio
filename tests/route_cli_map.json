@@ -113,6 +113,8 @@
  "tools.api_file_management_wide_to_long": "cli: wide-to-long",
  "tools.api_file_management_wide_to_long_preview": "cli: wide-to-long",
  "tools.api_fs_mkdir": "exempt: file picker helper",
+ "tools.api_recipe_builder_formula_check": "cli: recipes formula-check",
+ "tools.api_recipe_builder_formula_latex": "cli: recipes formula-latex",
  "tools.api_recipe_builder_save": "cli: recipes save",
  "tools.api_recipes_surveys": "cli: recipes surveys",
  "tools.api_survey_customizer_export": "cli: survey export-lss-customized",

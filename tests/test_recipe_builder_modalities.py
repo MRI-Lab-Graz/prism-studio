@@ -79,3 +79,26 @@ def test_a_new_supported_modality_gets_a_label_and_data_folder(tmp_path, monkeyp
 def test_the_run_page_detector_uses_the_same_labels():
     handlers = importlib.import_module("src.web.blueprints.tools_pages_handlers")
     assert "modality_labels" not in Path(handlers.__file__).read_text(encoding="utf-8")
+
+
+def test_cli_and_studio_offer_the_same_modalities_to_run(tmp_path, capsys):
+    """The Recipes page: modalities with data and recipes. THE RULE: `recipes modalities --for-run` decides."""
+    import src.cli.commands.recipes as commands
+    from src.cli.parser import build_prism_tools_parsers
+
+    _tsv(tmp_path, "biometrics")
+    (tmp_path / "code" / "recipes" / "biometrics").mkdir(parents=True)
+    (tmp_path / "code" / "recipes" / "biometrics" / "recipe-x.json").write_text("{}", encoding="utf-8")
+    parser, _ = build_prism_tools_parsers(Path(__file__).resolve().parents[1])
+    args = parser.parse_args(["recipes", "modalities", "--project", str(tmp_path), "--for-run"])
+    commands.cmd_recipes_modalities(args)
+    cli = json.loads(capsys.readouterr().out)
+
+    handlers = importlib.import_module("src.web.blueprints.tools_pages_handlers")
+    app = Flask(__name__, root_path=str(Path(__file__).resolve().parents[1] / "app"))
+    with app.app_context():
+        response, status = handlers.handle_api_recipes_modalities(str(tmp_path))
+    assert status == 200
+    assert cli == response.get_json()
+    assert cli["default"] in [m["value"] for m in cli["modalities"]]
+    assert "biometrics" in [m["value"] for m in cli["modalities"]]

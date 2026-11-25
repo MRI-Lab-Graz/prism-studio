@@ -16,6 +16,23 @@ def _safe_expand_path(path_str: str) -> Path:
         return Path(path_str)
 
 
+def global_recipes_root(base_dir: Path) -> Path | None:
+    """The configured global recipes folder, if it exists."""
+
+    from src.config import get_effective_library_paths
+
+    configured = get_effective_library_paths(app_root=str(base_dir))["global_recipe_path"]
+    if not configured:
+        return None
+    candidate = _safe_expand_path(configured)
+    if not candidate.is_absolute():
+        try:
+            candidate = (base_dir / candidate).resolve()
+        except (OSError, ValueError):
+            candidate = base_dir / candidate
+    return candidate if candidate.exists() and candidate.is_dir() else None
+
+
 def global_survey_library_root(base_dir: Path) -> Path | None:
     """The global survey library: the configured one, else the official one, else the app's own folders."""
 

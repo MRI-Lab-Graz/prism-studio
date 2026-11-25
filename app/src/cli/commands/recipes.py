@@ -402,9 +402,13 @@ def cmd_recipes_templates(args) -> None:
 
 
 def cmd_recipes_modalities(args) -> None:
-    """The modalities the Recipe Builder offers for the project (JSON)."""
-    from src.recipe_builder import list_builder_modalities
+    """The modalities the Recipe Builder offers, or with --for-run the runnable ones (JSON)."""
+    from src.library_roots import global_recipes_root
+    from src.recipe_builder import list_builder_modalities, list_run_modalities
 
+    if getattr(args, "for_run", False):
+        _print_json(list_run_modalities(Path(args.project).resolve(), global_recipes_root(_APP_ROOT)))
+        return
     _print_json({"modalities": list_builder_modalities(Path(args.project).resolve())})
 
 

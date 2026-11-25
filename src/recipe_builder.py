@@ -648,6 +648,27 @@ def project_has_modality_data(root, modality: str) -> bool:
     )
 
 
+def list_run_modalities(dataset_path, global_root=None) -> dict:
+    """What the Recipes page offers to run: modalities with data and recipes, and the default one.
+
+    Recipes count from the project (YODA or legacy folder) or the global recipes folder. Nothing
+    runnable (or no project folder) offers survey.
+    """
+
+    def has_recipes(modality: str) -> bool:
+        root = Path(dataset_path)
+        folders = [root / "code" / "recipes" / modality, root / "recipe" / modality]
+        if global_root:  # may be the top-level recipes folder or already modality-specific
+            folders += [Path(global_root) / modality, Path(global_root)]
+        return any(f.is_dir() and any(f.glob("recipe-*.json")) for f in folders)
+
+    found = []
+    if dataset_path and Path(dataset_path).is_dir():
+        found = [m for m in _SUPPORTED_MODALITIES if project_has_modality_data(dataset_path, m) and has_recipes(m)]
+    found = found or ["survey"]
+    return {"modalities": [{"value": m, "label": modality_label(m)} for m in found], "default": found[0]}
+
+
 def list_builder_modalities(dataset_path) -> list[dict]:
     """The modalities the Recipe Builder offers: those with data or a template in the project's own library."""
     return [

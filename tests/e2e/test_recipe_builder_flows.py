@@ -34,7 +34,6 @@ def add_scale(page, name, items=3, method=None):
     page.fill("#rbScaleNameInput", name)
     page.click("#rbScaleNameConfirmBtn")
     card = page.locator("#rbScaleCanvas .rb-scale-card").last
-    card.locator(".rb-scale-chevron").click()  # a new scale starts collapsed
     for index in range(items):
         page.locator("#rbItemList .rb-item-cb").nth(index).check()
     if items:
@@ -61,6 +60,7 @@ def test_template_details_are_prefilled(app_page, studio_url, project):
 
 def test_preview_shows_the_scale_the_user_built_and_the_reversed_item(app_page, studio_url, project):
     open_builder(app_page, studio_url, project)
+    app_page.click("#rbInversionToggle")  # folded while nothing is inverted
     app_page.locator("#rbInvertItemList label", has_text="DEMO02").locator("input").check()
     add_scale(app_page, "Total", method="sum")
 
@@ -139,6 +139,7 @@ def test_saving_keeps_everything_in_the_recipe_that_the_builder_does_not_edit(ap
 def test_a_recipe_built_here_scores_the_data_with_the_reversed_item(app_page, studio_url, scored_project):
     """End to end: builder -> saved project recipe -> Recipes page -> numbers."""
     open_builder(app_page, studio_url, scored_project)
+    app_page.click("#rbInversionToggle")  # folded while nothing is inverted
     app_page.locator("#rbInvertItemList label", has_text="DEMO02").locator("input").check()
     add_scale(app_page, "Total", method="sum")
     app_page.click("#rbSaveBtn")
@@ -173,6 +174,7 @@ def switch_on_irv(page):
 
 def test_irv_is_the_spread_of_the_raw_answers_and_ignores_reverse_coding(app_page, studio_url, scored_project):
     open_builder(app_page, studio_url, scored_project)
+    app_page.click("#rbInversionToggle")  # folded while nothing is inverted
     app_page.locator("#rbInvertItemList label", has_text="DEMO02").locator("input").check()
     add_scale(app_page, "Total", method="sum")
     switch_on_irv(app_page)

@@ -4,49 +4,9 @@ from pathlib import Path
 from flask import jsonify, render_template
 
 from src.biosample_template import specimen_types
-from src.constants import SUPPORTED_MODALITIES
-from src.recipe_builder import modality_label, project_has_modality_data
+from src.recipe_builder import list_run_modalities
 
 from .tools_helpers import _default_library_root_for_templates, _global_recipes_root
-
-
-_RECIPE_FILENAME_GLOB = "recipe-*.json"
-
-
-def _detect_available_recipe_modalities(project_root: Path) -> tuple[list[dict], str]:
-    """Detect recipe modalities available for the current project."""
-    def _has_data(modality: str) -> bool:
-        return project_has_modality_data(project_root, modality)
-
-    def _has_recipes(modality: str) -> bool:
-        # Project-local paths first (YODA then legacy)
-        candidates: list[Path] = [
-            project_root / "code" / "recipes" / modality,
-            project_root / "recipe" / modality,
-        ]
-        # Global official fallback — mirrors _load_and_validate_recipes priority chain
-        global_root = _global_recipes_root()
-        if global_root:
-            # global_root may be the top-level recipes dir or already modality-specific
-            for suffix in (modality, ""):
-                candidate = global_root / suffix if suffix else global_root
-                if candidate not in candidates:
-                    candidates.append(candidate)
-        for folder in candidates:
-            if folder.is_dir() and any(folder.glob(_RECIPE_FILENAME_GLOB)):
-                return True
-        return False
-
-    available: list[dict] = []
-    for modality in SUPPORTED_MODALITIES:
-        if _has_data(modality) and _has_recipes(modality):
-            available.append({"value": modality, "label": modality_label(modality)})
-
-    if not available:
-        available = [{"value": "survey", "label": modality_label("survey")}]
-
-    default_modality = available[0]["value"]
-    return available, default_modality
 
 
 def handle_converter(project_path: str | None):
@@ -97,18 +57,11 @@ def handle_converter(project_path: str | None):
 
 
 def handle_recipes(project_path: str):
-    available_modalities = [{"value": "survey", "label": modality_label("survey")}]
-    default_modality = "survey"
-
-    if project_path and Path(project_path).is_dir():
-        available_modalities, default_modality = _detect_available_recipe_modalities(
-            Path(project_path)
-        )
-
+    offered = list_run_modalities(project_path, _global_recipes_root())
     return render_template(
         "recipes.html",
-        available_modalities=available_modalities,
-        default_modality=default_modality,
+        available_modalities=offered["modalities"],
+        default_modality=offered["default"],
     )
 
 
@@ -133,18 +86,4 @@ def handle_api_recipes_sessions(dataset_path: str):
 
 def handle_api_recipes_modalities(dataset_path: str):
     """Return available recipe modalities for a given project path (for post-run refresh)."""
-    if not dataset_path or not os.path.isdir(dataset_path):
-        return (
-            jsonify(
-                {
-                    "modalities": [{"value": "survey", "label": modality_label("survey")}],
-                    "default": "survey",
-                }
-            ),
-            200,
-        )
-
-    available, default_modality = _detect_available_recipe_modalities(
-        Path(dataset_path)
-    )
-    return jsonify({"modalities": available, "default": default_modality}), 200
+    return jsonify(list_run_modalities(dataset_path, _global_recipes_root())), 200

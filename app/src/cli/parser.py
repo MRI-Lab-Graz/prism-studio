@@ -1659,9 +1659,14 @@ def build_prism_tools_parsers(
     _p.add_argument("--values", default="{}", help='Sample values as a JSON object, e.g. \'{"a": "65"}\'')
     _p = recipes_subparsers.add_parser("formula-latex", help="Show a score formula as LaTeX (JSON)")
     _p.add_argument("--formula", required=True, help="Formula, e.g. '({a} + {b}) / 2'")
-    recipes_subparsers.add_parser(
+    _p = recipes_subparsers.add_parser(
         "modalities", help="List the modalities the Recipe Builder offers for the project (JSON)"
-    ).add_argument("--project", required=True, help="Project root folder")
+    )
+    _p.add_argument("--project", required=True, help="Project root folder")
+    _p.add_argument(
+        "--for-run", action="store_true",
+        help="Instead: the modalities with data and recipes (the Recipes page), with the default",
+    )
 
     parser_biometrics_excel = biometrics_subparsers.add_parser(
         "import-excel", help="Import biometrics templates/library from Excel"
