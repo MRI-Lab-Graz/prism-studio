@@ -513,9 +513,11 @@ def _generate_neurobagel_schema(
         "sub": {"term": "nb:ParticipantID", "label": "Subject ID", "type": "string"},
     }
 
+    # exact names and aliases only: by substring, "native_language" was "age"
     normalized_vocab: dict[str, dict[str, Any]] = {
-        _normalize_column_name(key): cast(dict[str, Any], vocab)
+        _normalize_column_name(alias): cast(dict[str, Any], vocab)
         for key, vocab in neurobagel_vocab.items()
+        for alias in (key, *_DEFAULT_PARTICIPANT_STANDARD_ALIASES.get(key, ()))
     }
 
     selected_columns = _filter_participant_relevant_columns(
@@ -536,11 +538,7 @@ def _generate_neurobagel_schema(
         col_data = df[col].dropna()
         field: dict[str, Any] = {"Description": "", "Annotations": {}}
 
-        neurobagel_match: dict[str, Any] | None = None
-        for key_normalized, vocab in normalized_vocab.items():
-            if key_normalized in col_normalized or col_normalized in key_normalized:
-                neurobagel_match = vocab
-                break
+        neurobagel_match = normalized_vocab.get(col_normalized)
 
         if col == id_column:
             data_type = "string"
