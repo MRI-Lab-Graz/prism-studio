@@ -51,9 +51,19 @@ Built as described below, plus one general rule: in a modality without a context
 ### 0b. Physio, eyetracking, events and the other modalities - DECIDED (2026-11-25): no IDs
 Nothing to build. Analysis, should this be reopened: `2026-11-25-ids-physio-events-design.md`.
 
-### 0c. Sociodemographics - open, needs a design
-`official/participants.json` (`age`, `sex`, `handedness`, `education_level`, `height`, `weight`, `bmi`, ...) has no
-term IDs. IDs are unique across modalities, so `bmi` must reuse `prism:bmi`, not get a second one.
+### 0c. Sociodemographics - agreed direction (2026-11-25), design next
+**Agreed:** every column of `official/participants.json` gets a shared term (`prism:age`, `prism:sex`, `prism:gender`,
+...); `bmi` reuses `prism:bmi` (IDs are unique across modalities). Vocabularies are links, Neurobagel mainly, added only
+where someone has checked them. An external term is never used as the ID.
+
+**The design has to settle:**
+1. Where links live: `mappings/` as the one source; the `Annotations` blocks in `participants.json` (which hold links
+   today) generated from it or removed. Check what `src/neurobagel.py` reads before deciding.
+2. Neurobagel as an entry in `mappings/vocabularies.json`.
+3. Linking answer values (`sex` `M` -> a SNOMED code): a level in a mapping allows only `Measures` and `ValueRules`, not
+   `SameAs`, so this needs a small general extension.
+4. Where `terms` is declared: participants columns are not a modality in `entities.schema.json`.
+5. `participants.json` is Studio's file: whether the terms and the column list move to prism-specification.
 
 ### 1. Mappings in the `Specification` - DONE (branch, `2f9d1b6f`)
 `Specification.mappings` / `mappings_for(id)`, official + the project's own for that run only, official wins.
