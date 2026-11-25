@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
-- **Important: `participants.json` could say two opposite things about one code** (for example `Levels` "1": "Male" but `Annotations.Levels` "1": "Female"). Saving annotations updated only `Annotations.Levels`, and saving survey fields replaced only `Levels`. Both now stay together. The validator reports existing contradictions as an error: **re-validate your projects**, check each reported column against its codebook, and check exports made from it (e.g. Neurobagel).
+- **Important: `participants.json` could say two opposite things about one code** (for example `Levels` "1": "Male" but `Annotations.Levels` "1": "Female"). Saving annotations updated only `Annotations.Levels`, and saving survey fields replaced only `Levels`. Both now stay together. The validator reports existing contradictions as an error: **re-validate your projects**, check each reported column against its codebook, and check exports made from it (e.g. Neurobagel). Correct a reported column in `participants.json` **before** saving it again in the annotation panel: the panel keeps the stored term URL next to the `Levels` label, even when the two disagree.
 
 ### Added
 - **Recipe Builder: help and worked examples for formulas and best-of entries; clearer example-value boxes and check messages.**

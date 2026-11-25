@@ -22,7 +22,7 @@ import pandas as pd
 
 from src.eligibility import mark_screening_only
 from src.participants_converter import ParticipantsConverter, load_participant_source
-from src.participants_levels import add_missing_levels
+from src.participants_levels import add_missing_levels, swapped_codes
 from src.participants_sessions import (
     sanitize_session_token as _sanitize_session_token,
     session_label,
@@ -211,15 +211,47 @@ def merge_neurobagel_schema_for_columns(
                         base_schema[col].pop(key, None)
                     continue
                 current = base_schema[col].get(key)
-                if key == "Levels" and isinstance(current, dict):
+                if key == "Levels" and isinstance(current, dict) and value:
+                    if not isinstance(value, dict):
+                        continue
                     # Must follow Annotations.Levels above, which is replaced.
                     # A bare code (no label yet) never replaces a real label.
+                    changed = []
                     for code, label in value.items():
-                        if label != code or code not in current:
+                        if code not in current:
                             current[code] = label
+                        elif label != code and current[code] != label:
+                            if current[code] != code:
+                                changed.append(code)
+                            current[code] = label
+                    if changed and log_callback:
+                        log_callback(
+                            "WARNING",
+                            f"Changed value labels of column '{col}' for codes "
+                            f"{', '.join(changed)}; check them against the codebook",
+                        )
                     continue
                 if key not in base_schema[col]:
                     base_schema[col][key] = value
+
+        # Old term annotations that the new Levels contradict must not survive.
+        field = base_schema[col]
+        sent = schema_def.get("Annotations") if isinstance(schema_def, dict) else None
+        if (
+            isinstance(schema_def, dict)
+            and schema_def.get("Levels")
+            and isinstance(field.get("Levels"), dict)
+            and not (isinstance(sent, dict) and sent.get("Levels"))
+        ):
+            stale = swapped_codes(field["Levels"], field.get("Annotations"))
+            for code in stale:
+                del field["Annotations"]["Levels"][code]
+            if stale and log_callback:
+                log_callback(
+                    "WARNING",
+                    f"Removed outdated term annotations of column '{col}' "
+                    f"for codes {', '.join(stale)}",
+                )
 
         merged_count += 1
 
@@ -273,8 +305,14 @@ def merge_survey_selected_participants_schema(
             }
             # The selection carries only generic Levels; replacing curated ones
             # would leave their Annotations describing other codes.
-            if existing_spec.get("Levels"):
-                merged[field_name]["Levels"] = existing_spec["Levels"]
+            levels = existing_spec.get("Levels")
+            if levels:
+                generic = selected_spec.get("Levels") or {}
+                merged[field_name]["Levels"] = {
+                    # a bare code is only a placeholder: take the real label
+                    code: generic.get(code, label) if label == code else label
+                    for code, label in levels.items()
+                }
         else:
             merged[field_name] = selected_spec
 

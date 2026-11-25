@@ -71,3 +71,55 @@ def test_survey_selected_keeps_curated_levels_with_their_annotations():
     )
 
     assert merged["sex"] == {**curated, "Description": "Sex"}
+
+
+def test_new_levels_without_annotations_drop_the_contradicted_ones():
+    base = {
+        "gender": {
+            "Levels": {"1": "Male", "2": "Female"},
+            "Annotations": {
+                "Levels": {"1": {"Label": "Male"}, "2": {"Label": "Female"}}
+            },
+        }
+    }
+    new = {"gender": {"Levels": {"1": "Female", "2": "Male"}, "Annotations": {}}}
+    log = []
+
+    merged, _ = merge_neurobagel_schema_for_columns(
+        base, new, ["gender"], log_callback=lambda *a: log.append(a)
+    )
+
+    assert merged["gender"]["Annotations"]["Levels"] == {}
+    assert [level for level, _ in log] == ["WARNING", "WARNING"]
+    assert "1, 2" in log[0][1]
+
+
+def test_non_object_levels_do_not_crash():
+    base = {"gender": {"Levels": {"1": "Male"}}}
+
+    merged, _ = merge_neurobagel_schema_for_columns(
+        base, {"gender": {"Levels": None}}, ["gender"]
+    )
+
+    assert merged["gender"]["Levels"] == {"1": "Male"}
+
+
+def test_validator_accepts_two_codes_mapped_to_one_term(tmp_path):
+    assert not _check(
+        tmp_path, {"1": "Right", "2": "Mostly right"}, {"1": "Right", "2": "Right"}
+    )
+
+
+def test_validator_reads_object_levels(tmp_path):
+    levels = {"1": {"Description": "Male"}, "2": {"Description": "Female"}}
+
+    assert _check(tmp_path, levels, {"1": "Female"})
+
+
+def test_survey_selected_fills_unlabelled_curated_levels():
+    merged = merge_survey_selected_participants_schema(
+        {"sex": {"Levels": {"M": "M", "F": "Woman"}}},
+        {"sex": {"Levels": {"M": "Male", "F": "Female", "O": "Other"}}},
+    )
+
+    assert merged["sex"]["Levels"] == {"M": "Male", "F": "Woman"}
