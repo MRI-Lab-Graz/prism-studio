@@ -8,7 +8,8 @@ An instrument ID is `prism:<slug>`; its items are `prism:<slug>.<item>` (for exa
 `prism:ads.ads01`). The ID carries **no modality**: the modality is a property of the term (the folder
 `terms/<modality>/`), and an ID never changes once released. A hand-made `prism:survey:ads` form is not valid.
 
-IDs are listed in `ids/survey-ids.txt`, frozen, added by pull request. The IRI form is
+IDs are listed in `ids/survey-ids.txt`, frozen, added by pull request. An ID that should no longer be used is deprecated with its
+replacement, never removed (`ids/README.md`). The IRI form is
 `https://w3id.org/prism-specification/terms/<modality>/<id>` (see "IRIs and `local:` IDs" below; the ID stays `prism:<slug>`).
 
 ## One library entry per instrument

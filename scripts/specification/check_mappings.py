@@ -200,6 +200,49 @@ def _released_survey_ids(repo: Path) -> set[str]:
         return set()
 
 
+def deprecations(repo: Path) -> tuple[dict[str, str], list[str]]:
+    """({deprecated survey ID: its replacement}, problems) from ids/survey-deprecated.json; no file is none."""
+    path = Path(repo) / "ids" / "survey-deprecated.json"
+    if not path.is_file():
+        return {}, []
+    name = f"ids/{path.name}"
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        return {}, [f"{name}: cannot read ({exc})"]
+    if not isinstance(data, dict):
+        return {}, [f"{name}: must hold a JSON object"]
+    released, found, problems = _released_survey_ids(repo), {}, []
+    for old, entry in data.items():
+        new = entry.get("ReplacedBy") if isinstance(entry, dict) else None
+        if old not in released:
+            problems.append(f"{name}: {old} is not a released survey ID")
+        elif not (isinstance(new, str) and set(entry) == {"ReplacedBy"}):
+            problems.append(f'{name}: {old} must be {{"ReplacedBy": "prism:..."}}')
+        elif new in data:
+            problems.append(f"{name}: {old} is replaced by {new}, which is deprecated itself")
+        elif new not in released:
+            problems.append(f"{name}: {old} is replaced by {new}, which is not a released survey ID")
+        else:
+            found[old] = new
+    return found, problems
+
+
+def deprecated_links(repo: Path, mappings: Path | None = None) -> list[str]:
+    """Warnings: links on a deprecated ID. The link stays valid for old data; new curation goes to the replacement."""
+    deprecated, _ = deprecations(repo)
+    out = []
+    for path in sorted((Path(mappings or Path(repo) / "mappings") / "survey").glob("*.json")):
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue  # reported by check()
+        if isinstance(data, dict):
+            out += [f"mappings/survey/{path.name}: {k} is deprecated, link its replacement {deprecated[k]}"
+                    for k in data if k in deprecated]
+    return out
+
+
 def missing_targets(repo: Path) -> list[str]:
     """Warnings: released survey instruments with no library file, so their IRI has nothing to point at (404)."""
     derived, _ = survey_definitions(repo)
@@ -214,9 +257,11 @@ def missing_targets(repo: Path) -> list[str]:
 def check(repo: Path, mappings: Path | None = None) -> list[str]:
     repo = Path(repo)
     mappings = Path(mappings) if mappings else repo / "mappings"
+    deprecated, deprecation_problems = deprecations(repo)
     if not mappings.is_dir():
-        return []
+        return deprecation_problems
     vocabs, problems = load_vocabularies(mappings / "vocabularies.json")
+    problems += deprecation_problems
 
     # What exists, per modality: {full ID: level codes or None}
     declared = check_terms.term_modalities(repo)
@@ -267,7 +312,11 @@ def check(repo: Path, mappings: Path | None = None) -> list[str]:
                 if modality == "survey" and key in ids and f"prism:{family}" not in have:
                     problems.append(f"{where}: no library file for this instrument, its IRI would return 404")
                 owner.setdefault(key, name)
-                problems += entry_problems(entry, where, vocabs, ids.get(key))
+                defined = ids.get(key)
+                if modality == "survey" and key in deprecated and defined is None and isinstance(entry, dict):
+                    levels = entry.get("Levels")  # the item may have left its template, and its level codes with it
+                    defined = set(levels) if isinstance(levels, dict) else None
+                problems += entry_problems(entry, where, vocabs, defined)
     return problems
 
 
@@ -277,7 +326,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--mappings", type=Path, help="the mappings folder (default REPO/mappings)")
     args = ap.parse_args(argv)
     problems = check(args.repo, args.mappings)
-    for warning in missing_targets(args.repo):
+    for warning in missing_targets(args.repo) + deprecated_links(args.repo, args.mappings):
         print(f"warning: {warning}")
     for problem in problems:
         print(problem)
