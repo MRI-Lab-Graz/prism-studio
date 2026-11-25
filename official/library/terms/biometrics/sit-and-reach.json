@@ -1,0 +1,11 @@
+{
+  "TermID": "prism:sit-and-reach",
+  "Level": "variable",
+  "Label": "sit-and-reach distance",
+  "Aliases": [
+    "sit_and_reach"
+  ],
+  "Description": "Distance reached in the sit-and-reach flexibility test.",
+  "Units": "cm",
+  "Status": "official"
+}

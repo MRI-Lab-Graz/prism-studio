@@ -1,0 +1,8 @@
+{
+  "TermID": "prism:grip-strength",
+  "Level": "variable",
+  "Label": "grip strength",
+  "Description": "Maximum isometric grip force of the hand, measured with a dynamometer.",
+  "Units": "kg",
+  "Status": "official"
+}

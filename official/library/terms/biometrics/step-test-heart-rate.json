@@ -1,0 +1,11 @@
+{
+  "TermID": "prism:step-test-heart-rate",
+  "Level": "variable",
+  "Label": "step test heart rate",
+  "Aliases": [
+    "step_test_hr"
+  ],
+  "Description": "Heart rate measured immediately after a step test.",
+  "Units": "bpm",
+  "Status": "official"
+}

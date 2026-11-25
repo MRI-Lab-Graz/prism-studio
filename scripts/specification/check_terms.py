@@ -120,7 +120,15 @@ def check_registry(registry: dict[str, dict], specimen_types: list[str] | None) 
             if level != "variable":
                 problems.append(f"{key}: Level must be 'variable'")
             else:
-                if not _SLUG.fullmatch(local):
+                if "Parent" in term:  # a variant (grip-strength.left) of a flat term
+                    parent_id = term["Parent"]
+                    parent_key = parent_id.partition(":")[2]
+                    parent = registry.get(parent_key)
+                    if not parent or parent.get("TermID") != parent_id or "Parent" in parent:
+                        problems.append(f"{key}: Parent {parent_id!r} is not a flat term of this registry")
+                    elif not (local.startswith(parent_key + ".") and _SLUG.fullmatch(local[len(parent_key) + 1:])):
+                        problems.append(f"{key}: variant ID must be {prefix}:{parent_key}.<variant>")
+                elif not _SLUG.fullmatch(local):
                     problems.append(f"{key}: ID local part {local!r} must match {_SLUG.pattern}")
                 if not term.get("Label"):
                     problems.append(f"{key}: variable term needs a Label")

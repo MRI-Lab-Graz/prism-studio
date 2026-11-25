@@ -44,6 +44,7 @@
     "DefaultLanguage": "en"
   },
   "resting_hr": {
+    "Term": "prism:resting-heart-rate",
     "Description": {
       "en": "Resting heart rate measured after 5 minutes of seated rest"
     },
@@ -54,6 +55,7 @@
     }
   },
   "plank_duration": {
+    "Term": "prism:plank-duration",
     "Description": {
       "en": "Maximum duration holding a standard plank position"
     },
@@ -64,6 +66,7 @@
     }
   },
   "sit_and_reach": {
+    "Term": "prism:sit-and-reach",
     "Description": {
       "en": "Flexibility measure using sit-and-reach test"
     },
@@ -74,30 +77,35 @@
     }
   },
   "step_test_hr": {
+    "Term": "prism:step-test-heart-rate",
     "Description": {
       "en": "Heart rate immediately after 3-minute step test"
     },
     "Units": "bpm"
   },
   "grip_strength_left": {
+    "Term": "prism:grip-strength.left",
     "Description": {
       "en": "Maximum grip strength with left hand using dynamometer"
     },
     "Units": "kg"
   },
   "grip_strength_right": {
+    "Term": "prism:grip-strength.right",
     "Description": {
       "en": "Maximum grip strength with right hand using dynamometer"
     },
     "Units": "kg"
   },
   "vo2_max_estimated": {
+    "Term": "prism:vo2max-estimated",
     "Description": {
       "en": "Estimated maximum oxygen uptake based on step test performance"
     },
     "Units": "ml/kg/min"
   },
   "bmi": {
+    "Term": "prism:bmi",
     "Description": {
       "en": "Body Mass Index"
     },

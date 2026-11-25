@@ -35,6 +35,9 @@
     "biometrics": {
       "kind": "prism",
       "description": "Measured body values (weight, blood pressure, fitness tests, ...)",
+      "terms": {
+        "nonTermColumns": ["subject_id", "session_id"]
+      },
       "describedColumns": true,
       "suffixes": ["biometrics"],
       "extensions": ["tsv", "json"]

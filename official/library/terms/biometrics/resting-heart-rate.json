@@ -1,0 +1,11 @@
+{
+  "TermID": "prism:resting-heart-rate",
+  "Level": "variable",
+  "Label": "resting heart rate",
+  "Aliases": [
+    "resting_hr"
+  ],
+  "Description": "Heart rate measured at rest.",
+  "Units": "bpm",
+  "Status": "official"
+}

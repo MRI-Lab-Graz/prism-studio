@@ -1,0 +1,11 @@
+{
+  "TermID": "prism:plank-duration",
+  "Level": "variable",
+  "Label": "plank duration",
+  "Aliases": [
+    "plank_duration"
+  ],
+  "Description": "Longest time a standard plank position is held.",
+  "Units": "seconds",
+  "Status": "official"
+}

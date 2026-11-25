@@ -1,0 +1,12 @@
+{
+  "TermID": "prism:grip-strength.left",
+  "Level": "variable",
+  "Parent": "prism:grip-strength",
+  "Label": "grip strength, left hand",
+  "Aliases": [
+    "grip_strength_left"
+  ],
+  "Description": "Maximum grip strength of the left hand.",
+  "Units": "kg",
+  "Status": "official"
+}

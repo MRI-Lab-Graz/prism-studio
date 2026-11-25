@@ -27,7 +27,11 @@ Built on branch `worktree-feat-mappings-in-specification` (not merged): steps 1,
 
 ## Steps
 
-### 0. Shared terms for biometrics (spec, then Studio sync) - NEW, first priority
+### 0. Shared terms for biometrics - DONE (2026-11-25, specification v1.5.26 and Studio sync)
+
+Built as described below, plus one general rule: in a modality without a context field a flat term may have variants
+(`<parent>.<variant>`). Existing biometrics sidecars without `Term` now take part in the term notices.
+
 - **Decided (2026-11-24):** biometrics measures are **shared terms**, like biosample analytes (`prism:resting-heart-rate`,
   `prism:grip-strength`), not template-derived IDs. Two templates measuring the same thing share one ID; that is what
   lets data combine across studies.

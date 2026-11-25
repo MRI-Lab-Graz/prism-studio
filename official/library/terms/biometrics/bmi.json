@@ -1,0 +1,8 @@
+{
+  "TermID": "prism:bmi",
+  "Level": "variable",
+  "Label": "body mass index",
+  "Description": "Body mass divided by body height squared.",
+  "Units": "kg/m²",
+  "Status": "official"
+}

@@ -112,4 +112,4 @@ def test_specification_loads_environment_terms():
 
     spec = load_specification()
     assert "air-temperature" in spec.terms["environment"]
-    assert set(spec.term_modalities) == {"biosample", "environment"}
+    assert set(spec.term_modalities) == {"biosample", "environment", "biometrics"}

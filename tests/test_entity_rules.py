@@ -189,4 +189,5 @@ def test_term_modalities_from_entities():
     assert load_entity_rules().term_modalities == {
         "biosample": {"nonTermColumns": ["sample_id", "collection_time", "fasting"], "contextField": "Technical.SpecimenType"},
         "environment": {"nonTermColumns": ["subject_id", "session_id"]},
+        "biometrics": {"nonTermColumns": ["subject_id", "session_id"]},
     }

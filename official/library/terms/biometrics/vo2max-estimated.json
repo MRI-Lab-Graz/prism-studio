@@ -1,0 +1,11 @@
+{
+  "TermID": "prism:vo2max-estimated",
+  "Level": "variable",
+  "Label": "estimated VO2max",
+  "Aliases": [
+    "vo2_max_estimated"
+  ],
+  "Description": "Maximum oxygen uptake estimated from a submaximal test, not measured directly.",
+  "Units": "ml/kg/min",
+  "Status": "official"
+}

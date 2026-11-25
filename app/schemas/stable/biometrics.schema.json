@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://prism.org/schemas/biometrics/v1.1.4",
-  "version": "1.1.4",
+  "$id": "https://prism.org/schemas/biometrics/v1.1.5",
+  "version": "1.1.5",
   "title": "Biometrics Metadata",
   "description": "Schema for biometric and physical performance assessment data (e.g., VO2max, planks, balance, grip strength). Files should be named: sub-<label>[_ses-<label>]_biometrics-<label>[_run-<index>]_biometrics.<tsv|json>",
   "type": "object",
@@ -293,6 +293,10 @@
   "additionalProperties": {
     "type": "object",
     "properties": {
+      "Term": {
+        "type": "string",
+        "description": "Term of the PRISM term registry (ID, local name, label or equivalent), for example prism:grip-strength.left"
+      },
       "Description": {
         "type": ["string", "object"],
         "description": "Short description of the column (side, trial); no device or protocol, those belong in Study and Technical"
