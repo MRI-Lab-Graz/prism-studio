@@ -68,10 +68,12 @@ partner's own repository keyed by PRISM IDs; PRISM does not need to host them.
 `scripts/specification/fingerprint.py` (text SHA-256 for stubs) and `src/survey_fingerprints.py` (wording + scale hashes)
 differ. One definition with test vectors in the spec repo, Studio loads it. Needs decision A.
 
-### 5. Survey ID lifecycle - Studio half DONE (branch, `a6b14840`); spec half open
-Studio reads `deprecated.json` (Status, ReplacedBy; a deprecated released ID may leave the template; sync maps
-`ids/survey-deprecated.json`). Spec repo: the file, `check_library` (ReplacedBy released, no line lost),
-`check_mappings` warning on a link to a deprecated ID. Open in Studio: `terms resolve` should name the replacement.
+### 5. Survey ID lifecycle - DONE (specification v1.5.27 and Studio sync)
+`ids/survey-deprecated.json` (`{"prism:old": {"ReplacedBy": "prism:new"}}`, `ids/README.md`; appears with the first
+deprecation). `check_mappings` validates it and warns on a link to a deprecated ID; `check_schema_versions` fails when
+`survey-ids.txt` loses a line. Studio marks the ID and lets it leave the template.
+Open: Studio `terms resolve` should name the replacement; spec CI does not report a released item that left its template
+without a deprecation entry; the DASS, demo and SBI-D tests require every released item.
 
 ### 6. Accepted records for instruments that cannot ship (spec + Studio)
 `fingerprints/<task>.json` (hashes only), `check_fingerprints.py`, IDs appended on acceptance. Depends on 4 and decision B.

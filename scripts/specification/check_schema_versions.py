@@ -1,7 +1,9 @@
-"""Fail when a frozen modality schema version is edited or a version is released wrongly.
+"""Fail when a frozen modality schema version is edited or a version is released wrongly,
+or a released survey ID is lost.
 
 Usage: check_schema_versions.py <base_ref> <head_ref>
 Rules (modality schemas and recipe.survey; project/entities/dataset_description are not versioned this way):
+- lines of ids/survey-ids.txt are never removed or changed (a deprecated ID keeps its line);
 - files under schemas/archive/ are frozen: never modified or deleted;
 - a changed stable schema must carry a bumped `version`;
 - a bumped version needs the previous version archived, equal to the previous stable file.
@@ -16,6 +18,7 @@ import sys
 STABLE = "schemas/stable/"
 ARCHIVE = "schemas/archive/"
 SUFFIX = ".schema.json"
+SURVEY_IDS = "ids/survey-ids.txt"
 EXTRA_GOVERNED = {"recipe.survey"}  # not a modality, but versioned and archived the same way
 
 
@@ -40,6 +43,11 @@ def _same(a: str | None, b: str | None) -> bool:
 def check(changes, read_base, read_head, exists_head, modalities) -> list[str]:
     errors: list[str] = []
     for status, path in changes:
+        if path == SURVEY_IDS and status in ("M", "D"):
+            lost = set((read_base(path) or "").split()) - set((read_head(path) or "").split())
+            if lost:
+                errors.append(f"{path}: released IDs are frozen, lines lost: {', '.join(sorted(lost))}")
+            continue
         if path.startswith(ARCHIVE) and status in ("M", "D"):
             errors.append(f"{path}: archived versions are frozen and must not be edited or deleted")
             continue
@@ -93,9 +101,11 @@ def main(argv: list[str]) -> int:
     if modalities is None:
         print(f"ERROR: schemas/stable/entities.schema.json at {head} is missing or has no `modalities` object")
         return 1
+    # the diff is against the merge base, so IDs the base gained since then are not lost by this branch
+    fork = subprocess.run(["git", "merge-base", base, head], capture_output=True, text=True, check=True).stdout.strip()
     errors = check(
         changes,
-        lambda p: _git_show(base, p),
+        lambda p: _git_show(fork if p == SURVEY_IDS else base, p),
         lambda p: _git_show(head, p),
         lambda p: _git_show(head, p) is not None,
         governed(modalities),

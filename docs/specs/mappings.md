@@ -59,7 +59,9 @@ A mapping file holds no free text except `Source` (and the slug `Name`). It neve
   shape of a URL, not that the entry exists, so the author looks every link up;
 * every `Levels` code exists in the definition of the ID (the term's or the template's `Levels`); an ID without
   `Levels` takes none;
-* the types are right (a wrong type is a message, not a crash), and no ID is in two files.
+* the types are right (a wrong type is a message, not a crash), and no ID is in two files;
+* `ids/survey-deprecated.json` is valid (`ids/README.md`). A link on a deprecated ID is a warning, not a failure: link
+  the replacement.
 
 A specimen child (`prism:cortisol.serum`) inherits the links of its analyte; no check is needed for that.
 
