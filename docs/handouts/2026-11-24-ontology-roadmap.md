@@ -51,10 +51,26 @@ Built as described below, plus one general rule: in a modality without a context
 ### 0b. Physio, eyetracking, events and the other modalities - DECIDED (2026-11-25): no IDs
 Nothing to build. Analysis, should this be reopened: `2026-11-25-ids-physio-events-design.md`.
 
-### 0c. Sociodemographics - DESIGN DONE (2026-11-25), build open
-Approved: `2026-11-25-sociodemographics-terms-design.md` (links only in `mappings/`; no term for `participant_id` or the
-free-text columns). Build order: (1) fix the substring match that labels `native_language` as "Age"; (2) specification
-release; (3) Studio sync and `Term` in `participants.json`; (4) `Annotations` from mappings, hard-coded lists removed.
+### 0c. Sociodemographics - specification DONE (v1.5.28), Studio open
+Design: `2026-11-25-sociodemographics-terms-design.md` (links only in `mappings/`; no term for `participant_id` or the
+free-text `*_details` columns). Done: (1) the substring match that labelled `native_language` "Age" (#309);
+(2) specification v1.5.28 (prism-specification #71): `terms/participants/`, `height`/`weight` under biometrics, level
+`SameAs`, vocabulary `neurobagel`. No links yet: nobody has checked any, and who does is open.
+
+**(3) next - Studio sync of v1.5.28:**
+- `src/entity_rules.py` reads term declarations from `modalities` only: it must also read `tables`, with `termsFrom`
+  (participants also resolves to biometrics terms) and `unitsOptional` (passed to `check_registry`).
+- `participants.json` columns resolve to terms (notices only, never new errors); `"Term"` in
+  `official/participants.json`; `terms list|show|coverage` include participants; parity test.
+- Check that the sync vendors `terms/participants/`.
+
+**(4) after that:** build `Annotations` from `mappings/`; remove the hard-coded lists in `src/neurobagel.py` and
+`src/participant_columns.py` and the `nb:` logic in `participants.js`. The SSSOM export (`src/mappings_export.py`) skips
+links under `Levels`. Neurobagel writes SNOMED codes under `http://purl.bioontology.org/ontology/SNOMEDCT/`, PRISM
+requires `https://snomed.info/id/`: the export converts.
+
+**w3id (decided 2026-11-25, not submitted):** one general rule after the survey rule
+(prism-specification `specs/instrument-ids.md`). Until then `biometrics` and `participants` IRIs reach the front page.
 
 ### 1. Mappings in the `Specification` - DONE (branch, `2f9d1b6f`)
 `Specification.mappings` / `mappings_for(id)`, official + the project's own for that run only, official wins.
