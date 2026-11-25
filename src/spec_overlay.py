@@ -258,18 +258,26 @@ def load_local_links(project_root, modality: str = "biosample") -> dict[str, dic
     """{`prism:` ID: {vocabulary: URL}} of the project's local links (`code/specification/mappings/<modality>/<family>.json`).
 
     Project data is untrusted: a file or entry that is not the expected shape is skipped; the proposal check judges the rest."""
+    return {f"prism:{_local_part(term_id)}": entry["SameAs"] for term_id, entry in load_local_mappings(project_root, modality).items()
+            if isinstance(entry.get("SameAs"), dict)}
+
+
+def load_local_mappings(project_root, modality: str = "biosample") -> dict[str, dict]:
+    """{ID: mapping entry} of the project's own mapping files, whole entries (SameAs, Measures, ValueRules, Levels).
+
+    Project data is untrusted: an unreadable file, a non-object file, an entry that is not an object or an ID that
+    is not `local:`/`prism:<slug>` is skipped (the mappings checker reports problems)."""
     folder = _links_folder(project_root, modality)
-    links: dict[str, dict] = {}
+    found: dict[str, dict] = {}
     for path in sorted(folder.glob("*.json")) if folder.is_dir() else []:
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, ValueError, RecursionError):
             continue
         for term_id, entry in (data.items() if isinstance(data, dict) else ()):
-            same = entry.get("SameAs") if isinstance(entry, dict) else None
-            if _local_part(term_id) is not None and isinstance(same, dict):
-                links[f"prism:{_local_part(term_id)}"] = same
-    return links
+            if isinstance(entry, dict) and _local_part(term_id) is not None:
+                found[term_id] = entry
+    return found
 
 
 def write_local_links(project_root, modality: str, links: dict[str, dict]) -> list[Path]:

@@ -15,7 +15,7 @@ from src.term_proposal import (
     deliver_proposal,
     load_inherited_sidecar,
 )
-from src.survey_terms import build_survey_registry, freeze_report, released_ids, resolve_survey_sidecar, write_released_ids
+from src.survey_terms import build_survey_registry, deprecated_ids, freeze_report, released_ids, resolve_survey_sidecar, write_released_ids
 from src.term_registry import (
     context_value,
     find_term,
@@ -65,7 +65,7 @@ def cmd_terms_freeze(args) -> None:
               "Error: only the survey registry is frozen this way")
         sys.exit(1)
     registry, problems = build_survey_registry()
-    gone, not_shipped = freeze_report(registry, released_ids())
+    gone, not_shipped = freeze_report(registry, released_ids(), deprecated_ids()[0])
     if gone:
         _emit(args, {"success": False, "problems": problems + gone}, "\n".join(problems + gone))
         sys.exit(1)
@@ -155,6 +155,47 @@ def cmd_terms_check_links(args) -> None:
           "\n".join(problems) if problems else "No problems: every link is a known vocabulary, a real ID and a well-formed address.")
     if problems:
         sys.exit(1)
+
+
+def _specification(args):
+    """The specification of the run: the official one, plus the project's own terms and links with --project."""
+    from src.spec_overlay import OverlayError
+    from src.specification import load_specification
+
+    try:
+        return load_specification(project_root=args.project)
+    except (OverlayError, OSError, ValueError, RecursionError) as exc:
+        _fail(args, str(exc) or type(exc).__name__)
+
+
+def cmd_terms_coverage(args) -> None:
+    """Count, per modality, which IDs have a link to an outside vocabulary and which have none yet."""
+    from src.mappings_coverage import coverage
+
+    spec = _specification(args)
+    registries = {**spec.terms, "survey": build_survey_registry()[0]}
+    if args.modality and args.modality not in registries:
+        _fail(args, f"unknown modality {args.modality!r}; known: {', '.join(sorted(registries))}")
+    result = coverage({m: r for m, r in registries.items() if args.modality in (None, m)}, spec.mappings_for)
+    lines = []
+    for modality, c in result.items():
+        lines.append(f"{modality}: {c['total']} IDs, {c['direct']} linked, {c['inherited']} via the parent, {c['none']} without a link")
+        if args.missing:
+            lines += [f"  {term_id}" for term_id in c["missing"]]
+    _emit(args, {"success": True, "modalities": result}, "\n".join(lines))
+
+
+def cmd_terms_export_links(args) -> None:
+    """Write the links of mappings/ (the official ones, plus a project's own) as SSSOM."""
+    from src.mappings_export import sssom_table
+
+    table = sssom_table(_specification(args).mappings)
+    rows = sum(1 for line in table.splitlines() if not line.startswith("#")) - 1  # minus the column line
+    if args.out:
+        Path(args.out).write_text(table, encoding="utf-8")
+        _emit(args, {"success": True, "rows": rows, "out": args.out}, f"Wrote {rows} links to {args.out}")
+    else:
+        print(json.dumps({"success": True, "rows": rows, "table": table}, ensure_ascii=False) if args.json else table, end="")
 
 
 def cmd_terms_propose(args) -> None:

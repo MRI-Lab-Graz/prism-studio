@@ -10,14 +10,16 @@ from __future__ import annotations
 
 import contextlib
 import contextvars
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import cached_property, lru_cache
 from typing import Iterator
 
 from src.entity_rules import EntityRules, load_entity_rules
 from src.schema_manager import DEFAULT_SCHEMA_DIR, load_all_schemas
-from src.spec_overlay import _vendored, load_local_patches, load_local_terms, local_patch_modalities, merge_terms
-from src.term_registry import load_registry
+from src.spec_overlay import (
+    _vendored, load_local_mappings, load_local_patches, load_local_terms, local_patch_modalities, merge_terms,
+)
+from src.term_registry import load_mappings, load_registry, mappings_root
 
 
 @dataclass(frozen=True, eq=False)  # compared by identity: the dict fields would make a generated __eq__/__hash__ costly or fail
@@ -30,6 +32,11 @@ class Specification:
     overlay_problems: tuple = ()  # one message per project overlay file that was skipped
     local_patches: tuple = ()  # modalities whose schema carries the project's patch
     ignored_patch_items: tuple = ()  # additions of a patch the official schema now has (the official one wins)
+    mappings: dict = field(default_factory=dict)  # modality -> {ID -> {SameAs, Measures, ValueRules, Levels}}: the links of mappings/
+
+    def mappings_for(self, term_id: str) -> dict:
+        """The mapping entry of an ID (official, else the project's own), or {} when it has none."""
+        return next((m[term_id] for m in self.mappings.values() if term_id in m), {})
 
     # Derived once per specification (the rules compute them on every access); they replace the constants
     # validator.py used to freeze at import.
@@ -78,6 +85,8 @@ def load_specification(
     patched: list = []
     official_now: list = []
     rules = rules if rules is not None else load_entity_rules()
+    folders = sorted(mappings_root().iterdir()) if mappings_root().is_dir() else []  # a build may not carry mappings/
+    mappings = {folder.name: load_mappings(folder.name) for folder in folders if folder.is_dir()}
     for modality in rules.term_modalities:
         registry = load_registry(modality)
         if project_root is not None:
@@ -88,6 +97,9 @@ def load_specification(
             problems += skipped
         terms[modality] = registry
     if project_root is not None:
+        for modality in (*rules.term_modalities, "survey"):  # survey IDs are derived from templates, not a term registry
+            if modality in rules.prism_modalities:
+                mappings[modality] = {**load_local_mappings(project_root, modality), **mappings.get(modality, {})}  # official wins
         names, skipped = local_patch_modalities(project_root, schemas)
         problems += skipped
         for modality in names:
@@ -109,6 +121,7 @@ def load_specification(
         overlay_problems=tuple(problems),
         local_patches=tuple(patched),
         ignored_patch_items=tuple(official_now),
+        mappings=mappings,
     )
 
 

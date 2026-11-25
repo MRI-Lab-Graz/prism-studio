@@ -42,6 +42,7 @@ MAPPING = {
     "recipes/survey/": "official/recipe/survey/",
     "mappings/": "official/library/mappings/",
     "ids/survey-ids.txt": "official/library/survey/term-ids.txt",
+    "ids/survey-deprecated.json": "official/library/ids/survey-deprecated.json",  # not in survey/: readers of that folder take every *.json for a template; absent until a release has one
 }
 
 # Studio's own formats live in the same folders; sync never writes or deletes them.
