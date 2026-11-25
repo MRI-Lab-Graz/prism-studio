@@ -13,6 +13,9 @@ or in their own files keyed by PRISM IDs. Exports (SSSOM today) are adapters, ne
 So the first priority is that **every template of every modality has IDs**. An ID cannot carry meaning by itself
 (someone still decides "this item measures that concept"), but everything structural follows from the template.
 
+**Scope (decided 2026-11-25):** term IDs are for sociodemographics, survey, biometrics and biosample. This narrows
+"every template of every modality" above. Environment already has 31 released IDs; they stay (IDs are never removed).
+
 ## Where we are (verified in code)
 
 | Kind of data | IDs | How |
@@ -45,13 +48,12 @@ Built as described below, plus one general rule: in a modality without a context
   biometrics sidecar column resolves to its term, and the coverage report lists biometrics.
 - **Done when:** every column of `biometrics-fitness.json` resolves to a term (or is a declared non-term column).
 
-### 0b. Physio, eyetracking, events and the other modalities - DESIGN DONE (2026-11-25), build open
-Approved: `2026-11-25-ids-physio-events-design.md`. It replaces the notes below: physio needs one general rule
-(`columnsField`), so "no new code path" does not hold; the terms are per measured signal, not per `recording` value.
+### 0b. Physio, eyetracking, events and the other modalities - DECIDED (2026-11-25): no IDs
+Nothing to build. Analysis, should this be reopened: `2026-11-25-ids-physio-events-design.md`.
 
-- Decide per kind what is a measurement that needs an ID: e.g. the physio `recording` values (`ecg`, `resp`, `eda`, ...)
-  are already a controlled list and are natural shared terms; events and eyetracking may have none. Same mechanism as
-  step 0 (a `terms` declaration plus term files), no new code path. A short design note first, no code.
+### 0c. Sociodemographics - open, needs a design
+`official/participants.json` (`age`, `sex`, `handedness`, `education_level`, `height`, `weight`, `bmi`, ...) has no
+term IDs. IDs are unique across modalities, so `bmi` must reuse `prism:bmi`, not get a second one.
 
 ### 1. Mappings in the `Specification` - DONE (branch, `2f9d1b6f`)
 `Specification.mappings` / `mappings_for(id)`, official + the project's own for that run only, official wins.

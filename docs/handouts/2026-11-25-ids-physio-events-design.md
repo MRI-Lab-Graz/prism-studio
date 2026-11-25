@@ -1,6 +1,16 @@
 # Design note: IDs for physio, eye tracking, events (roadmap step 0b)
 
-Date: 2026-11-25. **Approach 1 and the term list approved 2026-11-25. No code yet.** Based on specification v1.5.27.
+Date: 2026-11-25. Based on specification v1.5.27.
+
+## Decision (2026-11-25): no IDs for physio, eye tracking or events
+
+- **No physio IDs for now**, so no eye tracking IDs either. Nothing from this note is to be built.
+- Converters do not write `Term` for channels.
+- No term check for eye tracking files in `beh/`, `func/`, `eeg/`: accepted.
+- Term IDs are for **sociodemographics, survey, biometrics and biosample** (roadmap).
+
+The rest is the analysis, kept in case physio IDs are wanted later. Its term list is **not** approved and no ID in it
+is released.
 
 ## Summary
 
@@ -94,10 +104,3 @@ IDs": events have no templates.
 - A column with `Term` and `Units: "n/a"` is checked.
 - No new physio-specific code; the other term modalities behave as before.
 - Existing projects get notices only, never new errors.
-
-## Decisions and open points
-
-- **Approved (2026-11-25):** approach 1 and the term list above.
-- **My call, not yet confirmed:** converters do not write `Term` for channels they recognise; names only suggest, as
-  elsewhere.
-- **Open:** is the folder limit for eye tracking acceptable for a first version?
