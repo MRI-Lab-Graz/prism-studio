@@ -37,6 +37,36 @@ def add_missing_levels(schema: dict, df) -> None:
             levels[code] = code
 
 
+def _label(level) -> str:
+    """A level's label; BIDS allows a string or an object."""
+    if isinstance(level, dict):
+        level = level.get("Label") or level.get("Description") or ""
+    return str(level).strip().casefold()
+
+
+def swapped_codes(levels: dict, annotations) -> list[str]:
+    """Codes whose annotation label is the Levels label of a *different* code.
+
+    Not reported: other wording (translations, standard term names), and a code
+    that shares its term with the code of that label (many codes, one term).
+    """
+    annotated = annotations.get("Levels") if isinstance(annotations, dict) else None
+    if not isinstance(annotated, dict):
+        return []
+    labels = {code: _label(level) for code, level in levels.items()}
+    terms = {code: _label(term) for code, term in annotated.items()}
+    return sorted(
+        code
+        for code, term in terms.items()
+        if term
+        and term != labels.get(code)
+        and any(
+            label == term and terms.get(other) != term
+            for other, label in labels.items()
+        )
+    )
+
+
 def check_participants_levels(root_dir: str) -> list[tuple[str, str, str]]:
     root = Path(root_dir)
     tsv, sidecar_path = root / "participants.tsv", root / "participants.json"
@@ -62,6 +92,20 @@ def check_participants_levels(root_dir: str) -> list[tuple[str, str, str]]:
         spec = spec if isinstance(spec, dict) else {}
         levels = spec.get("Levels")
         if isinstance(levels, dict):
+            swapped = swapped_codes(levels, spec.get("Annotations"))
+            if swapped:
+                issues.append(
+                    (
+                        "ERROR",
+                        (
+                            f"participants.json column '{column}': Levels and "
+                            f"Annotations.Levels contradict each other for codes "
+                            f"{', '.join(swapped)}. Check the codebook and correct "
+                            "the wrong block."
+                        ),
+                        str(sidecar_path),
+                    )
+                )
             missing = sorted(values - set(levels))
             if missing:
                 issues.append(
