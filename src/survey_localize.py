@@ -63,7 +63,13 @@ def _localize_survey_template(template: dict, language: str | None) -> dict:
         if isinstance(value, dict):
             if _is_language_dict(value):
                 return _pick_language_value(value, lang)
-            return {k: _recurse(v) for k, v in value.items()}
+            return {
+                # keyed by language, but per-language data, not a translation: keep every key
+                k: {code: _recurse(entry) for code, entry in v.items()}
+                if k == "LicenseByLanguage" and isinstance(v, dict)
+                else _recurse(v)
+                for k, v in value.items()
+            }
         if isinstance(value, list):
             return [_recurse(v) for v in value]
         return value
