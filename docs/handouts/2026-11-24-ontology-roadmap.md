@@ -92,9 +92,12 @@ at the end.
   spec script's (NFC, symbols removed)? Recommended: Studio's, no existing hash changes.
 - **B. Hash licensing:** may hashes of restricted instruments be published? Gates step 6 only.
 - **C. Library scope:** 23 survey templates ship; the 2026-11-14 decision said DASS only. Licence basis of the rest?
-- **D. Spec repo work:** steps 0, 3 (data), 4, 5 (spec half), 6 start in prism-specification: yours or mine?
-- **E. Biometrics variants (step 0):** left/right and protocol as child terms or as a context field; decided on the
-  real columns.
+- **Decided D (2026-11-25):** Claude does the spec-repo work (steps 0, 3 data, 4, 5 spec half, 6).
+- **Decided E (2026-11-25):** biometrics variants are child terms with dot notation (`prism:grip-strength.left`). IDs use
+  `-` (never `_`); data columns keep their names and are listed in the term's `Aliases`. Terms for
+  `biometrics-fitness.json`: `resting-heart-rate`, `step-test-heart-rate`, `grip-strength` (+ `.left`, `.right`),
+  `plank-duration`, `sit-and-reach`, `vo2max-estimated`, `bmi`. Check first that a column resolves to a child term
+  without a context field (biosample resolves its children by specimen).
 
 ## Suggested sequence
 
