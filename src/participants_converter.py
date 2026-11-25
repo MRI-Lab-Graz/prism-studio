@@ -41,6 +41,7 @@ from typing import Dict, Any, List, Optional, Tuple
 import pandas as pd
 
 from src.converters.file_reader import read_tabular_file as _read_tabular_file
+from src.participants_sessions import require_participant_id_column
 from src.participant_ids import find_participant_id_source_column, normalize_participant_id
 from src.text_sanitizer import trim_trailing_decimal_zeros
 
@@ -396,6 +397,8 @@ class ParticipantsConverter:
                 decisions=decisions,
                 order=order,
             )
+            if id_source:
+                require_participant_id_column(list(df.columns), id_source, source_path.suffix.lstrip("."))
             for w in load_warnings:
                 self._log("WARNING", w)
                 messages.append(f"⚠ {w}")

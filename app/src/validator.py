@@ -12,6 +12,7 @@ from datetime import datetime
 from typing import Callable
 from jsonschema import validate, ValidationError
 from src.schema_manager import validate_schema_version, apply_schema_validation_profile
+from src.modality_versions import current_version, read_pins
 from src.entity_rules import check_entities, load_entity_rules
 from src.instrument_ids import stub_id_problems
 from src.specification import current_specification
@@ -686,6 +687,17 @@ class DatasetValidator:
         return (
             f'. If this is a real addition, add it to this project: python prism_tools.py spec local add-values '
             f'--project "{root_dir}" --field {field} --value {error.instance}'
+        )
+
+    @staticmethod
+    def _outdated_pin_hint(modality: str, root_dir: str) -> str:
+        """An error against an older pinned schema may be fixed by the current one: say so."""
+        pinned = read_pins(root_dir)[0].get(modality)
+        if not pinned or pinned == current_version(modality):
+            return ""
+        return (
+            f". This project uses {modality} schema {pinned}; {current_version(modality)} may allow it: "
+            f'python prism_tools.py modality-version update "{root_dir}" {modality}'
         )
 
     def _build_effective_defs(self, sidecar_data: dict, modality: str, term_levels: set | None = None) -> dict:
@@ -1482,6 +1494,10 @@ class DatasetValidator:
                     issues.extend(self._check_terms(sidecar_data, key, file_path, root_dir, modality))
 
         except ValidationError as e:
+            key = normalize_path(sidecar_path)
+            if ("schema", key) in self._terms_checked:
+                return issues  # reported once per sidecar, not once per data file
+            self._terms_checked.add(("schema", key))
             # Format message to be more descriptive (include field path)
             field_path = " -> ".join([str(p) for p in e.path])
             prefix = f"{field_path}: " if field_path else ""
@@ -1489,7 +1505,8 @@ class DatasetValidator:
                 (
                     "ERROR",
                     f"{normalize_path(sidecar_path)} schema error: {prefix}{e.message}"
-                    + self._enum_addition_hint(modality, e, root_dir),
+                    + self._enum_addition_hint(modality, e, root_dir)
+                    + self._outdated_pin_hint(modality, root_dir),
                 )
             )
         except json.JSONDecodeError as e:

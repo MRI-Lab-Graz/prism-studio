@@ -11,7 +11,7 @@ _PRISM_ID_CANDIDATES = [
 ]
 
 # Additional fallback for LSA files with PRISMMETA signal
-_LSA_PRISMMETA_FALLBACK = ["token", "id"]
+_LSA_PRISMMETA_FALLBACK = ["token"]
 
 
 class IdColumnNotDetectedError(ValueError):
@@ -31,7 +31,7 @@ class IdColumnNotDetectedError(ValueError):
         format_name = format_names.get(source_format, source_format)
 
         limesurvey_note = (
-            'For LimeSurvey: also accepts "token" or "id" if PRISMMETA columns are present.\n\n'
+            'For LimeSurvey: also accepts "token" if PRISMMETA columns are present.\n\n'
             if source_format == "lsa"
             else "\n"
         )
@@ -61,7 +61,7 @@ def detect_id_column(
     Auto-detect priority:
     1. participant_id / participantid (PRISM primary)
     2. prism_participant_id / prismparticipantid (PRISM alternative)
-    3. token / id (LSA + PRISMMETA only)
+    3. token (LSA + PRISMMETA only)
     """
     lower_map = {str(c).strip().lower(): str(c).strip() for c in df_columns}
 

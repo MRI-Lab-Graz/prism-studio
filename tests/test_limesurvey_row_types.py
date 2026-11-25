@@ -136,7 +136,7 @@ def test_checkbox_answers_convert_checked_boxes_and_leave_unchecked_missing(tmp_
     library = tmp_path / "library"
     library.mkdir()
     (library / "survey-types.json").write_text(dump_complete(template), encoding="utf-8")
-    fields = ["id", "1X1X10M1", "1X1X10M2", "1X1X301", "1X1X302", "1X1X303", "1X1X40T1_K1"]
+    fields = ["token", "1X1X10M1", "1X1X10M2", "1X1X301", "1X1X302", "1X1X303", "1X1X40T1_K1"]
     body = "<row>" + "".join(
         f"<{('_' + f) if f[0].isdigit() else f}>{v}</{('_' + f) if f[0].isdigit() else f}>"
         for f, v in zip(fields, ["7", "Y", "", "A2", "A1", "A3", "text"])
@@ -149,7 +149,7 @@ def test_checkbox_answers_convert_checked_boxes_and_leave_unchecked_missing(tmp_
         archive.writestr("survey_1_responses.lsr", lsr)
 
     convert_survey_lsa_to_prism_dataset(
-        input_path=lsa, library_dir=library, output_root=tmp_path / "ds", id_column="id", unknown="warn",
+        input_path=lsa, library_dir=library, output_root=tmp_path / "ds", id_column="token", unknown="warn",
     )
     header, row = next((tmp_path / "ds").rglob("*task-types_survey.tsv")).read_text(encoding="utf-8").splitlines()[:2]
     answered = dict(zip(header.split("\t"), row.split("\t")))

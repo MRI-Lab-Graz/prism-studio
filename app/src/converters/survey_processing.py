@@ -900,7 +900,7 @@ def _trim_padded_numbers(df, templates, tasks, col_to_mapping) -> list[str]:
         for column in sorted(columns):
             before = df[column]
             after = before.map(trim_trailing_decimal_zeros)
-            diff = before.astype(str) != after.astype(str)
+            diff = before.notna() & (before.astype(str) != after.astype(str))
             if diff.any():
                 df[column] = after
                 count += int(diff.sum())

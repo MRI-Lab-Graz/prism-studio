@@ -7,16 +7,16 @@ from src.participants_converter import ParticipantsConverter
 LSR = """<?xml version="1.0" encoding="UTF-8"?>
 <document><LimeSurveyDocType>Responses</LimeSurveyDocType><DBVersion>636</DBVersion>
 <languages><language>de</language></languages><responses>
-<fields><fieldname>id</fieldname><fieldname>age</fieldname></fields>
-<rows><row><id><![CDATA[1]]></id><age><![CDATA[30]]></age></row>
-<row><id><![CDATA[2]]></id><age><![CDATA[40]]></age></row></rows>
+<fields><fieldname>token</fieldname><fieldname>age</fieldname></fields>
+<rows><row><token><![CDATA[1]]></token><age><![CDATA[30]]></age></row>
+<row><token><![CDATA[2]]></token><age><![CDATA[40]]></age></row></rows>
 </responses></document>"""
 
 MAPPING = {
     "version": "1.0",
     "mappings": {
         "participant_id": {
-            "source_column": "id",
+            "source_column": "token",
             "standard_variable": "participant_id",
             "type": "string",
         },

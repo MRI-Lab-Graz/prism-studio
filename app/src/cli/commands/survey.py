@@ -299,6 +299,8 @@ def cmd_survey_convert(args):
         print(f"Session: {result.session_column}")
     elif getattr(args, "duplicate_handling", "error") == "sessions":
         print("Session: numbered by date (completed responses only)")
+    elif getattr(args, "session", None):
+        print(f"Session: {args.session}")
     else:
         print("Session: (default ses-1)")
     if result.run_column:
