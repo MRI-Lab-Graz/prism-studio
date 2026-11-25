@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed (survey import, from a real longitudinal study)
-- **LimeSurvey's `id` is no longer accepted as the participant ID.** It numbers the responses of one survey and restarts in each one, so every timepoint was filed under other people. Choose the participant column, or map the response numbers with `--id-map`.
+- **LimeSurvey's `id` is no longer accepted as the participant ID** by survey conversion, `participants preview`/`convert` and `sessions review`. It numbers the responses of one survey and restarts in each one, so every timepoint was filed under other people. Choose the participant column, or map the response numbers with `--id-map`.
 - A raw LimeSurvey response export (`.xlsx`/`.csv`) is now read completely: `Group[ITEM]` headers match their template items, and the responses are recorded in `code/survey_imports.json` like those of an `.lsa`.
 - A template whose file name and `TaskName` disagree is reported, so files are not silently written under another task name than recipes expect.
 - `survey convert --dry-run` shows the `--session` it was given instead of "default ses-1"; empty cells are no longer reported as rewritten decimal zeros.

@@ -23,6 +23,7 @@ from src.participants_backend import (
     save_participant_mapping,
 )
 from src.participant_data_checks import find_participant_data_problems
+from src.participants_sessions import require_participant_id_column
 from src.participants_converter import ParticipantsConverter, load_participant_source
 from src.eligibility import load_criteria
 from src.participants_sessions import find_repeat_conflicts, scope_to_session
@@ -314,6 +315,12 @@ def cmd_participants_preview(args) -> None:
         input_path.suffix.lower(),
         getattr(args, "id_column", None),
     )
+    if id_column:
+        try:
+            require_participant_id_column(list(df.columns), id_column, input_path.suffix.lstrip("."))
+        except ValueError as exc:
+            print(f"Error: {exc}")
+            sys.exit(2)
     if not id_column:
         print(
             "Error: Could not determine ID column. Use --id-column to select it explicitly."

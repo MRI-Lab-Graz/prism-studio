@@ -51,7 +51,7 @@ from ..session_map import (
     session_map_for_conversion,
     single_session_warning,
 )
-from .id_detection import is_limesurvey_response_table, require_participant_id_column
+from ..participants_sessions import is_limesurvey_response_table, require_participant_id_column
 from .survey_column_mapping import group_item_renames
 from .survey_processing import (
     _RUN_SUFFIX_PATTERNS,
@@ -1455,6 +1455,8 @@ def _convert_survey_dataframe_to_prism_dataset(
             res_id_col=res_id_col,
             id_map=id_map,
             id_map_file=id_map_file,
+            response_table=str(source_format).lower() in {"lsa", "lss"}
+            or is_limesurvey_response_table(df.columns),
             suggest_id_matches_fn=_suggest_id_matches,
             missing_id_mapping_error_cls=MissingIdMappingError,
         )
@@ -1463,7 +1465,10 @@ def _convert_survey_dataframe_to_prism_dataset(
 
     if alias_map:
         df = _rename_item_columns(df, alias_map)
-    bracketed = group_item_renames(list(df.columns), item_to_task)
+    # an .lsa/.lss already names its columns by question id: only plain tables need this
+    bracketed = (
+        {} if source_format in {"lsa", "lss"} else group_item_renames(list(df.columns), item_to_task)
+    )
     if bracketed:
         df = _rename_item_columns(df, bracketed)
         conversion_warnings.append(f"{len(bracketed)} 'Group[ITEM]' column(s) were read as their item (ITEM).")
@@ -1663,7 +1668,7 @@ def _convert_survey_dataframe_to_prism_dataset(
     incomplete_tasks: list[str] = []
     for task in sorted(tasks_with_data):
         path = (templates.get(task) or {}).get("path")
-        if path and path.name != f"survey-{task}.json":
+        if path and path.name.lower() != f"survey-{task}.json".lower():
             conversion_warnings.append(
                 f"{path.name} has TaskName '{task}': its files are written as task-{task}. "
                 "Make the two agree (recipes and earlier files must use the same name); "

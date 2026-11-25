@@ -388,6 +388,25 @@ def number_sessions_by_date(
     return out.reset_index(drop=True), warnings
 
 
+def is_limesurvey_response_table(columns) -> bool:
+    """A LimeSurvey response export read as a plain table (.xlsx/.csv)."""
+    lower = {str(c).strip().lower() for c in columns}
+    return "lastpage" in lower and bool(lower & {"submitdate", "seed", "startlanguage"})
+
+
+def require_participant_id_column(columns, id_column: str, source_format: str) -> None:
+    """LimeSurvey's `id` numbers the responses of one survey; it never identifies a participant."""
+    is_limesurvey = str(source_format).lower() in {"lsa", "lss"} or is_limesurvey_response_table(columns)
+    if is_limesurvey and str(id_column).strip().lower() == "id":
+        likely = [str(c) for c in columns if str(c).strip().lower() in {"code", "token", "participant_id", "vpcode", "vpn"}]
+        hint = f" Likely participant columns here: {', '.join(likely)}." if likely else ""
+        raise ValueError(
+            "The column 'id' of a LimeSurvey export is the response number (it starts again in every survey), "
+            "not the participant. Choose the column that identifies the participant (--id-column), or map the "
+            "response numbers yourself (--id-map)." + hint
+        )
+
+
 def session_assignment_table(
     df: pd.DataFrame,
     id_column: str,
@@ -405,6 +424,7 @@ def session_assignment_table(
     and unchanged since) are left out, except manual session overrides; the sessions are
     still numbered across the whole file.
     """
+    require_participant_id_column(list(df.columns), id_column, "")
     res, warnings = _outcomes(
         df, id_column, date_column, response_id_column, decisions, order, order_id_column,
         strict=False,

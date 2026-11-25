@@ -123,3 +123,85 @@ def test_a_template_whose_file_and_task_name_differ_is_reported(tmp_path):
 
     assert "survey-wellbeing2.json" in result.stdout, result.stdout + result.stderr
     assert "task-wellbeing" in result.stdout
+
+
+# ── review findings ──────────────────────────────────────────────────────
+
+
+def test_group_plus_item_wins_and_generic_or_ambiguous_codes_are_left_alone():
+    from src.converters.survey_column_mapping import group_item_renames
+
+    items = {name: "t" for name in ("PSQI0501", "01", "SQ001", "MOOD1")}
+
+    renames = group_item_renames(
+        ["PSQI05[01]", "Q1[SQ001]", "A[MOOD1]", "B[MOOD1]"], items
+    )
+
+    assert renames == {"PSQI05[01]": "PSQI0501"}
+
+
+def test_mapped_response_numbers_stay_response_numbers_in_the_ledger(tmp_path):
+    id_map = tmp_path / "map.tsv"
+    id_map.write_text("id\tparticipant_id\n1\tsub-07\n2\tsub-07b\n")
+
+    result = _run(tmp_path, _export(tmp_path), "--id-column", "id", "--id-map", str(id_map))
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    ledger = json.loads((tmp_path / "out" / "code" / "survey_imports.json").read_text())
+    assert sorted(next(iter(ledger["seen"].values()))) == ["1", "2"]
+
+
+def test_an_id_map_never_switches_to_the_response_number_on_its_own(tmp_path):
+    # the map is incomplete for the chosen column but happens to cover every response number
+    header = [*EXPORT[:6], "vpn", *EXPORT[7:]]
+    rows = [[*RESPONSES[0][:6], "9", *RESPONSES[0][7:]], [*RESPONSES[1][:6], "10", *RESPONSES[1][7:]]]
+    id_map = tmp_path / "map.tsv"
+    id_map.write_text("vp\tparticipant_id\n1\tsub-01\n2\tsub-02\n9\tsub-09\n")
+
+    result = _run(tmp_path, _export(tmp_path, header, rows), "--id-column", "vpn", "--id-map", str(id_map))
+
+    assert result.returncode != 0, result.stdout
+    assert not list((tmp_path / "out").glob("sub-*"))
+
+
+def _tool(*args):
+    return subprocess.run(
+        [sys.executable, str(PRISM_TOOLS_APP), *args],
+        capture_output=True, text=True, encoding="utf-8", cwd=str(PROJECT_ROOT), timeout=120,
+    )
+
+
+def test_session_review_refuses_the_response_number(tmp_path):
+    result = _tool("sessions", "review", "--input", str(_export(tmp_path)), "--id-column", "id")
+
+    assert result.returncode != 0
+    assert "response number" in result.stdout + result.stderr
+
+
+def test_participants_conversion_refuses_the_response_number(tmp_path):
+    for action in ("preview", "convert"):
+        project = tmp_path / action
+        project.mkdir()
+        result = _tool("participants", action, "--input", str(_export(tmp_path)),
+                       "--id-column", "id", "--project", str(project))
+
+        assert result.returncode != 0, action + result.stdout
+        assert "response number" in result.stdout + result.stderr, action
+        assert "Traceback" not in result.stderr, action
+        assert not (project / "participants.tsv").exists()
+
+
+def test_response_number_is_never_auto_detected():
+    from src.converters.id_detection import detect_id_column
+
+    assert detect_id_column(["id", "PRISMMETA1"], "lsa", has_prismmeta=True) is None
+
+
+def test_capitals_in_a_template_file_name_are_no_mismatch(tmp_path):
+    library = _library(tmp_path)
+    (library / "survey-wellbeing.json").rename(library / "survey-Wellbeing.json")
+
+    result = _run(tmp_path, _export(tmp_path), "--id-column", "Code", "--dry-run", library=library)
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "has TaskName" not in result.stdout

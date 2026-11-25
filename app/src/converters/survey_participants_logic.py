@@ -200,6 +200,7 @@ def _apply_subject_id_mapping(
     id_map_file,
     suggest_id_matches_fn,
     missing_id_mapping_error_cls,
+    response_table: bool = False,
 ):
     """Apply optional subject ID mapping and return updated dataframe/ID column."""
     warnings: list[str] = []
@@ -251,6 +252,8 @@ def _apply_subject_id_mapping(
     best_col = res_id_col
     best_matches, best_ratio = _score_column(res_id_col)
     for c in candidate_cols:
+        if response_table and c != res_id_col and c.strip().lower() == "id":
+            continue  # response numbers are mapped only when the user chose them
         matches, ratio = _score_column(c)
         if (matches > best_matches) or (matches == best_matches and ratio > best_ratio):
             best_col = c
@@ -282,7 +285,10 @@ def _apply_subject_id_mapping(
             f"ID mapping incomplete: {len(missing)} IDs from data are missing in the mapping: {sample}{more}.",
         )
 
-    df[res_id_col] = df[res_id_col].map(
+    source_col = res_id_col
+    if response_table and res_id_col.strip().lower() == "id":
+        res_id_col = "mapped_participant_id"  # `id` stays the response number (ledger, decisions)
+    df[res_id_col] = df[source_col].map(
         lambda x: id_map_lower.get(
             str(x).strip().lower(), id_map.get(str(x).strip(), x)
         )

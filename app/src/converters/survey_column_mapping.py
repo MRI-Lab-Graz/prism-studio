@@ -75,11 +75,14 @@ def group_item_renames(columns, item_to_task: dict[str, str]) -> dict[str, str]:
         match = re.fullmatch(r"(.+)\[(.+)\]", str(column).strip())
         if not match or column in item_to_task:
             continue
-        for name in (match[2], match[1] + match[2]):
+        # LimeSurvey's default codes (SQ001) name no item without their group
+        bare = () if re.fullmatch(r"SQ\d+", match[2]) else (match[2],)
+        for name in (match[1] + match[2], *bare):
             if name in item_to_task and name not in columns:
                 renames[column] = name
                 break
-    return renames
+    targets = list(renames.values())
+    return {c: name for c, name in renames.items() if targets.count(name) == 1}
 
 
 def _match_columns_to_templates(
