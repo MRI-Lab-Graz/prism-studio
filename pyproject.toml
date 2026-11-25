@@ -5,7 +5,8 @@ exclude = '''
 '''
 
 [tool.coverage.run]
-source = ["src", "app/src"]
+# No `source` here: `coverage xml` would name files relative to it, and src/ and app/src/
+# share names (tests/test_coverage_report_paths.py). CI passes --cov=src --cov=app/src.
 omit = [
     "tests/*",
     "scripts/*",

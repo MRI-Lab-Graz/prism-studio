@@ -186,7 +186,9 @@ jobs:
       - name: Run tests with coverage
         shell: bash
         run: |
-          pytest tests/ --ignore=tests/e2e --cov=src --cov=app/src --cov-report=xml --cov-report=term-missing -q
+          pytest tests/ --ignore=tests/e2e --cov=src --cov=app/src --cov-report=term-missing -q
+          # Separate step: names files from the repo root (src/ and app/src/ share names).
+          coverage xml
 
       - name: Upload coverage to Codecov
         # Pin to v5.5.0 commit to avoid transient tag-resolution/codeload issues.
