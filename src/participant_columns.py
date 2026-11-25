@@ -152,6 +152,14 @@ def _load_project_participant_filter_config(project_path: str | Path | None) -> 
         return default_config
 
 
+# Further names that label a column; not part of the table above, which also decides which columns are imported.
+_LABEL_ONLY_ALIASES = {
+    "age": ("age_years", "alter_jahre"),
+    "handedness": ("dominant_hand",),
+    "subject": ("subject_id",),
+}
+
+
 def _normalize_column_name(name: str) -> str:
     normalized = str(name).lower().strip()
     normalized = (
@@ -517,7 +525,8 @@ def _generate_neurobagel_schema(
     normalized_vocab: dict[str, dict[str, Any]] = {
         _normalize_column_name(alias): cast(dict[str, Any], vocab)
         for key, vocab in neurobagel_vocab.items()
-        for alias in (key, *_DEFAULT_PARTICIPANT_STANDARD_ALIASES.get(key, ()))
+        for alias in (key, *_DEFAULT_PARTICIPANT_STANDARD_ALIASES.get(key, ()), *_LABEL_ONLY_ALIASES.get(key, ()))
+        if alias != "race"  # imported like ethnicity, but a different variable
     }
 
     selected_columns = _filter_participant_relevant_columns(
