@@ -51,6 +51,8 @@ from ..session_map import (
     session_map_for_conversion,
     single_session_warning,
 )
+from .id_detection import is_limesurvey_response_table, require_participant_id_column
+from .survey_column_mapping import group_item_renames
 from .survey_processing import (
     _RUN_SUFFIX_PATTERNS,
     LIMESURVEY_SYSTEM_COLUMNS,
@@ -924,27 +926,6 @@ def convert_survey_lsa_to_prism_dataset(
     return result
 
 
-def _debug_print_file_head(input_path: Path, num_lines: int = 4):
-    """Print the first few lines of a text file for debugging/visibility in terminal."""
-    try:
-        # Avoid binary files
-        if input_path.suffix.lower() in {".xlsx", ".xls", ".lsa", ".zip", ".gz"}:
-            return
-
-        with open(input_path, "r", encoding="utf-8", errors="replace") as f:
-            print(f"\n[DEBUG] --- First {num_lines} lines of {input_path.name} ---")
-            for i in range(num_lines):
-                line = f.readline()
-                if not line:
-                    break
-                print(f"L{i + 1}: {line.rstrip()}")
-            header_len = 26 + len(input_path.name)
-            print("-" * header_len + "\n")
-    except Exception:
-        # Silently fail if we can't read/print
-        pass
-
-
 def _load_id_mapping(path: str | Path | None) -> dict[str, str] | None:
     """Load subject ID mapping (source -> participant_id) from TSV/CSV.
 
@@ -958,9 +939,6 @@ def _load_id_mapping(path: str | Path | None) -> dict[str, str] | None:
     if not p.exists():
         raise ValueError(f"ID map file not found: {p}")
 
-    # DEBUG: Log file details
-    file_size = p.stat().st_size
-    print(f"[PRISM DEBUG] Loading ID map: {p} (size: {file_size} bytes)")
 
     try:
         import pandas as pd
@@ -977,15 +955,6 @@ def _load_id_mapping(path: str | Path | None) -> dict[str, str] | None:
     elif suffix == ".csv":
         sep = ","
 
-    # First, manually inspect the file to debug
-    try:
-        with open(p, "r", encoding="utf-8-sig") as f:
-            first_line = f.readline()
-            if first_line:
-                print(f"[PRISM DEBUG] First line of ID map: {repr(first_line[:100])}")
-    except Exception as debug_e:
-        print(f"[PRISM DEBUG] Could not read first line: {debug_e}")
-
     try:
         df = pd.read_csv(p, sep=sep, engine="python", encoding="utf-8-sig", dtype=str)
     except Exception:
@@ -996,7 +965,6 @@ def _load_id_mapping(path: str | Path | None) -> dict[str, str] | None:
                 if not sample.strip():
                     raise ValueError("ID map file is empty")
                 sniff_sep = csv.Sniffer().sniff(sample).delimiter
-                print(f"[PRISM DEBUG] Sniffed delimiter: {repr(sniff_sep)}")
                 f.seek(0)
                 reader = csv.reader(f, delimiter=sniff_sep)
                 rows = list(reader)
@@ -1006,7 +974,6 @@ def _load_id_mapping(path: str | Path | None) -> dict[str, str] | None:
                     raise ValueError(
                         f"ID map must have at least two columns, got {len(rows[0])}"
                     )
-                print(f"[PRISM DEBUG] Manually parsed {len(rows)} rows")
                 # Use first row as header, rest as data
                 if len(rows) > 1:
                     df = pd.DataFrame(rows[1:], columns=rows[0])
@@ -1025,19 +992,13 @@ def _load_id_mapping(path: str | Path | None) -> dict[str, str] | None:
             f"ID map file {p} must have at least two columns (source_id, participant_id)"
         )
 
-    # Debug: Log current state
-    print(f"[PRISM DEBUG] DataFrame shape before processing: {df.shape}")
-    print(f"[PRISM DEBUG] DataFrame columns before processing: {list(df.columns)}")
-    print(f"[PRISM DEBUG] First 3 rows:\n{df.head(3)}")
 
     try:
         df = df.iloc[:, :2].copy()
         df.columns = ["source_id", "participant_id"]
-        print(f"[PRISM DEBUG] After column rename: {list(df.columns)}")
 
         df["source_id"] = df["source_id"].astype(str).str.strip()
         df["participant_id"] = df["participant_id"].astype(str).str.strip()
-        print(f"[PRISM DEBUG] After string conversion - dtypes: {df.dtypes.to_dict()}")
 
         mapping = {
             str(row["source_id"]).strip(): str(row["participant_id"]).strip()
@@ -1054,7 +1015,6 @@ def _load_id_mapping(path: str | Path | None) -> dict[str, str] | None:
     if not mapping:
         raise ValueError(f"ID map file {p} contains no valid mappings")
 
-    print(f"[PRISM DEBUG] Loaded ID map with {len(mapping)} entries")
     return mapping
 
 
@@ -1195,9 +1155,6 @@ def _extract_lsa_questions_map(input_path: Path) -> dict | None:
 def _read_table_as_dataframe(
     *, input_path: Path, kind: str, sheet: str | int = 0, separator: str | None = None
 ):
-    # Print head for visibility in terminal
-    _debug_print_file_head(input_path)
-
     if kind in ("xlsx", "csv", "tsv"):
         result = _read_tabular_file(
             input_path, kind=kind, sheet=sheet, separator=separator
@@ -1490,6 +1447,8 @@ def _convert_survey_dataframe_to_prism_dataset(
 
     # --- Apply subject ID mapping if provided ---
     id_map: dict[str, str] | None = _load_id_mapping(id_map_file)
+    if not id_map:
+        require_participant_id_column(list(df.columns), res_id_col, source_format)
     df, res_id_col, id_map_warnings = (
         _survey_participants_logic._apply_subject_id_mapping(
             df=df,
@@ -1504,6 +1463,10 @@ def _convert_survey_dataframe_to_prism_dataset(
 
     if alias_map:
         df = _rename_item_columns(df, alias_map)
+    bracketed = group_item_renames(list(df.columns), item_to_task)
+    if bracketed:
+        df = _rename_item_columns(df, bracketed)
+        conversion_warnings.append(f"{len(bracketed)} 'Group[ITEM]' column(s) were read as their item (ITEM).")
 
     # PRISM survey conversion currently accepts long-format tables only.
     # If wide session-coded columns are detected without a session column,
@@ -1698,6 +1661,14 @@ def _convert_survey_dataframe_to_prism_dataset(
 
     refusals: list[dict] = []
     incomplete_tasks: list[str] = []
+    for task in sorted(tasks_with_data):
+        path = (templates.get(task) or {}).get("path")
+        if path and path.name != f"survey-{task}.json":
+            conversion_warnings.append(
+                f"{path.name} has TaskName '{task}': its files are written as task-{task}. "
+                "Make the two agree (recipes and earlier files must use the same name); "
+                "an instrument version belongs in Study.Version, not in the name."
+            )
     for task in sorted(tasks_with_data):  # a template that is used is a project template: it must be complete
         try:
             require_complete_template(templates[task]["json"], source=str(templates[task]["path"]))
@@ -1922,7 +1893,7 @@ def _convert_survey_dataframe_to_prism_dataset(
     )
 
     # --- Remember imported LimeSurvey responses (for "skip surveys already in the project") ---
-    if ls_system_cols:
+    if ls_system_cols or is_limesurvey_response_table(df.columns):
         _survey_io._record_imported_responses(
             df=df,
             res_id_col=res_id_col,

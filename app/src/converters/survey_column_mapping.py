@@ -68,6 +68,20 @@ def _collect_primary_template_items(template_payload: dict) -> set[str]:
     return items
 
 
+def group_item_renames(columns, item_to_task: dict[str, str]) -> dict[str, str]:
+    """LimeSurvey table exports head a column ``Group[ITEM]``: the template item it stands for."""
+    renames = {}
+    for column in columns:
+        match = re.fullmatch(r"(.+)\[(.+)\]", str(column).strip())
+        if not match or column in item_to_task:
+            continue
+        for name in (match[2], match[1] + match[2]):
+            if name in item_to_task and name not in columns:
+                renames[column] = name
+                break
+    return renames
+
+
 def _match_columns_to_templates(
     *,
     df,

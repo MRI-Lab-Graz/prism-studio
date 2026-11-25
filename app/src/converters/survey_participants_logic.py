@@ -247,25 +247,17 @@ def _apply_subject_id_mapping(
         ratio = matches / total if total else 0.0
         return matches, ratio
 
-    print(f"[PRISM DEBUG] ID map keys sample: {list(id_map_lower.keys())[:5]} ...")
-    print(f"[PRISM DEBUG] Dataframe columns: {list(df.columns)}")
-    print(f"[PRISM DEBUG] Candidate ID columns: {candidate_cols}")
 
     best_col = res_id_col
     best_matches, best_ratio = _score_column(res_id_col)
-    print(
-        f"[PRISM DEBUG] Score {res_id_col}: matches={best_matches}, ratio={best_ratio:.3f}"
-    )
     for c in candidate_cols:
         matches, ratio = _score_column(c)
-        print(f"[PRISM DEBUG] Score {c}: matches={matches}, ratio={ratio:.3f}")
         if (matches > best_matches) or (matches == best_matches and ratio > best_ratio):
             best_col = c
             best_matches, best_ratio = matches, ratio
 
     if best_matches == 0 and "code" in candidate_cols:
         best_col = "code"
-        print("[PRISM DEBUG] No matches; falling back to 'code' column")
 
     if best_col != res_id_col:
         warnings.append(
@@ -273,9 +265,6 @@ def _apply_subject_id_mapping(
         )
         res_id_col = best_col
 
-    print(
-        f"[PRISM DEBUG] Selected ID column: {res_id_col}; unique sample: {df[res_id_col].astype(str).unique()[:10]}"
-    )
 
     df[res_id_col] = df[res_id_col].astype(str).str.strip()
     ids_in_data = set(df[res_id_col].unique())

@@ -489,10 +489,6 @@ def _detect_sessions(*, df, res_ses_col: str | None) -> list[str]:
             ]
         )
         print(f"[PRISM INFO] Sessions detected in {res_ses_col}: {detected_sessions}")
-    else:
-        print(
-            f"[PRISM DEBUG] No session column detected (res_ses_col is None). Available columns: {list(df.columns)[:20]}"
-        )
     return detected_sessions
 
 

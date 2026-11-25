@@ -203,7 +203,7 @@ def test_prism_export_converts_back_with_every_answer(tmp_path, exporter):
     out = tmp_path / "ds"
     convert_survey_lsa_to_prism_dataset(
         input_path=lsa, library_dir=OFFICIAL_SURVEY_LIBRARY, output_root=out,
-        id_column="id", unknown="warn",
+        id_column="token", unknown="warn",
     )
     tsv = next(out.rglob("*task-demo_survey.tsv")).read_text(encoding="utf-8").splitlines()
     header, row = tsv[0].split("\t"), tsv[1].split("\t")
