@@ -45,7 +45,10 @@ Built as described below, plus one general rule: in a modality without a context
   biometrics sidecar column resolves to its term, and the coverage report lists biometrics.
 - **Done when:** every column of `biometrics-fitness.json` resolves to a term (or is a declared non-term column).
 
-### 0b. Physio, eyetracking, events and the other modalities (design only)
+### 0b. Physio, eyetracking, events and the other modalities - DESIGN DONE (2026-11-25), build open
+Approved: `2026-11-25-ids-physio-events-design.md`. It replaces the notes below: physio needs one general rule
+(`columnsField`), so "no new code path" does not hold; the terms are per measured signal, not per `recording` value.
+
 - Decide per kind what is a measurement that needs an ID: e.g. the physio `recording` values (`ecg`, `resp`, `eda`, ...)
   are already a controlled list and are natural shared terms; events and eyetracking may have none. Same mechanism as
   step 0 (a `terms` declaration plus term files), no new code path. A short design note first, no code.
