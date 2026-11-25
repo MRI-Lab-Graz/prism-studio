@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Important: `participants.json` could say two opposite things about one code** (for example `Levels` "1": "Male" but `Annotations.Levels` "1": "Female"). Saving annotations updated only `Annotations.Levels`, and saving survey fields replaced only `Levels`. Both now stay together. The validator reports existing contradictions as an error: **re-validate your projects**, check each reported column against its codebook, and check exports made from it (e.g. Neurobagel).
+
 ### Added
 - **Recipe Builder: help and worked examples for formulas and best-of entries; clearer example-value boxes and check messages.**
 - **Recipe Builder: formula scores and Best of N.** A score can use Method `formula` (item pull-down, check with example values, rendered formula) and the new Best of N section writes `Transforms.Derived` `max`/`min` entries, so a recipe like the Y Balance Test needs no JSON editing. New commands `prism_tools recipes formula-check` and `recipes formula-latex` run the same check and rendering.

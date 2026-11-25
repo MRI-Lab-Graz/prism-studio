@@ -37,6 +37,24 @@ def add_missing_levels(schema: dict, df) -> None:
             levels[code] = code
 
 
+def _swapped_codes(levels: dict, annotations) -> list[str]:
+    """Codes whose annotation label is the Levels label of a *different* code.
+
+    Other wording (translations, standard term names) is not reported.
+    """
+    annotated = annotations.get("Levels") if isinstance(annotations, dict) else None
+    if not isinstance(annotated, dict):
+        return []
+    labels = {code: str(label).strip().casefold() for code, label in levels.items()}
+    swapped = []
+    for code, term in annotated.items():
+        label = str(term.get("Label", "") if isinstance(term, dict) else "")
+        label = label.strip().casefold()
+        if label and label != labels.get(code) and label in labels.values():
+            swapped.append(code)
+    return sorted(swapped)
+
+
 def check_participants_levels(root_dir: str) -> list[tuple[str, str, str]]:
     root = Path(root_dir)
     tsv, sidecar_path = root / "participants.tsv", root / "participants.json"
@@ -62,6 +80,20 @@ def check_participants_levels(root_dir: str) -> list[tuple[str, str, str]]:
         spec = spec if isinstance(spec, dict) else {}
         levels = spec.get("Levels")
         if isinstance(levels, dict):
+            swapped = _swapped_codes(levels, spec.get("Annotations"))
+            if swapped:
+                issues.append(
+                    (
+                        "ERROR",
+                        (
+                            f"participants.json column '{column}': Levels and "
+                            f"Annotations.Levels contradict each other for codes "
+                            f"{', '.join(swapped)}. Check the codebook and correct "
+                            "the wrong block."
+                        ),
+                        str(sidecar_path),
+                    )
+                )
             missing = sorted(values - set(levels))
             if missing:
                 issues.append(

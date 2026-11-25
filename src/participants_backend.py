@@ -210,6 +210,14 @@ def merge_neurobagel_schema_for_columns(
                     else:
                         base_schema[col].pop(key, None)
                     continue
+                current = base_schema[col].get(key)
+                if key == "Levels" and isinstance(current, dict):
+                    # Must follow Annotations.Levels above, which is replaced.
+                    # A bare code (no label yet) never replaces a real label.
+                    for code, label in value.items():
+                        if label != code or code not in current:
+                            current[code] = label
+                    continue
                 if key not in base_schema[col]:
                     base_schema[col][key] = value
 
@@ -263,6 +271,10 @@ def merge_survey_selected_participants_schema(
                 **existing_spec,
                 **selected_spec,
             }
+            # The selection carries only generic Levels; replacing curated ones
+            # would leave their Annotations describing other codes.
+            if existing_spec.get("Levels"):
+                merged[field_name]["Levels"] = existing_spec["Levels"]
         else:
             merged[field_name] = selected_spec
 
