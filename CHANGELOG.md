@@ -7,29 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-- **Participant annotation suggestions: columns that only contain a variable name were labelled as that variable** (`native_language` and `language` as "Age", typed continuous). Only the variable's name or a known alias (e.g. `Alter`, `Geschlecht`) counts now; check `Description` and `VariableType` in existing `participants.json` files.
-- **Survey conversion broke `Study.LicenseByLanguage`** (e.g. DASS-21): the sidecar got the German licence entry in place of the language-keyed structure, so validation failed with a schema error. The language keys are now kept. Convert affected data again.
-- **Important: `participants.json` could say two opposite things about one code** (for example `Levels` "1": "Male" but `Annotations.Levels` "1": "Female"). Saving annotations updated only `Annotations.Levels`, and saving survey fields replaced only `Levels`. Both now stay together. The validator reports existing contradictions as an error: **re-validate your projects**, check each reported column against its codebook, and check exports made from it (e.g. Neurobagel). Correct a reported column in `participants.json` **before** saving it again in the annotation panel: the panel keeps the stored term URL next to the `Levels` label, even when the two disagree.
-
-### Added
-- **Recipe Builder: help and worked examples for formulas and best-of entries; clearer example-value boxes and check messages.**
-- **Recipe Builder: formula scores and Best of N.** A score can use Method `formula` (item pull-down, check with example values, rendered formula) and the new Best of N section writes `Transforms.Derived` `max`/`min` entries, so a recipe like the Y Balance Test needs no JSON editing. New commands `prism_tools recipes formula-check` and `recipes formula-latex` run the same check and rendering.
-
-### Changed
-- Recipe Builder: the Inversion box can be folded (folded by default when no item is inverted).
-- Recipe Builder: a newly added scale opens expanded.
-
-### Fixed
-- A conversion no longer replaces the project's `dataset_description.json` with placeholder values (survey, biometrics, physio saves).
-- `max` or `min` as a score `Method` was silently left empty (`n/a`); the validator now rejects it and points to `Transforms.Derived`.
-- Recipe Builder only lists modalities that exist in the project and says 'no project loaded' instead of 'failed to load templates'. New command `recipes modalities --project P`.
+## [1.26.2] - 2026-11-25
 
 ### Removed (breaking)
 - **Sending, syncing and getting data moved to Worldline Desktop.** `prism_tools publish` and `prism_tools datalad sync | update | put-on-server | open-from-server | get-data` are gone, with their Studio routes (Sync now, Put on server, Open from server, Get data, Publish). Use [Worldline Desktop](https://worldline-desktop.readthedocs.io/) (0.6.3 or later refuses to send a project that tracks `sourcedata/` to a public host). The DataLad page keeps Enable DataLad and Save; `datalad enable | save | status | doctor | identity` and `save-gate` stay.
 - If you installed the old pre-push hook (`publish --install-hook`), run `prism_tools save-gate --install-hooks --project <root>`: it removes that hook, which would otherwise block every push.
 - `datalad status` no longer takes `--check-server` or `--validate` and no longer reports `reachable`, `other_servers`, `valid` or `error_count` (use `datalad doctor`). The save audit log is now `.git/prism/save.jsonl`; an existing `publish.jsonl` is renamed on the next save.
 - The DataLad page and the server-backup note now tell people to install Worldline Desktop and link to its install guide (before: its docs front page). PRISM does not launch the app.
+
+### Added
+- **Recipe Builder: help and worked examples for formulas and best-of entries; clearer example-value boxes and check messages.**
+- **Recipe Builder: formula scores and Best of N.** A score can use Method `formula` (item pull-down, check with example values, rendered formula) and the new Best of N section writes `Transforms.Derived` `max`/`min` entries, so a recipe like the Y Balance Test needs no JSON editing. New commands `prism_tools recipes formula-check` and `recipes formula-latex` run the same check and rendering.
+- **Biometrics measures have shared IDs** (`prism:resting-heart-rate`, `prism:grip-strength` with `.left` / `.right`, ...), and the fitness template names them. Biometrics sidecars, also ones without `Term`, now get the same term notices as biosample and environment (specification v1.5.26).
+- **A survey ID can be deprecated**, naming its replacement: it is marked `deprecated` and may leave its template; a released ID is never removed (specification v1.5.27).
+- `prism_tools terms coverage [--modality M] [--project P] [--missing]`: how many IDs have a link to an outside vocabulary, and which have none.
+- `prism_tools terms export-links [--project P] [--out FILE]`: the links of `mappings/` (and a project's own) as an SSSOM table.
+- **A project can recognise its own surveys by their wording.** `prism_tools spec local add-survey --sidecar FILE` stores fingerprints of item wording and scales (never item text), `remove-survey` takes them out, and `terms resolve --project P` uses them; an instrument only the project has gets a `local:` name.
+
+### Changed
+- Recipe Builder: the Inversion box can be folded (folded by default when no item is inverted).
+- Recipe Builder: a newly added scale opens expanded.
+- A survey's `OriginalName` and `Instructions` take any language; no `en` entry is needed (survey schema 2.1.7, specification v1.5.25). The template editor says which fields are English and which keep the original language.
+
+### Fixed
+- **Participant annotation suggestions: columns that only contain a variable name were labelled as that variable** (`native_language` and `language` as "Age", typed continuous). Only the variable's name or a known alias (e.g. `Alter`, `Geschlecht`) counts now; check `Description` and `VariableType` in existing `participants.json` files.
+- **Survey conversion broke `Study.LicenseByLanguage`** (e.g. DASS-21): the sidecar got the German licence entry in place of the language-keyed structure, so validation failed with a schema error. The language keys are now kept. Convert affected data again.
+- **Important: `participants.json` could say two opposite things about one code** (for example `Levels` "1": "Male" but `Annotations.Levels` "1": "Female"). Saving annotations updated only `Annotations.Levels`, and saving survey fields replaced only `Levels`. Both now stay together. The validator reports existing contradictions as an error: **re-validate your projects**, check each reported column against its codebook, and check exports made from it (e.g. Neurobagel). Correct a reported column in `participants.json` **before** saving it again in the annotation panel: the panel keeps the stored term URL next to the `Levels` label, even when the two disagree.
+- A conversion no longer replaces the project's `dataset_description.json` with placeholder values (survey, biometrics, physio saves).
+- `max` or `min` as a score `Method` was silently left empty (`n/a`); the validator now rejects it and points to `Transforms.Derived`.
+- Recipe Builder only lists modalities that exist in the project and says 'no project loaded' instead of 'failed to load templates'. New command `recipes modalities --project P`.
+- A DOI containing `//` (for example `10.1026//0012-...`) is accepted; `.`, `..` and a trailing `/` are still refused.
+- Saving after a subject rename: a renamed `sub-*` dataset that the superproject had not registered yet was checked as a whole dataset ("Missing dataset_description.json", "No subjects found") and the save was refused.
 
 ## [1.26.1] - 2026-11-20
 
