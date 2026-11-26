@@ -82,6 +82,8 @@ Once you've completed all seven chapters:
 - [Recipes](RECIPES.md) and
   [Prepare a Recipe](TUTORIAL_BEGINNER_4_RECIPE.md) — score the responses
   once you actually have them
+- [Participant code maps](CODE_MAPS.md) — if people typed their own codes into the
+  survey
 - [Converter → Survey](studio/converter_survey.md) — import real response
   data against this template
 - [LimeSurvey Integration](LIMESURVEY_INTEGRATION.md) — the full round trip:

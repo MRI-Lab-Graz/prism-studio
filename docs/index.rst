@@ -239,6 +239,7 @@ in the repository root for the full citation, including all authors.
    TEMPLATES
    SCHEMA_VERSIONING
    ONTOLOGY_READY
+   CODE_MAPS
 
 .. toctree::
    :maxdepth: 2

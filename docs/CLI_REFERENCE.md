@@ -219,6 +219,9 @@ conflict and never overwritten. A recorded response is skipped as a whole, even 
 questionnaires in the export (the check is about new *responses*). Without a record in that file it falls back to the
 file name and says so.
 
+Participant codes: `--id-map FILE` maps the values of the ID column to participant IDs. Without it,
+the project's `code/survey_*code_map.tsv` files are used, see [Participant code maps](CODE_MAPS.md).
+
 Templates are optional for `.lsa` files: questionnaires without a library template are
 left out of the conversion and listed as a warning; the matched ones convert.
 
