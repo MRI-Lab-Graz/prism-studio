@@ -1432,11 +1432,7 @@ class DatasetValidator:
         issues = []
         for table in current_specification().rules.tables:
             path = os.path.join(root_dir, f"{table}.json")
-            try:
-                with open(path, encoding="utf-8") as handle:
-                    sidecar = json.load(handle)
-            except (OSError, ValueError, RecursionError):
-                continue  # absent or unreadable: other checks report a broken file
+            sidecar = _default_load_sidecar_json(path)  # None: absent or unparseable (no notices to give)
             if isinstance(sidecar, dict):
                 data = os.path.join(root_dir, f"{table}.tsv")  # what the hinted commands take as --data
                 issues.extend(self._check_terms(sidecar, normalize_path(path), data, root_dir, table))

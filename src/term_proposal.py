@@ -266,10 +266,16 @@ def check_with_specification(proposal: dict, registry: dict[str, dict], specimen
     if specimens is None and "contextField" in modalities.get(term_modality, {}):
         specimens = module.check_terms.specimen_types(stable / f"{term_modality}.schema.json")
     # a one-level modality (no contextField) gets specimens=None, never [] (that would apply two-level rules)
-    from src.term_registry import mappings_root  # local, like the import above
+    from src.survey_terms import build_survey_registry  # local, like the import above
+    from src.term_registry import mappings_root
+
+    # the specification's CI checks IDs (and `termsFrom` names) across registries: so does this
+    others = {m: terms for m, terms in current_specification().terms.items() if m != term_modality}
+    others["survey"] = build_survey_registry()[0]
 
     problems = module.check_proposal(
         document, registry, specimens or None, schemas=schemas, modalities=modalities, mappings_dir=mappings_root(),
+        others=others,
     )[1]
     # the form's size limit, on the indented text that is printed, shown and pasted (extract_proposal measures that)
     size = len(json.dumps(document, indent=2, ensure_ascii=False).encode("utf-8"))

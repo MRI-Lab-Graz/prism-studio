@@ -126,3 +126,42 @@ def test_participants_json_written_from_the_template_keeps_the_term():
 
     out = _participants_json_from_template(columns=["participant_id", "education_level"], template=TEMPLATE)
     assert out["education_level"]["Term"] == "prism:education-level"
+
+
+def test_a_name_of_a_borrowed_term_cannot_be_added(tmp_path):
+    sidecar = tmp_path / "participants.json"
+    sidecar.write_text(json.dumps({"body_len": {"Description": "d", "Units": "cm"}}), encoding="utf-8")
+    r = subprocess.run(
+        [sys.executable, str(REPO / "prism_tools.py"), "spec", "local", "add-term", "--project", str(tmp_path),
+         "--sidecar", str(sidecar), "--column", "body_len", "--modality", "participants", "--label", "height"],
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
+    )
+    assert r.returncode == 1 and "Traceback" not in r.stderr, r.stdout + r.stderr
+
+
+def test_a_hand_written_local_term_never_shadows_a_borrowed_one(tmp_path):
+    folder = tmp_path / "code" / "specification" / "terms" / "participants"
+    folder.mkdir(parents=True)
+    (folder / "height.json").write_text(json.dumps(
+        {"TermID": "local:height", "Level": "variable", "Label": "mine", "Description": "d", "Units": "m"}), encoding="utf-8")
+    spec = load_specification(project_root=tmp_path)
+    assert spec.registry_for("participants")["height"]["TermID"] == "prism:height"
+
+
+def test_the_proposal_check_knows_the_borrowed_registry():
+    from src.term_proposal import check_with_specification
+
+    term = {"TermID": "prism:body-len", "Level": "variable", "Label": "height", "Description": "d", "Units": "cm"}
+    problems = check_with_specification(
+        {"modality": "participants", "terms": [term]}, current_specification().terms["participants"])
+    assert any("height" in p for p in problems), problems
+
+
+def test_cli_show_finds_a_term_of_terms_from():
+    assert _tools("terms", "show", "height", "--modality", "participants", "--json")["term"]["TermID"] == "prism:height"
+
+
+def test_a_short_term_name_is_not_suggested_for_any_word_containing_it():
+    for column in ("language_stage", "message"):
+        assert "prism:age" not in _tools("terms", "suggest", column, "--modality", "participants", "--json")["similar"]
+    assert "prism:age" in _tools("terms", "suggest", "age_at_scan", "--modality", "participants", "--json")["similar"]

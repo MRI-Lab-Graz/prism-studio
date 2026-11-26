@@ -151,6 +151,11 @@ def term_meaning(term: dict, mappings: dict[str, dict], registry: dict[str, dict
     return {"Measures": measures, "MeasuresFrom": origin if measures else None, "ValueRules": own(term, "ValueRules")[0]}
 
 
+def borrowed_terms(declaration: dict) -> dict[str, dict]:
+    """The official terms of a declaration's `termsFrom` registries (participants: biometrics)."""
+    return {key: term for source in declaration.get("termsFrom", ()) for key, term in load_registry(source).items()}
+
+
 def _similar(registry: dict[str, dict], probe: str) -> tuple[str, ...]:
     """Parent terms whose name is contained in the probe or contains it (substring only)."""
     lowered = probe.lower()
@@ -160,7 +165,8 @@ def _similar(registry: dict[str, dict], probe: str) -> tuple[str, ...]:
     for key, term in registry.items():
         if term.get("Level") not in ("analyte", "variable"):
             continue
-        if any(len(n) >= 3 and (n in lowered or lowered in n) for n in term_names(key, term)):
+        tokens = re.split(r"[^a-z0-9]+", lowered)  # a short name (age) must be a whole word, not part of "language"
+        if any(len(n) >= 3 and (n in (lowered if len(n) > 3 else tokens) or lowered in n) for n in term_names(key, term)):
             hits.append(term["TermID"])
     return tuple(sorted(hits))
 

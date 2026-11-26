@@ -19,7 +19,7 @@ from src.schema_manager import DEFAULT_SCHEMA_DIR, load_all_schemas
 from src.spec_overlay import (
     _vendored, load_local_mappings, load_local_patches, load_local_terms, local_patch_modalities, merge_terms,
 )
-from src.term_registry import load_mappings, load_registry, mappings_root
+from src.term_registry import borrowed_terms, load_mappings, load_registry, mappings_root
 
 
 @dataclass(frozen=True, eq=False)  # compared by identity: the dict fields would make a generated __eq__/__hash__ costly or fail
@@ -98,7 +98,7 @@ def load_specification(
         registry = load_registry(modality)
         if project_root is not None:
             found, skipped = load_local_terms(project_root, modality)
-            registry, in_use, dropped = merge_terms(registry, found)
+            registry, in_use, dropped = merge_terms(registry, found, borrowed_terms(rules.term_modalities[modality]))
             local |= in_use
             ignored += dropped
             problems += skipped
