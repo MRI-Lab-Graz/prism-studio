@@ -14,7 +14,11 @@ import re
 from pathlib import Path
 
 from src.constants import SUPPORTED_MODALITIES as _SUPPORTED_MODALITIES
-from src.recipe_validation import validate_recipe, validate_recipe_warnings
+from src.recipe_validation import (
+    read_participant_variables,
+    validate_recipe,
+    validate_recipe_warnings,
+)
 from src.survey_scale_inference import (
     apply_implicit_numeric_level_ranges,
     get_survey_item_map,
@@ -604,7 +608,11 @@ def save_recipe_to_project(
         set(extract_items_from_template(matched_template["full_path"], modality=modality))
         or None
     )
-    validation_errors = validate_recipe(recipe, known_items=known_items)
+    validation_errors = validate_recipe(
+        recipe,
+        known_items=known_items,
+        participant_variables=read_participant_variables(dataset_path),
+    )
     if validation_errors:
         raise RecipeSaveError("Recipe validation failed", validation_errors)
 
@@ -689,8 +697,14 @@ def draft_from_template(dataset_path, task: str, *, modality: str = "survey", in
     descriptions, descriptions_i18n, description_languages, template_language = extract_item_description_metadata_from_template(
         path, modality=modality
     )
+    items = extract_items_from_template(path, modality=modality)
+    item_names = {item.lower() for item in items}
     return {
-        "items": extract_items_from_template(path, modality=modality),
+        "items": items,
+        # an item of the same name wins, so such a column is not offered
+        "participant_variables": [
+            name for name in read_participant_variables(dataset_path) if name.lower() not in item_names
+        ],
         "item_descriptions": descriptions,
         "item_descriptions_i18n": descriptions_i18n,
         "item_description_languages": description_languages,

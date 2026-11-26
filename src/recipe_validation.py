@@ -10,7 +10,9 @@ before execution.
 
 from __future__ import annotations
 
+import csv
 import re
+from pathlib import Path
 from typing import Any
 
 from src.constants import SUPPORTED_MODALITIES
@@ -38,6 +40,18 @@ def _as_list_of_str(x: Any) -> list[str]:
 
 
 _RESERVED_OUTPUT_COLUMNS = {"participant_id", "session", "run"}
+
+
+def read_participant_variables(project_root: str | Path) -> list[str]:
+    """The columns of the project's participants.tsv a recipe may use as variables."""
+    try:
+        with open(Path(project_root) / "participants.tsv", encoding="utf-8-sig", newline="") as fh:
+            header = next(csv.reader(fh, delimiter="\t"), [])
+    except (OSError, UnicodeDecodeError, csv.Error):
+        return []
+    if "participant_id" not in header:
+        return []
+    return [col for col in header if col and col != "participant_id"]
 
 
 def _unknown_items(items: list[str], known_items_lower: set[str] | None) -> list[str]:
@@ -155,7 +169,7 @@ def _validate_score_entries(
                 errors.append(
                     prefix
                     + f"{list_label}[{idx}].Items references item(s) not found in the "
-                    f"matched template: {unknown}"
+                    f"matched template or participants.tsv: {unknown}"
                 )
 
         missing = str(score.get("Missing", "ignore")).strip().lower()
@@ -218,6 +232,7 @@ def validate_recipe(
     *,
     recipe_id: str | None = None,
     known_items: set[str] | None = None,
+    participant_variables: list[str] | None = None,
 ) -> list[str]:
     """Return a list of human-readable validation errors for a recipe.
 
@@ -228,6 +243,9 @@ def validate_recipe(
     is reported as a validation error instead of silently resolving to no
     value at scoring time. Pass ``None`` (the default) to skip this check when
     the matched template can't be resolved.
+
+    ``participant_variables`` (participants.tsv columns) count as known too in
+    scores and derived variables, but not in ``Transforms.Invert``.
     """
 
     errors: list[str] = []
@@ -334,7 +352,8 @@ def validate_recipe(
     # Names available to *later* Derived entries only: _calculate_derived_variables
     # runs the list in order and writes each result back into the row before the
     # next entry runs, so a later Derived can legitimately reference an earlier one.
-    available_derived_lower: set[str] = set()
+    # participant columns are available to Derived and Scores from the start; Invert never sees them
+    available_derived_lower: set[str] = {str(v).strip().lower() for v in participant_variables or []}
     if derived_cfg is not None:
         if not isinstance(derived_cfg, list):
             errors.append(prefix + "Transforms.Derived must be a list")
@@ -377,7 +396,7 @@ def validate_recipe(
                         errors.append(
                             prefix
                             + f"Transforms.Derived[{idx}].Items references item(s) not found "
-                            f"in the matched template: {unknown}"
+                            f"in the matched template or participants.tsv: {unknown}"
                         )
 
                 if method == "map":

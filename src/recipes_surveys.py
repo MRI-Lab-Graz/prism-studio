@@ -33,7 +33,7 @@ from src.datalad_execution import (
     run_datalad_save,
     run_datalad_unlock,
 )
-from src.recipe_validation import validate_recipe
+from src.recipe_validation import read_participant_variables, validate_recipe
 from src.safe_excel import to_excel_safe
 from src.utils.io import read_json as _read_json, write_json as _write_json
 from src.survey_scale_inference import get_survey_item_map
@@ -798,7 +798,7 @@ def _merge_all_output_column_name(
 def _inject_participant_values_into_rows(
     rows: list[dict[str, str]], participant_values: dict[str, str]
 ) -> list[dict[str, str]]:
-    """Return row copies with participant-level values filled where missing."""
+    """Return row copies with participant values added; a row's own column wins, even when n/a."""
     if not participant_values:
         return rows
 
@@ -806,7 +806,7 @@ def _inject_participant_values_into_rows(
     for row in rows:
         merged = row.copy()
         for col, val in participant_values.items():
-            if col not in merged or _is_missing_cell_value(merged.get(col)):
+            if col not in merged:
                 merged[col] = val
         out_rows.append(merged)
     return out_rows
@@ -1351,7 +1351,10 @@ def _load_and_validate_recipes(
             template_dataset_path, modality=modality, task=task
         )
         errs = validate_recipe(
-            recipe_json, recipe_id=recipe_id, known_items=known_items
+            recipe_json,
+            recipe_id=recipe_id,
+            known_items=known_items,
+            participant_variables=read_participant_variables(template_dataset_path),
         )
         rec_path = rec.get("path")
         rec_name = rec_path.name if isinstance(rec_path, Path) else str(recipe_id)
