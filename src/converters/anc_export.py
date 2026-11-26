@@ -23,6 +23,8 @@ import sys
 import yaml
 from urllib.parse import urlparse
 
+from src.code_maps import find_code_map_files, is_code_map
+
 # Add parent directory to path for imports
 if __name__ == "__main__":
     sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -126,6 +128,10 @@ class ANCExporter:
         logger.info(f"✓ AND export completed: {self.output_path}")
         return self.output_path
 
+    def _ignore_code_maps(self, folder: str, names: list[str]) -> list[str]:
+        rel = Path(folder).relative_to(self.dataset_path).parts
+        return [n for n in names if (Path(folder) / n).is_file() and is_code_map((*rel, n))]
+
     def _copy_dataset_structure(self):
         """Copy dataset structure to export directory."""
         logger.info("Copying dataset structure...")
@@ -141,7 +147,7 @@ class ANCExporter:
 
             if item.is_dir():
                 if not dest.exists():
-                    shutil.copytree(item, dest, symlinks=False)
+                    shutil.copytree(item, dest, symlinks=False, ignore=self._ignore_code_maps)
             else:
                 if not dest.exists():
                     shutil.copy2(item, dest)

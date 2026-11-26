@@ -16,6 +16,7 @@ from src.export_options import (
     run_project_export,
 )
 from src.cli.services.export_args import export_data_from_args
+from src.code_maps import left_out_message
 
 
 def cmd_export_project(args) -> None:
@@ -65,6 +66,12 @@ def cmd_export_folder(args) -> None:
         print(f"Error: {result.get('error') or 'folder export failed'}")
         sys.exit(1)
     print(f"✅ Exported to {result.get('output_path') or result.get('output_root') or args.output_folder or 'the default folder'}")
+    _print_left_out(result)
+
+
+def _print_left_out(result: dict) -> None:
+    if result.get("code_maps_left_out"):
+        print(left_out_message(result["code_maps_left_out"]))
 
 
 def _project_or_exit(args) -> Path:
@@ -92,6 +99,8 @@ def cmd_export_git_lfs(args) -> None:
     """A one-way Git LFS export snapshot: a folder, and by default an initialized repository."""
     result = run_git_lfs_export(_project_or_exit(args), export_data_from_args(args))
     _print_result(result, args, f"Exported to {result.get('output_path') or result.get('output_root') or 'the default folder'}")
+    if not getattr(args, "json", False):
+        _print_left_out(result)
 
 
 def cmd_export_annex_availability(args) -> None:

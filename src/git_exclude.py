@@ -29,7 +29,7 @@ def ensure_git_excluded(project_root: str | Path, *patterns: str) -> None:
         pass  # best effort: never block an export/log on a read-only .git
 
 
-SENSITIVE_PATHS = ("code/anonymization_map.json", "code/logs")
+SENSITIVE_PATHS = ("code/anonymization_map.json", "code/logs", "code/**/*code_map*")
 
 
 def tracked_sensitive_files(project_root: str | Path) -> list[str]:
@@ -37,7 +37,8 @@ def tracked_sensitive_files(project_root: str | Path) -> list[str]:
     import subprocess
 
     out = subprocess.run(
-        ["git", "-C", str(project_root), "ls-files", "--", *SENSITIVE_PATHS],
+        ["git", "-C", str(project_root), "ls-files", "--",
+         *(f":(glob){p}" if "*" in p else p for p in SENSITIVE_PATHS)],
         capture_output=True, text=True, check=False,
     )
     return out.stdout.split("\n")[:-1] if out.returncode == 0 and out.stdout else []

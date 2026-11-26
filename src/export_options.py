@@ -10,6 +10,7 @@ import threading
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Set
 
+from src.code_maps import find_code_map_files, left_out_message
 from src.project_export import export_project
 
 EXPORT_VALIDATION_MODES = {"both", "bids", "prism", "ignore", "none"}
@@ -321,10 +322,15 @@ def run_anc_export(project_path, data: dict) -> dict:
         include_ci_examples=bool(data.get("include_ci_examples", False)),
         copy_data=True,
     )
+    left_out = find_code_map_files(project)
+    message = "ANC export completed successfully"
+    if left_out:
+        message += ". " + left_out_message(left_out)
     return {
         "success": True,
         "output_path": str(result_path),
-        "message": "ANC export completed successfully",
+        "code_maps_left_out": left_out,
+        "message": message,
         "generated_files": {
             "readme": str(result_path / "README.md"),
             "citation": str(result_path / "CITATION.cff"),

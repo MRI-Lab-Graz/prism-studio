@@ -11,6 +11,8 @@ import zipfile
 from pathlib import Path
 from typing import Any
 
+from src.code_maps import find_code_map_files, is_code_map
+
 TEMPLATE_EXCLUDED_ROOT_FILES = {
     "participants.tsv",
     "participants.json",
@@ -38,6 +40,9 @@ def _write_tree(
         rel_root = Path(root).relative_to(source_root)
         for filename in files:
             if filename in TEMPLATE_EXCLUDED_FILENAMES:
+                stats["files_skipped"] += 1
+                continue
+            if is_code_map((Path(arc_prefix) / rel_root / filename).parts):
                 stats["files_skipped"] += 1
                 continue
             source_file = Path(root) / filename
@@ -87,5 +92,6 @@ def export_project_template_zip(project_path: Path, output_zip: Path) -> dict[st
     return {
         "project_path": str(project_root),
         "output_zip": str(output_path),
+        "code_maps_left_out": find_code_map_files(project_root),
         **stats,
     }

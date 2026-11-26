@@ -22,7 +22,8 @@ from src.survey_dates import (
     drop_survey_date_sidecar,
     has_survey_date,
 )
-from src.git_exclude import ensure_git_excluded
+from src.code_maps import find_code_map_files, is_code_map, left_out_message
+from src.git_exclude import SENSITIVE_PATHS, ensure_git_excluded
 from src.cross_platform import describe_case_insensitive_id_collisions, remove_tree
 from src.project_export_helpers import (
     _extract_export_task_label,
@@ -293,6 +294,7 @@ def export_project(
         if cancelled_flag and cancelled_flag.is_set():
             raise InterruptedError("Export cancelled by user")
 
+    ensure_git_excluded(project_path, *SENSITIVE_PATHS)
     _report(5, "Collecting participants...")
     _check_cancelled()
 
@@ -661,6 +663,8 @@ def export_project(
                 # Keep participants mapping and anonymization map out of share ZIPs.
                 if filename in ("participants_mapping.json", "anonymization_map.json"):
                     continue
+                if is_code_map(Path(arc_prefix, *rel_parts, filename).parts):
+                    continue
                 # The import ledger holds response start dates and LimeSurvey tokens.
                 if Path(arc_prefix, *rel_parts, filename).parts == IMPORT_LEDGER_PARTS:
                     continue
@@ -888,6 +892,10 @@ def export_project(
 
         final_size = _fmt_size(output_zip)
         size_part = f" ({final_size})" if final_size else ""
+        stats["code_maps_left_out"] = find_code_map_files(project_path) if include_code else []
+        if stats["code_maps_left_out"]:
+            _report(99, left_out_message(stats["code_maps_left_out"]))
+            print(left_out_message(stats["code_maps_left_out"]))
         _report(100, f"Export complete{size_part}")
         print(f"✓ Export complete: {output_zip}")
         print(f"  Processed {stats['files_processed']} files")

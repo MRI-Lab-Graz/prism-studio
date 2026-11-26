@@ -37,3 +37,13 @@ def test_snapshot_message_warns_when_sensitive_files_are_tracked():
     assert sensitive_files_warning([]) == ""
     text = sensitive_files_warning(["code/anonymization_map.json"])
     assert "anonymization_map.json" in text and "do not share" in text.lower()
+
+
+def test_lists_tracked_code_maps_at_any_depth(tmp_path):
+    git(tmp_path, "init", "-q")
+    (tmp_path / "code" / "old").mkdir(parents=True)
+    (tmp_path / "code" / "survey_code_map.tsv").write_text("x")
+    (tmp_path / "code" / "old" / "survey_code_map.tsv").write_text("x")
+    git(tmp_path, "add", "-A")
+    git(tmp_path, "commit", "-q", "-m", "x")
+    assert sorted(tracked_sensitive_files(tmp_path)) == ["code/old/survey_code_map.tsv", "code/survey_code_map.tsv"]

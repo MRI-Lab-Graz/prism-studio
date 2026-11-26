@@ -44,6 +44,7 @@ from urllib.parse import urlparse
 
 from src.fixer import DatasetFixer
 from src.survey_dates import IMPORT_LEDGER_PARTS, strip_survey_dates_in_tree
+from src.code_maps import find_code_map_files, is_code_map, left_out_message
 from src.project_export_helpers import (
     _extract_export_task_label,
     _extract_terminal_suffix_label,
@@ -2033,6 +2034,8 @@ class ProjectManager:
             result["error"] = status.get("message") or "DataLad is not available in this environment."
             return result
 
+        ensure_git_excluded(project_path, *SENSITIVE_PATHS)  # a hand-added code map must not be saved
+
         from src.share_publish import validate_for_publish
 
         try:
@@ -2741,6 +2744,8 @@ class ProjectManager:
                 return False
             if rel_parts == IMPORT_LEDGER_PARTS:  # response dates and LimeSurvey tokens
                 return True
+            if not is_dir and is_code_map(rel_parts):
+                return True
 
             if rel_parts[0].startswith("sub-") and rel_parts[0] in normalized_exclude_subjects:
                 return True
@@ -3117,6 +3122,11 @@ class ProjectManager:
             result["phenotype_bridge_files"] = phenotype_bridge_file_count
         result["excluded_repository_metadata"] = sorted(ignored_names)
         result["message"] = f"Project folder export created at {export_path} without Git/DataLad metadata."
+        result["code_maps_left_out"] = find_code_map_files(project_path) if include_code else []
+        if result["code_maps_left_out"]:
+            note = left_out_message(result["code_maps_left_out"])
+            result["message"] = f"{result['message']} {note}"
+            self._emit_backend_progress(note)
         if bidsignore_rules_added:
             result["bidsignore_rules_added"] = sorted(bidsignore_rules_added)
         if materialized_export:

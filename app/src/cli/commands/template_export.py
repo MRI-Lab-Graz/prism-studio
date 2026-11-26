@@ -36,3 +36,7 @@ def cmd_template_export(args) -> None:
     print(f"   Files skipped: {stats['files_skipped']}")
     print(f"   Subject dirs skipped: {stats['subject_dirs_skipped']}")
     print(f"   Root subject dirs skipped: {stats['root_subject_dirs_skipped']}")
+    if stats.get("code_maps_left_out"):
+        from src.code_maps import left_out_message
+
+        print(f"   {left_out_message(stats['code_maps_left_out'])}")
