@@ -23,6 +23,7 @@ def _bootstrap_import_path() -> None:
 try:
     from src.converters.excel_base import (
         find_column_idx,
+        level_problems,
         parse_levels as _base_parse_levels,
         detect_language,
     )
@@ -30,6 +31,7 @@ except (ImportError, ValueError):
     _bootstrap_import_path()
     from src.converters.excel_base import (
         find_column_idx,
+        level_problems,
         parse_levels as _base_parse_levels,
         detect_language,
     )
@@ -482,6 +484,9 @@ def process_excel_biometrics(
         allowed = _parse_allowed_values(allowed_cell)
         # Preserve labels when provided (prefer AllowedValues column; fall back to Scaling)
         levels = _parse_levels(allowed_cell) or _parse_levels(scaling)
+        used_cell = allowed_cell if _parse_levels(allowed_cell) else scaling
+        for problem in level_problems(used_cell):
+            print(f"[PRISM] Warning: {var_name}: {problem}")
         if levels and not allowed:
             # Derive AllowedValues from Levels keys
             allowed = _parse_allowed_values(";".join(levels.keys()))

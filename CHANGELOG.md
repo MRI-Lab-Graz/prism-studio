@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed (codebook import)
+- **Answer labels containing commas are no longer cut off.** In a comma-separated scale cell, "3 = meistens, die ganze Zeit" was imported as "meistens" and "0,5 Jahre" as "0"; different answers could end up with the same label. A comma now separates answers only in front of the next `code =`. **Templates imported earlier keep the cut labels: check them against their codebook.**
+- Codebook imports now warn when text is ignored, a code is defined twice or several codes get the same label.
+
 ### Fixed (survey import, from a real longitudinal study)
 - **LimeSurvey's `id` is no longer accepted as the participant ID** by survey conversion, `participants preview`/`convert` and `sessions review`. It numbers the responses of one survey and restarts in each one, so every timepoint was filed under other people. Choose the participant column, or map the response numbers with `--id-map`.
 - A raw LimeSurvey response export (`.xlsx`/`.csv`) is now read completely: `Group[ITEM]` headers match their template items, and the responses are recorded in `code/survey_imports.json` like those of an `.lsa`.

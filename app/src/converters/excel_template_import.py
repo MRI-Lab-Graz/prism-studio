@@ -75,7 +75,7 @@ def _autolabel_description_column(path: Path) -> None:
         wb.save(path)
 
 
-def parse_excel_groups(file_bytes: bytes, filename: str) -> dict:
+def parse_excel_groups(file_bytes: bytes, filename: str, problems: list | None = None) -> dict:
     """Parse an Excel/CSV/TSV codebook into {prefix: full_prism_sidecar}."""
     suffix = Path(filename).suffix.lower() or ".xlsx"
     # A directory, not NamedTemporaryFile: Windows refuses to reopen a file that is still open.
@@ -83,7 +83,12 @@ def parse_excel_groups(file_bytes: bytes, filename: str) -> dict:
         tmp_path = Path(tmp_dir) / f"codebook{suffix}"
         tmp_path.write_bytes(file_bytes)
         _autolabel_description_column(tmp_path)
-        return extract_excel_templates(str(tmp_path), check_collisions=False)
+        return extract_excel_templates(str(tmp_path), check_collisions=False, problems=problems)
+
+
+def group_notes(template: dict, problems: list) -> list:
+    """The import problems that belong to one group's items."""
+    return [p for p in problems if p.split(":", 1)[0] in template]
 
 
 def summarize_groups(groups: dict) -> list:
