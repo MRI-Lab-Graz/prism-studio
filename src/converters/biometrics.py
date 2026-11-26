@@ -26,6 +26,7 @@ from src.converters.file_reader import (
 )
 from src.entity_rules import load_entity_rules
 from src.participants_sessions import session_label
+from src.code_maps import ProjectCodeMaps
 from src.session_map import resolve_import_session
 from src.subject_id_matching import build_subject_id_matcher
 from src.utils.io import (
@@ -203,6 +204,7 @@ def convert_biometrics_table_to_prism_dataset(
     skip_participants: bool = False,
     existing_participant_ids: set[str] | None = None,
     id_overrides: dict[str, str] | None = None,
+    project_root: str | Path | None = None,
 ) -> BiometricsConvertResult:
     """Convert biometrics CSV/XLSX (wide format) into a PRISM/BIDS-style dataset.
 
@@ -213,6 +215,8 @@ def convert_biometrics_table_to_prism_dataset(
     - sub-*/ses-*/biometrics/sub-*_ses-*_task-<task>_biometrics.tsv
 
     Args:
+        project_root: The PRISM project the data belongs to (its session rule and code
+            maps apply); default: ``output_root``. Give it when converting into a staging folder.
         skip_participants: If True, do not build participants.tsv from the data table (default: False); the converted subjects are listed in it either way
         existing_participant_ids: Canonical participant_id values already
             present in the target project's own participants.tsv (the
@@ -233,6 +237,7 @@ def convert_biometrics_table_to_prism_dataset(
     input_path = Path(input_path).resolve()
     library_dir = Path(library_dir).resolve()
     output_root = Path(output_root).resolve()
+    project_root = Path(project_root).resolve() if project_root else output_root
 
     if input_path.suffix.lower() not in {".csv", ".xlsx", ".tsv"}:
         raise ValueError("Biometrics input must be a .csv, .xlsx, or .tsv file")
@@ -249,6 +254,8 @@ def convert_biometrics_table_to_prism_dataset(
     task_to_items, task_to_template = _load_biometrics_library(library_dir)
     if not task_to_items:
         raise ValueError(f"No biometrics-*.json templates found in: {library_dir}")
+
+    all_task_items = task_to_items  # one row is one person, also for tasks not exported
 
     # Filter tasks if requested
     if tasks_to_export is not None:
@@ -298,7 +305,32 @@ def convert_biometrics_table_to_prism_dataset(
             + ", ".join(unknown_cols)
         )
 
-    subject_id_match = build_subject_id_matcher(existing_participant_ids or set())
+    effective_session = (
+        None if session and str(session).strip().lower() == "all" else session
+    )
+
+    if effective_session:
+        row_labels = [session_label(effective_session)]
+    elif col_ses:
+        row_labels = [session_label(v) for v in df[col_ses]]
+    else:
+        row_labels = [""]
+    session_ids, session_warnings = _project_session_ids(project_root, row_labels, default_session)
+
+    maps = ProjectCodeMaps.open(project_root, "biometrics", known_tasks=set(all_task_items))
+    map_notes: list[str] = []
+    if maps:
+        columns = {_norm_col(c) for c in df.columns}
+        file_tasks = [t for t, items in all_task_items.items() if any(_norm_col(i) in columns for i in items)]
+        has_id = df[col_pid].notna() & df[col_pid].astype(str).str.strip().ne("")
+        labels = row_labels if len(row_labels) == len(df) else row_labels[:1] * len(df)
+        df.loc[has_id, col_pid] = maps.resolve_all(
+            [(raw, file_tasks, session_ids[label]) for raw, label, given in zip(df[col_pid], labels, has_id) if given]
+        )
+        map_notes = maps.notes()
+
+    # A mapped participant is final; otherwise match the project's existing spelling.
+    subject_id_match = build_subject_id_matcher(set() if maps else existing_participant_ids or set())
 
     def _resolve_sub_id(raw_value) -> str:
         normalized = _normalize_sub_id(raw_value)
@@ -320,18 +352,6 @@ def convert_biometrics_table_to_prism_dataset(
 
     from src.cleaning_notes import cleaning_note, missing_id_note
 
-    effective_session = (
-        None if session and str(session).strip().lower() == "all" else session
-    )
-
-    if effective_session:
-        row_labels = [session_label(effective_session)]
-    elif col_ses:
-        row_labels = [session_label(v) for v in df[col_ses]]
-    else:
-        row_labels = [""]
-    session_ids, session_warnings = _project_session_ids(output_root, row_labels, default_session)
-
     raw_ids = list(df[col_pid])
     shown_ids = [(raw, sid) for raw, sid in zip(raw_ids, normalized_ids) if sid]
     raw_sessions = (
@@ -344,6 +364,7 @@ def convert_biometrics_table_to_prism_dataset(
         cleaning_note([r for r, _ in shown_ids], [_normalize_sub_id(r) for r, _ in shown_ids], "participant ID", "sub-"),
         cleaning_note(raw_sessions, [session_ids[session_label(v)] for v in raw_sessions], "session label", "ses-"),
         *session_warnings,
+        *map_notes,
     ]
     notes = [note for note in notes if note]
 

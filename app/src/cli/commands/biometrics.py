@@ -101,6 +101,7 @@ def cmd_biometrics_convert(args) -> None:
             input_path=input_path,
             library_dir=library_dir,
             output_root=convert_into,
+            project_root=project_path,
             id_column=getattr(args, "id_column", None) or None,
             session_column=getattr(args, "session_column", None) or None,
             session=getattr(args, "session", None) or None,
