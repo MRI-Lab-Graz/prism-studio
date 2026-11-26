@@ -95,6 +95,19 @@ and Studio.
   without being asked. A value in the data that the map does not list then stops the import. The
   release notes must say so.
 
+## Raw-file imports (decided 2026-11-26)
+
+Physio, eyetracking and other raw files carry the participant in the file name (`sub-<label>_...`).
+When the modality of a file has a map (`physio_code_map.tsv`, ...):
+
+- a label that is a listed code is written as the mapped participant;
+- a label that is already one of the participant numbers of those maps stays as it is;
+- anything else stops the import before any file is written.
+
+`ses-` and `task-` of the file name select the narrower maps. Without a map nothing changes.
+Column-based imports (survey, biometrics, environment, biosample, participants) do not accept
+unlisted values. Project registration reads no participant IDs and needs no maps.
+
 ## Approaches
 
 1. **One resolver in `src/`, files found by name (chosen).** Maps live with the project and the name
