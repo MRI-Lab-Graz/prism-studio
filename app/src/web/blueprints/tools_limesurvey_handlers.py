@@ -94,10 +94,14 @@ def handle_limesurvey_to_prism():
                 )
                 return suggested_new
 
+            problems = []
             extracted = extract_excel_templates(
                 file_bytes,
                 version_merge_handler=_web_version_merge_handler,
+                problems=problems,
             )
+            for message in problems:
+                log(message, "warning")
 
             if not extracted:
                 return (

@@ -203,6 +203,22 @@ def test_codebook_cli_output_without_select_fails(no_library, tmp_path):
         cmd_survey_import_codebook(_args(tmp_path, output=str(tmp_path / "o")))
 
 
+def test_codebook_losses_are_the_same_in_studio_and_the_cli(no_library, tmp_path, capsys):
+    rows = [["Variable name", "Description_de", "Scaling"], ["ads1_1", ADS[0], "0=ja;1=ja"]]
+    buf = io.BytesIO()
+    with pd.ExcelWriter(buf, engine="openpyxl") as writer:
+        pd.DataFrame(rows).to_excel(writer, index=False, header=False)
+    path = tmp_path / "lossy.xlsx"
+    path.write_bytes(buf.getvalue())
+
+    notes = _post("import-excel", buf.getvalue(), "lossy.xlsx", {"group": "ads"}).get_json()["notes"]
+    capsys.readouterr()
+    cmd_survey_import_codebook(_args(tmp_path, input=str(path), select=["ads"], output=str(tmp_path / "out")))
+
+    assert notes == ["ads1_1: several codes have the same label 'ja'"]
+    assert notes[0] in capsys.readouterr().out
+
+
 # --- rename: a group called "Part 2" can be given a real name before it is written ------------------
 
 def test_rename_sets_the_name_and_the_file_name(no_library):
