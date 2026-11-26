@@ -119,3 +119,50 @@ def test_an_unanswered_item_is_not_filled_from_participants(project):
     header, row = _score(project)[:2]
 
     assert dict(zip(header.split(","), row.split(",")))["adj"] == ""  # missing
+
+
+def _sum(*items):
+    return {**RECIPE, "Scores": [{"Name": "adj", "Method": "sum", "Items": list(items)}]}
+
+
+def _adj(project):
+    header, row = _score(project)[:2]
+    return dict(zip(header.split(","), row.split(",")))["adj"]
+
+
+def test_an_item_absent_from_the_data_is_not_filled_from_participants(project):
+    data = project / "sub-01" / "ses-1" / "survey" / "sub-01_ses-1_task-demo_survey.tsv"
+    data.write_text("q1\n2\n", encoding="utf-8")
+    _recipe_file(project, _sum("q2"))
+
+    assert _adj(project) == ""
+
+
+def test_an_item_wins_over_a_column_differing_in_case(project):
+    (project / "participants.tsv").write_text("participant_id\tQ1\nsub-01\t99\n", encoding="utf-8")
+    _recipe_file(project, _sum("Q1"))
+
+    assert _adj(project) == "2"
+
+
+def test_a_participant_variable_in_a_sum_does_not_warn_about_partial_answers(project):
+    _recipe_file(project, _sum("q1", "age"))
+
+    result = compute_survey_recipes(prism_root=project, repo_root=APP_ROOT.parent, out_format="csv")
+
+    assert not [w for w in result.data_warnings if "only some" in w]
+
+
+def test_validate_file_rejects_a_project_that_does_not_exist(project, capsys):
+    with pytest.raises(SystemExit):
+        cmd_recipes_validate_file(
+            SimpleNamespace(
+                recipe=str(_recipe_file(project)),
+                known_items_from=None,
+                project=str(project / "typo"),
+                recipe_id=None,
+                json=False,
+            )
+        )
+
+    assert "--project not found" in capsys.readouterr().out

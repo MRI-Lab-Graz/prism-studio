@@ -326,6 +326,9 @@ def cmd_recipes_validate_file(args) -> None:
     recipe_id = getattr(args, "recipe_id", None) or recipe_path.stem
 
     project = getattr(args, "project", None)
+    if project and not Path(project).is_dir():
+        print(f"Error: --project not found: {project}")
+        sys.exit(1)
     errors = validate_recipe(
         recipe,
         recipe_id=recipe_id,
