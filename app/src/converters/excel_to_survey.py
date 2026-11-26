@@ -52,6 +52,7 @@ try:
         find_column_idx,
         clean_variable_name,
         parse_levels,
+        level_problems,
         detect_language,
         read_excel_sheets,
     )
@@ -62,6 +63,7 @@ except (ImportError, ValueError):
         find_column_idx as _find_column_idx,
         clean_variable_name as _clean_variable_name,
         parse_levels as _parse_levels,
+        level_problems as _level_problems,
         detect_language as _detect_language,
         read_excel_sheets as _read_excel_sheets,
     )
@@ -70,6 +72,7 @@ except (ImportError, ValueError):
     find_column_idx = _find_column_idx
     clean_variable_name = _clean_variable_name
     parse_levels = _parse_levels
+    level_problems = _level_problems
     detect_language = _detect_language
     read_excel_sheets = _read_excel_sheets
 
@@ -1046,6 +1049,7 @@ def extract_excel_templates(
     output_dir=None,
     check_collisions=True,
     version_merge_handler=None,
+    problems=None,
 ):
     """
     Core extraction logic that returns a dictionary of templates {prefix: sidecar_dict}.
@@ -1058,6 +1062,7 @@ def extract_excel_templates(
         check_collisions: Whether to check for item ID collisions (default: True)
         version_merge_handler: Optional callable(existing_template, new_items, prefix) -> version_name
                                If not provided and collision detected, will raise error
+        problems: Optional list that collects "<item>: <what the import loses>" messages
     """
     merged_sheet_df = None
     variant_definitions_by_prefix = {}
@@ -1601,6 +1606,16 @@ def extract_excel_templates(
             if not run_clean.startswith("run-"):
                 run_clean = f"run-{run_clean}"
             entry["RunHint"] = run_clean
+
+        found = [
+            f"{var_name}: {problem}"
+            for cell in (scale, scale_en, scale_de, *scale_lang_values.values())
+            for problem in level_problems(cell)
+        ]
+        for message in dict.fromkeys(found):
+            print(f"[PRISM] Warning: {message}")
+            if problems is not None:
+                problems.append(message)
 
         levels_default = parse_levels(scale)
         levels_en = parse_levels(scale_en)

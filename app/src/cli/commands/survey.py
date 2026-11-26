@@ -649,7 +649,7 @@ def cmd_survey_item_map(args):
 def cmd_survey_import_codebook(args):
     """Import the instrument groups of an Excel/CSV/TSV codebook as PRISM templates. Matches the
     Template Editor's 'Import Template Source' for .xlsx/.csv/.tsv."""
-    from src.converters.excel_template_import import parse_excel_groups, summarize_groups
+    from src.converters.excel_template_import import group_notes, parse_excel_groups, summarize_groups
     from src.converters.template_import import finish_import, match_questionnaire_to_library
 
     input_path = Path(args.input).resolve()
@@ -657,7 +657,8 @@ def cmd_survey_import_codebook(args):
     try:
         if args.output and not args.select:
             raise ValueError("--output needs --select KEY|all (use --list to see the keys)")
-        groups = parse_excel_groups(input_path.read_bytes(), input_path.name)
+        problems = []
+        groups = parse_excel_groups(input_path.read_bytes(), input_path.name, problems)
         if not groups:
             raise ValueError("No variables found in the file")
         print(f"[PRISM] Codebook import: {input_path.name} -> {len(groups)} group(s):")
@@ -676,7 +677,7 @@ def cmd_survey_import_codebook(args):
         out_dir = Path(args.output).resolve()
         planned = []
         for key in keys:
-            payload = finish_import(groups[key], key, project_path)
+            payload = finish_import(groups[key], key, project_path, notes=group_notes(groups[key], problems))
             planned.append((out_dir / payload["suggested_filename"], payload["template"]))
         _write_planned_templates(planned, out_dir)
     except (OSError, ValueError) as e:

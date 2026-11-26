@@ -772,11 +772,12 @@ def api_template_editor_import_excel():
     project_path = (request.form.get("project_path") or "").strip() or None
 
     try:
-        from src.converters.excel_template_import import parse_excel_groups, summarize_groups
+        from src.converters.excel_template_import import group_notes, parse_excel_groups, summarize_groups
         from src.converters.template_import import finish_import
 
         file_bytes = file.read()
-        groups = parse_excel_groups(file_bytes, file.filename)
+        problems = []
+        groups = parse_excel_groups(file_bytes, file.filename, problems)
         if not groups:
             return jsonify({"error": "No variables found in the file"}), 400
 
@@ -795,7 +796,8 @@ def api_template_editor_import_excel():
         if template is None:
             return jsonify({"error": f"Group '{group}' not found in file"}), 400
 
-        return jsonify(finish_import(template, group, project_path)), 200
+        notes = group_notes(template, problems)
+        return jsonify(finish_import(template, group, project_path, notes=notes)), 200
 
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
