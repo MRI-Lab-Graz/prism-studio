@@ -132,24 +132,20 @@ def augment_neurobagel_data(raw_data: Dict[str, Any]) -> Dict[str, Any]:
             "O": {
                 "label": "Other",
                 "description": "Other biological sex",
-                "uri": "snomed:447964000",
             },
         },
         "handedness": {
             "L": {
                 "label": "Left",
                 "description": "Left-handed",
-                "uri": "snomed:87622008",
             },
             "R": {
                 "label": "Right",
                 "description": "Right-handed",
-                "uri": "snomed:78791000",
             },
             "A": {
                 "label": "Ambidextrous",
                 "description": "Ambidextrous",
-                "uri": "snomed:16022009",
             },
         },
         "group": {
@@ -186,7 +182,6 @@ def augment_neurobagel_data(raw_data: Dict[str, Any]) -> Dict[str, Any]:
             "ASD": {
                 "label": "Autism Spectrum Disorder",
                 "description": "Autism spectrum disorder",
-                "uri": "snomed:408856003",
             },
             "MDD": {
                 "label": "Major Depressive Disorder",
@@ -259,7 +254,6 @@ def augment_neurobagel_data(raw_data: Dict[str, Any]) -> Dict[str, Any]:
             "ASD": {
                 "label": "Autism Spectrum Disorder",
                 "description": "Autism spectrum disorder",
-                "uri": "snomed:408856003",
             },
             "MDD": {
                 "label": "Major Depressive Disorder",
@@ -316,27 +310,22 @@ def augment_neurobagel_data(raw_data: Dict[str, Any]) -> Dict[str, Any]:
             "1": {
                 "label": "Less than High School",
                 "description": "Did not complete high school",
-                "uri": "ncit:C17781",
             },
             "2": {
                 "label": "High School Diploma",
                 "description": "Completed high school or equivalent",
-                "uri": "ncit:C17782",
             },
             "3": {
                 "label": "Some College",
                 "description": "Some college or associate degree",
-                "uri": "ncit:C17783",
             },
             "4": {
                 "label": "Bachelor's Degree",
                 "description": "Bachelor's degree",
-                "uri": "ncit:C17784",
             },
             "5": {
                 "label": "Graduate Degree",
                 "description": "Master's, doctoral, or professional degree",
-                "uri": "ncit:C17785",
             },
         },
     }

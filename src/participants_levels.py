@@ -14,6 +14,53 @@ from pathlib import Path
 MAX_CODES = 10  # more distinct values than this: not a code list
 _MISSING = {"", "n/a", "na"}
 
+# Codes Studio once wrote that mean something else, or are not in the vocabulary
+# (checked 2026-11-26: NCI Thesaurus; SNOMED CT International via tx.fhir.org).
+_ABSENT = "not in the current SNOMED CT International Edition"
+WRONG_TERM_CODES = {
+    "ncit:C17781": "it is GTP-Binding Protein RAD, not an education level",
+    "ncit:C17782": "it is CDKN1A Gene, not an education level",
+    "ncit:C17783": "it is Cyclin-Dependent Kinase Inhibitor 1, not an education level",
+    "ncit:C17784": "it is Cyclin-Dependent Kinase 4 Inhibitor B, not an education level",
+    "ncit:C17785": "it is Cyclin-Dependent Kinase 5, not an education level",
+    "ncit:C20432": "it is Betacellulin, not an education level",
+    "ncit:C41185": "it is Concentration, not a study group",
+    "snomed:14421000": _ABSENT,
+    "snomed:14647231000119105": _ABSENT,
+    "snomed:16022009": _ABSENT,
+    "snomed:20863000": _ABSENT,
+    "snomed:224530016": _ABSENT,
+    "snomed:447964000": _ABSENT,
+    "snomed:78791000": _ABSENT,
+    "snomed:87622008": _ABSENT,
+    "snomed:408856003": "it is retired in SNOMED CT",
+}
+
+
+def _term_codes(value) -> set[str]:
+    """Every string anywhere inside a sidecar entry."""
+    if isinstance(value, dict):
+        value = list(value.values())
+    if isinstance(value, list):
+        return set().union(*map(_term_codes, value))
+    return {value} if isinstance(value, str) else set()
+
+
+def _wrong_code_issues(sidecar, path: Path) -> list[tuple[str, str, str]]:
+    if not isinstance(sidecar, dict):
+        return []
+    return [
+        (
+            "WARNING",
+            f"participants.json column '{column}' uses the term code {code}: "
+            f"{WRONG_TERM_CODES[code]}. Remove the TermURL or replace it with a "
+            "code you have checked.",
+            str(path),
+        )
+        for column, spec in sidecar.items()
+        for code in sorted(_term_codes(spec) & WRONG_TERM_CODES.keys())
+    ]
+
 
 def _is_integer_like(value: str) -> bool:
     try:
@@ -83,7 +130,7 @@ def check_participants_levels(root_dir: str) -> list[tuple[str, str, str]]:
     except (OSError, ValueError):
         return []  # unreadable files are reported elsewhere
 
-    issues: list[tuple[str, str, str]] = []
+    issues = _wrong_code_issues(sidecar, sidecar_path)
     for column in rows[0].keys() if rows else []:
         if column == "participant_id":
             continue
