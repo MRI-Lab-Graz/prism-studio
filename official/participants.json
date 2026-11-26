@@ -82,7 +82,6 @@
       "inputWidth": "1"
     },
     "Annotations": {
-      "IsAbout": "snomed:14421000",
       "Relationship": "instance_of",
       "Label": "Person (ID)"
     }
@@ -113,7 +112,6 @@
       "de": "WICHTIG: Forscher sollten dies durch vordefinierte Levels ersetzen, die spezifisch für ihre Studie sind (z.B. Kontrolle/Experimentell, Patient/Gesund, Gruppe_A/Gruppe_B)."
     },
     "Annotations": {
-      "IsAbout": "ncit:C41185",
       "Label": "Study group"
     }
   },
@@ -226,7 +224,6 @@
     "DataType": "string",
     "VariableType": "Categorical",
     "Annotations": {
-      "IsAbout": "snomed:14647231000119105",
       "Label": "Gender identity"
     }
   },
@@ -261,7 +258,6 @@
     "DataType": "string",
     "VariableType": "Categorical",
     "Annotations": {
-      "IsAbout": "snomed:20863000",
       "Label": "Handedness"
     }
   },
@@ -974,7 +970,6 @@
       }
     },
     "Annotations": {
-      "IsAbout": "snomed:224530016",
       "Label": "Education level",
       "Standard": "ISCED 2011",
       "DictionarySourceURI": "cde:5090887"
@@ -997,7 +992,6 @@
     "VariableType": "Continuous",
     "InputType": "numerical",
     "Annotations": {
-      "IsAbout": "snomed:224530016",
       "Label": "Years of education"
     },
     "LimeSurvey": {

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed (term codes in participants annotations)
+- **The education level codes Studio offered were gene codes** (`ncit:C17781`-`C17785`, `C20432`); `ncit:C41185` ("study group") is "Concentration". The codes for handedness, sex "Other" and four fields of the official participants template are not in the current SNOMED CT edition, and the autism code is retired. All are removed (labels stay).
+- Validation warns about each of these codes in a project's `participants.json`. **Projects annotated earlier keep them until you remove them.**
+
 ### Fixed (survey import, from a real longitudinal study)
 - **LimeSurvey's `id` is no longer accepted as the participant ID** by survey conversion, `participants preview`/`convert` and `sessions review`. It numbers the responses of one survey and restarts in each one, so every timepoint was filed under other people. Choose the participant column, or map the response numbers with `--id-map`.
 - A raw LimeSurvey response export (`.xlsx`/`.csv`) is now read completely: `Group[ITEM]` headers match their template items, and the responses are recorded in `code/survey_imports.json` like those of an `.lsa`.

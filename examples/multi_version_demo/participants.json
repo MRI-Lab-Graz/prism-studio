@@ -35,23 +35,18 @@
       "VariableType": "Categorical",
       "Levels": {
         "1": {
-          "TermURL": "snomed:78791000",
           "Label": "Right"
         },
         "2": {
-          "TermURL": "snomed:87622008",
           "Label": "Left"
         },
         "A": {
-          "TermURL": "snomed:16022009",
           "Label": "Ambidextrous"
         },
         "L": {
-          "TermURL": "snomed:87622008",
           "Label": "Left"
         },
         "R": {
-          "TermURL": "snomed:78791000",
           "Label": "Right"
         }
       }
