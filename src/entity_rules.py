@@ -8,7 +8,7 @@ concrete regexes/strings from it instead of hardcoding their own copies.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import lru_cache
 
 from src.schema_manager import DEFAULT_SCHEMA_DIR as _DEFAULT_SCHEMA_DIR, load_schema
@@ -86,6 +86,8 @@ class EntityRules:
     default_required_entities: frozenset
     modalities: dict[str, ModalityRule]
     aliases: dict[str, str]
+    # files with described columns that are no modality (participants.tsv): name -> `terms` declaration
+    tables: dict[str, dict] = field(default_factory=dict)
 
     @property
     def prism_modalities(self) -> set[str]:
@@ -101,8 +103,8 @@ class EntityRules:
 
     @property
     def term_modalities(self) -> dict[str, dict]:
-        """Modalities whose columns point to registry terms, with their `terms` declaration."""
-        return {name: rule.terms for name, rule in self.modalities.items() if rule.terms is not None}
+        """Modalities and tables whose columns point to registry terms, with their `terms` declaration."""
+        return {**{name: rule.terms for name, rule in self.modalities.items() if rule.terms is not None}, **self.tables}
 
     @property
     def bids_modalities(self) -> set[str]:
@@ -241,4 +243,5 @@ def load_entity_rules(schema_dir: str | None = None, version: str = "stable") ->
         default_required_entities=frozenset(schema.get("defaultRequiredEntities", ())),
         modalities=modalities,
         aliases=aliases,
+        tables={name: data["terms"] for name, data in schema.get("tables", {}).items() if "terms" in data},
     )

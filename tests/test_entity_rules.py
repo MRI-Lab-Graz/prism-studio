@@ -190,4 +190,5 @@ def test_term_modalities_from_entities():
         "biosample": {"nonTermColumns": ["sample_id", "collection_time", "fasting"], "contextField": "Technical.SpecimenType"},
         "environment": {"nonTermColumns": ["subject_id", "session_id"]},
         "biometrics": {"nonTermColumns": ["subject_id", "session_id"]},
+        "participants": {"nonTermColumns": ["participant_id"], "unitsOptional": True, "termsFrom": ["biometrics"]},
     }

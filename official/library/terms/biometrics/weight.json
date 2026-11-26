@@ -1,0 +1,8 @@
+{
+  "TermID": "prism:weight",
+  "Level": "variable",
+  "Label": "weight",
+  "Description": "Weight in kilograms",
+  "Units": "kg",
+  "Status": "official"
+}

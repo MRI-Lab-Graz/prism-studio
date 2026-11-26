@@ -1,0 +1,15 @@
+{
+  "TermID": "prism:gender",
+  "Level": "variable",
+  "Label": "gender",
+  "Description": "Gender identity",
+  "Levels": {
+    "man": "Man",
+    "woman": "Woman",
+    "nonbinary": "Non-binary / Genderqueer",
+    "trans_man": "Transgender man",
+    "trans_woman": "Transgender woman",
+    "other": "Other"
+  },
+  "Status": "official"
+}

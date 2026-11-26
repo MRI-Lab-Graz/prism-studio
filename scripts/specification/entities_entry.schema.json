@@ -21,6 +21,8 @@
       "required": ["nonTermColumns"],
       "properties": {
         "nonTermColumns": {"type": "array", "items": {"type": "string"}},
+        "termsFrom": {"type": "array", "items": {"type": "string"}},
+        "unitsOptional": {"type": "boolean"},
         "contextField": {"type": "string", "pattern": "^[A-Z][A-Za-z]*\\.[A-Z][A-Za-z]*$"}
       }
     }

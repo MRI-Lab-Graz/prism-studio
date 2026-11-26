@@ -1,0 +1,10 @@
+{
+  "TermID": "prism:hormonal-contraceptive-use",
+  "Level": "variable",
+  "Label": "hormonal contraceptive use",
+  "Aliases": [
+    "hormonal_contraceptive_use"
+  ],
+  "Description": "Hormonal contraceptive use",
+  "Status": "official"
+}

@@ -1,0 +1,10 @@
+{
+  "TermID": "prism:menstrual-cycle-regularity",
+  "Level": "variable",
+  "Label": "menstrual cycle regularity",
+  "Aliases": [
+    "menstrual_cycle_regularity"
+  ],
+  "Description": "Menstrual cycle regularity",
+  "Status": "official"
+}

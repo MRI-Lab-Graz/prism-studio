@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Participant columns have shared term IDs** (specification v1.5.28). `participants.json` columns carry `"Term"`, the validator gives notices for them (never errors), and the `terms` and `spec local add-term` commands take `--modality participants`. `height` and `weight` are new biometrics terms.
+
 ## [1.26.2] - 2026-11-26
 
 ### Removed (breaking)

@@ -1,0 +1,10 @@
+{
+  "TermID": "prism:residence-type",
+  "Level": "variable",
+  "Label": "residence type",
+  "Aliases": [
+    "residence_type"
+  ],
+  "Description": "Type of residential area",
+  "Status": "official"
+}

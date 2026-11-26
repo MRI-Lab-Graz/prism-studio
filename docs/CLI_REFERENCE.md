@@ -927,6 +927,11 @@ without `--check`. See `MODALITY_PROPOSALS.md`.
 Look up the shipped metric terms (the term registry, see the Terms section of
 `specs/biosample.md`).
 
+`--modality participants` is the columns of `participants.tsv` (the specification's `tables`): `terms list`, `suggest`,
+`propose`, `coverage` and `spec local add-term` take it like a modality, and `height`, `weight` and `bmi` resolve to the
+biometrics terms (`terms list` and `coverage` count only the participant terms themselves). A term there needs neither units nor levels. `validate` gives notices for the columns of
+`participants.json`, never errors. It has no schema, so `spec local add-values` does not apply.
+
     python prism_tools.py terms list [--modality biosample] [--json]
     python prism_tools.py terms show <term> [--modality biosample] [--json]
     python prism_tools.py terms freeze --modality survey [--json]

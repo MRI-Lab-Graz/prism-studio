@@ -1,0 +1,10 @@
+{
+  "TermID": "prism:alcohol-consumption",
+  "Level": "variable",
+  "Label": "alcohol consumption",
+  "Aliases": [
+    "alcohol_consumption"
+  ],
+  "Description": "Alcohol consumption frequency",
+  "Status": "official"
+}

@@ -19,7 +19,7 @@ from src.schema_manager import DEFAULT_SCHEMA_DIR, load_all_schemas
 from src.spec_overlay import (
     _vendored, load_local_mappings, load_local_patches, load_local_terms, local_patch_modalities, merge_terms,
 )
-from src.term_registry import load_mappings, load_registry, mappings_root
+from src.term_registry import borrowed_terms, load_mappings, load_registry, mappings_root
 
 
 @dataclass(frozen=True, eq=False)  # compared by identity: the dict fields would make a generated __eq__/__hash__ costly or fail
@@ -37,6 +37,13 @@ class Specification:
     def mappings_for(self, term_id: str) -> dict:
         """The mapping entry of an ID (official, else the project's own), or {} when it has none."""
         return next((m[term_id] for m in self.mappings.values() if term_id in m), {})
+
+    def registry_for(self, modality: str, terms: dict | None = None) -> dict[str, dict]:
+        """The terms a column of this kind may resolve to: its own, plus those of its declaration's `termsFrom`."""
+        found: dict = {}
+        for source in (*self.term_modalities.get(modality, {}).get("termsFrom", ()), modality):
+            found.update((self.terms if terms is None else terms).get(source, {}))
+        return found
 
     # Derived once per specification (the rules compute them on every access); they replace the constants
     # validator.py used to freeze at import.
@@ -91,14 +98,14 @@ def load_specification(
         registry = load_registry(modality)
         if project_root is not None:
             found, skipped = load_local_terms(project_root, modality)
-            registry, in_use, dropped = merge_terms(registry, found)
+            registry, in_use, dropped = merge_terms(registry, found, borrowed_terms(rules.term_modalities[modality]))
             local |= in_use
             ignored += dropped
             problems += skipped
         terms[modality] = registry
     if project_root is not None:
         for modality in (*rules.term_modalities, "survey"):  # survey IDs are derived from templates, not a term registry
-            if modality in rules.prism_modalities:
+            if modality in rules.prism_modalities or modality in rules.tables:
                 mappings[modality] = {**load_local_mappings(project_root, modality), **mappings.get(modality, {})}  # official wins
         names, skipped = local_patch_modalities(project_root, schemas)
         problems += skipped

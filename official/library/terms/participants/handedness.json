@@ -1,0 +1,12 @@
+{
+  "TermID": "prism:handedness",
+  "Level": "variable",
+  "Label": "handedness",
+  "Description": "Dominant hand",
+  "Levels": {
+    "R": "Right-handed",
+    "L": "Left-handed",
+    "A": "Ambidextrous (both hands equally)"
+  },
+  "Status": "official"
+}

@@ -87,6 +87,7 @@
     }
   },
   "group": {
+    "Term": "prism:group",
     "Description": {
       "en": "Study group assignment",
       "de": "Studiengruppenzuordnung"
@@ -116,6 +117,7 @@
     }
   },
   "age": {
+    "Term": "prism:age",
     "Description": {
       "en": "Your age in years",
       "de": "Ihr Alter in Jahren"
@@ -146,6 +148,7 @@
     }
   },
   "sex": {
+    "Term": "prism:sex",
     "Description": {
       "en": "Biological sex assigned at birth",
       "de": "Biologisches Geschlecht bei Geburt"
@@ -182,6 +185,7 @@
     }
   },
   "gender": {
+    "Term": "prism:gender",
     "Description": {
       "en": "Gender identity",
       "de": "Geschlechtsidentität"
@@ -228,6 +232,7 @@
     }
   },
   "handedness": {
+    "Term": "prism:handedness",
     "Description": {
       "en": "Dominant hand",
       "de": "Dominante Hand"
@@ -262,6 +267,7 @@
     }
   },
   "native_language": {
+    "Term": "prism:native-language",
     "Description": {
       "en": "Native language (mother tongue)",
       "de": "Muttersprache"
@@ -408,6 +414,7 @@
     }
   },
   "country_of_birth": {
+    "Term": "prism:country-of-birth",
     "Description": {
       "en": "Country of birth",
       "de": "Geburtsland"
@@ -714,6 +721,7 @@
     }
   },
   "country_of_residence": {
+    "Term": "prism:country-of-residence",
     "Description": {
       "en": "Current country of residence",
       "de": "Aktuelles Wohnsitzland"
@@ -908,6 +916,7 @@
     }
   },
   "education_level": {
+    "Term": "prism:education-level",
     "Description": {
       "en": "Highest level of education completed",
       "de": "Höchster Bildungsabschluss"
@@ -976,6 +985,7 @@
     }
   },
   "education_years": {
+    "Term": "prism:education-years",
     "Description": {
       "en": "Years of formal education",
       "de": "Jahre formaler Bildung"
@@ -999,6 +1009,7 @@
     }
   },
   "employment_status": {
+    "Term": "prism:employment-status",
     "Description": {
       "en": "Current employment status",
       "de": "Aktueller Erwerbsstatus"
@@ -1073,6 +1084,7 @@
     "DataType": "string"
   },
   "marital_status": {
+    "Term": "prism:marital-status",
     "Description": {
       "en": "Current relationship status",
       "de": "Aktueller Beziehungsstatus"
@@ -1123,6 +1135,7 @@
     "DataType": "string"
   },
   "ethnicity": {
+    "Term": "prism:ethnicity",
     "Description": {
       "en": "Ethnic background",
       "de": "Ethnische Herkunft"
@@ -1186,6 +1199,7 @@
     }
   },
   "residence_type": {
+    "Term": "prism:residence-type",
     "Description": {
       "en": "Type of residential area",
       "de": "Art des Wohngebiets"
@@ -1224,6 +1238,7 @@
     "DataType": "string"
   },
   "income_bracket": {
+    "Term": "prism:income-bracket",
     "Description": {
       "en": "Annual household income (before taxes)",
       "de": "Jährliches Haushaltseinkommen (brutto)"
@@ -1270,6 +1285,7 @@
     "DataType": "string"
   },
   "height": {
+    "Term": "prism:height",
     "Description": {
       "en": "Height in centimeters",
       "de": "Körpergröße in Zentimetern"
@@ -1293,6 +1309,7 @@
     }
   },
   "weight": {
+    "Term": "prism:weight",
     "Description": {
       "en": "Weight in kilograms",
       "de": "Körpergewicht in Kilogramm"
@@ -1316,6 +1333,7 @@
     }
   },
   "bmi": {
+    "Term": "prism:bmi",
     "Description": {
       "en": "Body Mass Index",
       "de": "Body-Mass-Index"
@@ -1343,6 +1361,7 @@
     }
   },
   "vision": {
+    "Term": "prism:vision",
     "Description": {
       "en": "Vision / Eyesight",
       "de": "Sehvermögen"
@@ -1397,6 +1416,7 @@
     }
   },
   "hearing": {
+    "Term": "prism:hearing",
     "Description": {
       "en": "Hearing ability",
       "de": "Hörvermögen"
@@ -1447,6 +1467,7 @@
     }
   },
   "smoking_status": {
+    "Term": "prism:smoking-status",
     "Description": {
       "en": "Smoking status",
       "de": "Raucherstatus"
@@ -1485,6 +1506,7 @@
     "DataType": "string"
   },
   "alcohol_consumption": {
+    "Term": "prism:alcohol-consumption",
     "Description": {
       "en": "Alcohol consumption frequency",
       "de": "Häufigkeit des Alkoholkonsums"
@@ -1527,6 +1549,7 @@
     "DataType": "string"
   },
   "physical_activity": {
+    "Term": "prism:physical-activity",
     "Description": {
       "en": "Physical activity level",
       "de": "Körperliche Aktivität"
@@ -1565,6 +1588,7 @@
     "DataType": "string"
   },
   "medication_current": {
+    "Term": "prism:medication-current",
     "Description": {
       "en": "Currently taking medications?",
       "de": "Nehmen Sie derzeit Medikamente ein?"
@@ -1624,6 +1648,7 @@
     }
   },
   "psychiatric_diagnosis": {
+    "Term": "prism:psychiatric-diagnosis",
     "Description": {
       "en": "History of psychiatric/mental health diagnosis?",
       "de": "Psychiatrische/psychische Diagnose in der Vorgeschichte?"
@@ -1683,6 +1708,7 @@
     }
   },
   "neurological_diagnosis": {
+    "Term": "prism:neurological-diagnosis",
     "Description": {
       "en": "History of neurological diagnosis?",
       "de": "Neurologische Diagnose in der Vorgeschichte?"
@@ -1742,6 +1768,7 @@
     }
   },
   "menstrual_cycle_regularity": {
+    "Term": "prism:menstrual-cycle-regularity",
     "Description": {
       "en": "Menstrual cycle regularity",
       "de": "Regelmäßigkeit des Menstruationszyklus"
@@ -1782,6 +1809,7 @@
     }
   },
   "menstrual_cycle_length": {
+    "Term": "prism:menstrual-cycle-length",
     "Description": {
       "en": "Average menstrual cycle length (days)",
       "de": "Durchschnittliche Zykluslänge (Tage)"
@@ -1807,6 +1835,7 @@
     }
   },
   "hormonal_contraceptive_use": {
+    "Term": "prism:hormonal-contraceptive-use",
     "Description": {
       "en": "Hormonal contraceptive use",
       "de": "Verwendung hormoneller Verhütungsmittel"

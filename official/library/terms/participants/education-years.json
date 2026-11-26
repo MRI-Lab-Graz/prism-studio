@@ -1,0 +1,11 @@
+{
+  "TermID": "prism:education-years",
+  "Level": "variable",
+  "Label": "education years",
+  "Aliases": [
+    "education_years"
+  ],
+  "Description": "Years of formal education",
+  "Units": "years",
+  "Status": "official"
+}

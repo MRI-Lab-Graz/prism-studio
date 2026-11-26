@@ -26,7 +26,7 @@ from src.term_proposal import (
     load_inherited_sidecar,
     specification_scripts_dir,
 )
-from src.term_registry import context_value, load_registry, term_columns, resolve_column, term_names
+from src.term_registry import borrowed_terms, context_value, load_registry, term_columns, resolve_column, term_names
 
 OVERLAY_PARTS = ("code", "specification")
 
@@ -141,9 +141,11 @@ def _checked_modality(modality) -> str:
     """`modality` when it is a kind of data with an official stable schema; every caller-supplied name that becomes a path passes here."""
     from src.specification import current_specification  # lazy: specification imports this module
 
+    spec = current_specification()
     if not (
         isinstance(modality, str) and re.fullmatch(MODALITY_NAME, modality)
-        and modality in current_specification().prism_modalities and isinstance(_official_schema(modality), dict)
+        and (modality in spec.rules.tables
+             or (modality in spec.prism_modalities and isinstance(_official_schema(modality), dict)))
     ):
         raise OverlayError(f"{modality}: not a kind of data of this specification")
     return modality
@@ -207,7 +209,7 @@ def local_patch_modalities(project_root, schemas: dict) -> tuple[list[str], list
     return found, problems
 
 
-def merge_terms(official: dict[str, dict], local: dict[str, dict]) -> tuple[dict, frozenset[str], tuple[str, ...]]:
+def merge_terms(official: dict[str, dict], local: dict[str, dict], borrowed: dict[str, dict] | None = None) -> tuple[dict, frozenset[str], tuple[str, ...]]:
     """The official registry plus the local terms that add something.
 
     A local term is ignored when the official registry has its file stem, its TermID or ANY name it answers to
@@ -215,17 +217,24 @@ def merge_terms(official: dict[str, dict], local: dict[str, dict]) -> tuple[dict
     first, the TermIDs of the local terms in use, the TermIDs of the local terms ignored).
     """
     merged = dict(official)
-    official_ids = {term.get("TermID") for term in official.values()}
-    official_names = {name for stem, term in official.items() for name in term_names(stem, term)}
+    taken = {**(borrowed or {}), **official}  # `termsFrom` terms are official here too, but stay in their registry
+    official_ids = {term.get("TermID") for term in taken.values()}
+    official_names = {name for stem, term in taken.items() for name in term_names(stem, term)}
     in_use: set[str] = set()
     ignored: list[str] = []
     for stem, term in local.items():
-        if stem in official or term["TermID"] in official_ids or official_names & set(term_names(stem, term)):
+        if stem in taken or term["TermID"] in official_ids or official_names & set(term_names(stem, term)):
             ignored.append(term["TermID"])
         else:
             merged[stem] = term
             in_use.add(term["TermID"])
     return merged, frozenset(in_use), tuple(ignored)
+
+
+def _borrowed(modality: str) -> dict[str, dict]:
+    from src.specification import current_specification  # lazy: specification imports this module
+
+    return borrowed_terms(current_specification().term_modalities.get(modality, {}))
 
 
 def write_local_terms(project_root, modality: str, terms: list[dict]) -> list[Path]:
@@ -454,7 +463,7 @@ _NOT_PROJECT_DATA = {"code", "derivatives", "sourcedata", ".git", ".datalad"}
 
 def merged_registry(project_root, modality: str = "biosample") -> dict[str, dict]:
     """The official registry plus the project's local terms (the official one wins)."""
-    return merge_terms(load_registry(modality), load_local_terms(project_root, modality)[0])[0]
+    return merge_terms(load_registry(modality), load_local_terms(project_root, modality)[0], _borrowed(modality))[0]
 
 
 def _project_specimens(project_root, modality: str) -> list[str] | None:
@@ -520,7 +529,7 @@ def add_local_term(
 def list_local_items(project_root, modality: str = "biosample") -> list[dict]:
     """Every file of the overlay: layer, ID, and whether it is local, now official (ignored) or invalid."""
     terms, problems = load_local_terms(project_root, modality)
-    _merged, _in_use, ignored = merge_terms(load_registry(modality), terms)  # the validator's decision, not a second one
+    _merged, _in_use, ignored = merge_terms(load_registry(modality), terms, _borrowed(modality))  # the validator's decision, not a second one
     folder = _terms_folder(project_root, modality)
     items = []
     for stem, term in terms.items():

@@ -728,7 +728,7 @@ class DatasetValidator:
         # Third pass: columns naming a registry term inherit its definition
         # (the column's own values win). Name matches only suggest, see
         # _check_terms.
-        registry = self._registries.get(modality) or {}
+        registry = current_specification().registry_for(modality, self._registries)
         specimen = context_value(sidecar_data, modality)
         for k, v in sidecar_data.items():
             if isinstance(v, dict) and isinstance(v.get("Term"), str) and v["Term"]:
@@ -1368,15 +1368,16 @@ class DatasetValidator:
     def _check_terms(self, sidecar_data, key, file_path, root_dir, modality) -> list:
         """Relate each term column to the modality's term registry (spec severity table)."""
         issues = []
-        registry = self._registries.get(modality) or {}
-        has_context = bool(current_specification().term_modalities.get(modality, {}).get("contextField"))
+        registry = current_specification().registry_for(modality, self._registries)
+        declaration = current_specification().term_modalities.get(modality, {})
+        has_context = bool(declaration.get("contextField"))
         specimen = context_value(sidecar_data, modality)
         local_terms = current_specification().local_terms
         for col, col_def in term_columns(sidecar_data, modality):
             res = resolve_column(registry, col, col_def, specimen)
             ref = col_def.get("Term")
             term = res.term or {}
-            if isinstance(ref, str) and ref and not col_def.get("Units") and not term.get("Units") and not (
+            if not declaration.get("unitsOptional") and isinstance(ref, str) and ref and not col_def.get("Units") and not term.get("Units") and not (
                 res.kind == "term" and term.get("Levels")
             ):
                 where = f" or has no definition for specimen {specimen!r}" if has_context else ""
@@ -1424,6 +1425,17 @@ class DatasetValidator:
                     f'--column "{col}" --modality {modality} (add --open to send it). The maintainers may choose a different name; '
                     "your files keep working through an alias.",
                 ))
+        return issues
+
+    def validate_table_sidecars(self, root_dir):
+        """Term notices for the sidecars of the dataset's tables (participants.json); no schema, never a new error."""
+        issues = []
+        for table in current_specification().rules.tables:
+            path = os.path.join(root_dir, f"{table}.json")
+            sidecar = _default_load_sidecar_json(path)  # None: absent or unparseable (no notices to give)
+            if isinstance(sidecar, dict):
+                data = os.path.join(root_dir, f"{table}.tsv")  # what the hinted commands take as --data
+                issues.extend(self._check_terms(sidecar, normalize_path(path), data, root_dir, table))
         return issues
 
     def validate_sidecar(self, file_path, modality, root_dir):

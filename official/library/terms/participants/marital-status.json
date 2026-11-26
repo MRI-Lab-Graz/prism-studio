@@ -1,0 +1,10 @@
+{
+  "TermID": "prism:marital-status",
+  "Level": "variable",
+  "Label": "marital status",
+  "Aliases": [
+    "marital_status"
+  ],
+  "Description": "Current relationship status",
+  "Status": "official"
+}

@@ -6,6 +6,7 @@ import json
 import sys
 from pathlib import Path
 
+from src.specification import current_specification
 from src.term_proposal import (
     ProposalError,
     attach_links,
@@ -95,6 +96,11 @@ def cmd_terms_resolve(args) -> None:
 def cmd_terms_show(args) -> None:
     """Show one term by ID, local name, label, alias or equivalent."""
     registry, _problems = _registry(args.modality)
+    spec = current_specification()
+    sources = (args.modality,)
+    if args.modality in spec.term_modalities:  # also the terms it borrows (`termsFrom`), with their links
+        registry = spec.registry_for(args.modality)
+        sources = (*spec.term_modalities[args.modality].get("termsFrom", ()), args.modality)
     candidates = _candidates(registry, args.term)
     if len(candidates) > 1:
         message = f"ambiguous term {args.term!r}: " + ", ".join(candidates) + " (use the full ID)"
@@ -104,7 +110,7 @@ def cmd_terms_show(args) -> None:
     if not found:
         _emit(args, {"success": False, "error": f"unknown term: {args.term}"}, f"Error: unknown term: {args.term}")
         sys.exit(1)
-    mappings = load_mappings(args.modality)
+    mappings = {k: v for source in sources for k, v in load_mappings(source).items()}
     links = term_links(registry, found[1], mappings)
     meaning = term_meaning(found[1], mappings, registry)
     text = json.dumps(found[1], indent=2, ensure_ascii=False)
@@ -120,7 +126,7 @@ def cmd_terms_show(args) -> None:
 
 def cmd_terms_suggest(args) -> None:
     """Relate a column name to the registry, as the validator does."""
-    res = resolve_column(load_registry(args.modality), args.column, {}, args.specimen)
+    res = resolve_column(current_specification().registry_for(args.modality), args.column, {}, args.specimen)
     similar = ", ".join(res.similar) or "none"
     _emit(
         args,
@@ -222,7 +228,7 @@ def cmd_terms_propose(args) -> None:
     if problems:
         _fail(args, "the proposal does not pass the specification checks: " + "; ".join(problems), proposal=proposal, problems=problems)
     column_def = sidecar[args.column]
-    similar = list(resolve_column(registry, args.column, column_def, context_value(sidecar, args.modality)).similar)
+    similar = list(resolve_column(current_specification().registry_for(args.modality), args.column, column_def, context_value(sidecar, args.modality)).similar)
     delivered = deliver_proposal(
         proposal, out=getattr(args, "out", None), open_browser=args.open, similar=similar, alias=args.column
     )

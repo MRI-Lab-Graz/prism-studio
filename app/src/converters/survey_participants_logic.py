@@ -155,7 +155,7 @@ def _participants_json_from_template(
         units = v.get("Units") or v.get("Unit")
         if units:
             meta["Units"] = units
-        for key in ("DataType", "VariableType", "MinValue", "MaxValue", "Annotations"):
+        for key in ("Term", "DataType", "VariableType", "MinValue", "MaxValue", "Annotations"):
             if key in v:
                 meta[key] = v[key]
         return meta

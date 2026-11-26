@@ -65,7 +65,10 @@ def _dangling_slug(col_def: dict) -> str | None:
 
 def _build_variable_proposal(registry: dict, column: str, col_def: dict, label: str | None, modality: str) -> dict:
     """One-level modality (environment): an unknown column becomes one `variable` term."""
-    res = resolve_column(registry, column, col_def, None)
+    from src.specification import current_specification  # lazy: it imports the term registry
+
+    spec = current_specification()
+    res = resolve_column({**spec.registry_for(modality), **registry}, column, col_def, None)  # termsFrom is official too
     if res.kind in ("term", "suggestion"):
         term_id = (res.term or {}).get("TermID")
         raise ProposalError(
@@ -74,7 +77,7 @@ def _build_variable_proposal(registry: dict, column: str, col_def: dict, label: 
         )
     if res.kind == "deprecated":
         raise ProposalError(res.message)
-    if not col_def.get("Units") and not col_def.get("Levels"):
+    if not (col_def.get("Units") or col_def.get("Levels") or spec.term_modalities.get(modality, {}).get("unitsOptional")):
         raise ProposalError(f"column {column!r} has no Units or Levels; a proposal needs one of them")
     description = col_def.get("Description")
     term = {
@@ -263,10 +266,16 @@ def check_with_specification(proposal: dict, registry: dict[str, dict], specimen
     if specimens is None and "contextField" in modalities.get(term_modality, {}):
         specimens = module.check_terms.specimen_types(stable / f"{term_modality}.schema.json")
     # a one-level modality (no contextField) gets specimens=None, never [] (that would apply two-level rules)
-    from src.term_registry import mappings_root  # local, like the import above
+    from src.survey_terms import build_survey_registry  # local, like the import above
+    from src.term_registry import mappings_root
+
+    # the specification's CI checks IDs (and `termsFrom` names) across registries: so does this
+    others = {m: terms for m, terms in current_specification().terms.items() if m != term_modality}
+    others["survey"] = build_survey_registry()[0]
 
     problems = module.check_proposal(
         document, registry, specimens or None, schemas=schemas, modalities=modalities, mappings_dir=mappings_root(),
+        others=others,
     )[1]
     # the form's size limit, on the indented text that is printed, shown and pasted (extract_proposal measures that)
     size = len(json.dumps(document, indent=2, ensure_ascii=False).encode("utf-8"))

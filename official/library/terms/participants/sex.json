@@ -1,0 +1,12 @@
+{
+  "TermID": "prism:sex",
+  "Level": "variable",
+  "Label": "biological sex",
+  "Description": "Biological sex assigned at birth",
+  "Levels": {
+    "M": "Male",
+    "F": "Female",
+    "O": "Intersex / Other"
+  },
+  "Status": "official"
+}

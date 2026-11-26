@@ -23,4 +23,4 @@ def test_every_column_of_the_fitness_template_resolves_to_its_term():
 
 def test_coverage_counts_biometrics_like_any_term_modality():
     spec = current_specification()
-    assert coverage({"biometrics": spec.terms["biometrics"]}, spec.mappings_for)["biometrics"]["total"] == 9
+    assert coverage({"biometrics": spec.terms["biometrics"]}, spec.mappings_for)["biometrics"]["total"] == 11  # with height and weight

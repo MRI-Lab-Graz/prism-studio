@@ -42,7 +42,7 @@ holds `prism:cortisol` and its specimen children. Keys are full IDs of that fami
 | `SameAs` | The ID is the same thing as that entry in another vocabulary: `{vocabulary: URL}`, one URL per vocabulary. |
 | `Measures` | The item, score or variable measures that concept: a list of `{URL, Match, Higher, Source, Checked, Status}`. Only `URL` is required. `Match` is `exact`, `broader`, `narrower` or `related`; `Higher` is `more` or `less` (a higher value means more or less of the concept); `Checked` is a date `YYYY-MM-DD`; `Status` is `reviewed` or `unreviewed`. |
 | `ValueRules` | Named rules that read a value as a state: a list of `{Name, Source, Rules}`; each rule is `{When: {Op, Value}, State}`. `Op` is one of `==`, `!=`, `>=`, `>`, `<=`, `<`, `in` (`in` takes a list). `Name` and `State` are slugs. Several rules may exist and disagree; none is the truth, a consumer picks one by name. |
-| `Levels` | The same `Measures` and `ValueRules` for one answer value or category, keyed by the level code as written in the data. |
+| `Levels` | `SameAs`, `Measures` and `ValueRules` for one answer value or category, keyed by the level code of the term's or template's `Levels`. A study's data may use other codes; a link applies only to the code it is written for. |
 
 A mapping file holds no free text except `Source` (and the slug `Name`). It never quotes item wording.
 
@@ -100,12 +100,16 @@ A `SameAs` name, and the URL of a `Measures` link, must come from `mappings/voca
 | `hmdb` | Human Metabolome Database |
 | `drugbank` | DrugBank |
 | `rxnorm` | RxNorm |
+| `neurobagel` | Neurobagel |
 
 The list is data: a new vocabulary is one entry (name, label, URL pattern) with a real example URL in
 `tests/test_vocabularies.py`, which checks that the example matches its own pattern and no other. A pattern checks the
 shape of a URL, never that the entry exists; the author looks every link up. When a vocabulary was added, the shape was
 confirmed by opening a real entry, except for `drugbank`, `hmdb`, `icd11`, `loinc`, `omim`, `rxnorm`: those services refuse automated
 look-ups, so their shape is the one in their own documentation and a link there needs a manual look-up.
+
+The `neurobagel`
+names are those in Neurobagel's own configuration (`neurobagel/communities`); its URLs are identifiers, not pages.
 
 ## Who reviews links
 
