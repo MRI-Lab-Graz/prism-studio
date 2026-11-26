@@ -33,6 +33,7 @@ import requests
 
 from src.bids_integration import check_and_update_bidsignore
 from src.cleaning_notes import cleaning_note
+from src.code_maps import CodeMapError, ProjectCodeMaps
 from src.term_registry import find_term, load_registry
 from src.session_map import resolve_import_session
 from src.converters.file_reader import (
@@ -846,6 +847,32 @@ def perform_environment_conversion(
     persistent_cache = _load_environment_provider_cache(persistent_cache_path)
     persistent_cache_dirty = False
     cache_hits = 0
+
+    def row_session(row) -> tuple[str, str]:
+        """(label in the data, session written) for one row."""
+        from_column = bool(session_col and session_col in df.columns)
+        label = (str(row.get(session_col, "")).strip() if from_column else "") or session_override or ""
+        project_session = _project_session_id(project_path, label, project_sessions, session_warnings)
+        if project_session is not None:  # the project's Timepoints decide
+            return label, project_session
+        if from_column:
+            return label, _bids_label(label or "1", "ses") or "ses-1"
+        return label, _bids_label(session_override, "ses") if session_override else "ses-1"
+
+    # Participant IDs from the project's code maps: before the pilot pick, any output or any request.
+    maps = ProjectCodeMaps.open(project_root_path, "environment", known_tasks=set())
+    if maps and participant_col and participant_col in df.columns:
+        cells = df[participant_col].astype(str).str.strip()
+        given = cells.ne("")
+        if not participant_override and not given.all():  # no made-up sub-NN beside mapped participants
+            empty = ", ".join(str(i + 1) for i in df.index[~given][:20])
+            raise CodeMapError(f"Row(s) {empty}: empty participant cell; with code maps every row needs a listed code.")
+        df.loc[given, participant_col] = maps.resolve_all(
+            [(cell, (), row_session(row)[1]) for cell, (_, row) in zip(cells[given], df[given].iterrows())]
+        )
+        for note in maps.notes():
+            log_callback(note, "warning" if note in maps.warnings else "info")
+
     if pilot_random_subject:
         if participant_col and participant_col in df.columns:
             participants = [
@@ -993,19 +1020,7 @@ def perform_environment_conversion(
             id_pairs.append((raw_pid_for_note, subject_id))
         fallback_idx += 1
 
-        if session_col and session_col in df.columns:
-            session_label = str(row.get(session_col, "")).strip() or session_override or ""
-        else:
-            session_label = session_override or ""
-        project_session = _project_session_id(project_path, session_label, project_sessions, session_warnings)
-        if project_session is not None:  # the project's Timepoints decide
-            session_id = project_session
-        elif session_col and session_col in df.columns:
-            session_id = _bids_label(session_label or "1", "ses") or "ses-1"
-        elif session_override:
-            session_id = _bids_label(session_override, "ses")
-        else:
-            session_id = "ses-1"
+        session_id = row_session(row)[1]
         raw_session_for_note = str(row.get(session_col, "")).strip() if session_col else ""
         if raw_session_for_note:
             ses_pairs.append((raw_session_for_note, session_id))
