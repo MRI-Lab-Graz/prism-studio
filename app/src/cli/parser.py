@@ -1165,7 +1165,7 @@ def build_prism_tools_parsers(
         "--id-map",
         dest="id_map",
         default=None,
-        help="File mapping the IDs in the survey to participant IDs",
+        help="File mapping the IDs in the survey to participant IDs; replaces the project's code/survey_*code_map.tsv files",
     )
     parser_survey_convert.add_argument(
         "--name", help="Dataset name written to dataset_description.json (if created)"

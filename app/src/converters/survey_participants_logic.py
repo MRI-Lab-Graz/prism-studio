@@ -8,6 +8,8 @@ from dataclasses import dataclass
 from ..participants_paths import participants_mapping_candidates
 from ..utils.io import read_json as _read_json, write_json as _write_json
 from .id_detection import detect_id_column, IdColumnNotDetectedError
+from src.code_maps import find_code_map_files, load_code_maps, resolve_row
+from src.git_exclude import SENSITIVE_PATHS, ensure_git_excluded, tracked_sensitive_files
 from . import survey_processing as _survey_processing
 
 # =============================================================================
@@ -192,6 +194,65 @@ def _participants_json_from_template(
 # =============================================================================
 
 
+def _apply_participant_ids(
+    *,
+    df,
+    res_id_col: str,
+    id_map: dict[str, str] | None,
+    id_map_file,
+    project_root,
+    file_tasks_fn,
+    row_session_fn,
+    known_tasks: set[str],
+    columns_without_id_check_fn,
+    **mapping_kwargs,
+):
+    """Turn the ID column into participant IDs: from ``--id-map``, else from the project's code maps."""
+    maps, warnings, ignored = [], [], []
+    if project_root and id_map:
+        ignored = [Path(rel).name for rel in find_code_map_files(project_root)
+                   if Path(rel).parent.name == "code" and Path(rel).name.startswith("survey_")]
+    elif project_root:
+        maps = load_code_maps(project_root, "survey")
+    if ignored:
+        warnings.append(f"--id-map given: project code maps not used: {', '.join(ignored)}.")
+
+    if not maps:
+        if not id_map:
+            columns_without_id_check_fn(res_id_col)
+        df, res_id_col, mapped_warnings = _apply_subject_id_mapping(
+            df=df, res_id_col=res_id_col, id_map=id_map, id_map_file=id_map_file, **mapping_kwargs
+        )
+        return df, res_id_col, warnings + mapped_warnings
+
+    ensure_git_excluded(project_root, *SENSITIVE_PATHS)
+    tracked = {Path(rel).name for rel in tracked_sensitive_files(project_root)}
+    for code_map in maps:
+        if code_map.task and code_map.task not in known_tasks:
+            warnings.append(f"Code map {code_map.name}: no template for task '{code_map.task}'.")
+        if code_map.name in tracked:
+            warnings.append(f"Code map {code_map.name} is tracked by git; it stays in the history.")
+
+    tasks = file_tasks_fn()
+    used: dict[str, set[str]] = {}
+
+    def resolve(index, code):
+        hit = resolve_row(maps, str(code), tasks, row_session_fn(index))
+        if hit is None:
+            return None
+        for name in hit[1]:
+            used.setdefault(name, set()).add(str(code).strip().casefold())
+        return hit[0]
+
+    every_code = {code: code for code_map in maps for code in code_map.entries}
+    df, res_id_col, mapped_warnings = _apply_subject_id_mapping(
+        df=df, res_id_col=res_id_col, id_map=every_code, id_map_file=None, resolve=resolve, **mapping_kwargs
+    )
+    warnings += mapped_warnings
+    warnings += [f"Applied code map {name}: {len(codes)} code(s)." for name, codes in sorted(used.items())]
+    return df, res_id_col, warnings
+
+
 def _apply_subject_id_mapping(
     *,
     df,
@@ -201,8 +262,12 @@ def _apply_subject_id_mapping(
     suggest_id_matches_fn,
     missing_id_mapping_error_cls,
     response_table: bool = False,
+    resolve=None,
 ):
-    """Apply optional subject ID mapping and return updated dataframe/ID column."""
+    """Apply optional subject ID mapping and return updated dataframe/ID column.
+
+    With ``resolve(row_index, code) -> participant | None`` (project code maps) the answer may differ
+    by row; ``id_map`` then only holds every known code, to choose the ID column and suggest matches."""
     warnings: list[str] = []
     if not id_map:
         return df, res_id_col, warnings
@@ -271,9 +336,13 @@ def _apply_subject_id_mapping(
 
     df[res_id_col] = df[res_id_col].astype(str).str.strip()
     ids_in_data = set(df[res_id_col].unique())
-    missing = sorted(
-        [i for i in ids_in_data if str(i).strip().lower() not in id_map_lower]
-    )
+    if resolve:
+        resolved = {index: resolve(index, value) for index, value in df[res_id_col].items()}
+        missing = sorted({df.at[index, res_id_col] for index, hit in resolved.items() if hit is None})
+    else:
+        missing = sorted(
+            [i for i in ids_in_data if str(i).strip().lower() not in id_map_lower]
+        )
     if missing:
         sample = ", ".join(missing[:20])
         more = "" if len(missing) <= 20 else f" (+{len(missing) - 20} more)"
@@ -288,14 +357,17 @@ def _apply_subject_id_mapping(
     source_col = res_id_col
     if response_table and res_id_col.strip().lower() == "id":
         res_id_col = "mapped_participant_id"  # `id` stays the response number (ledger, decisions)
-    df[res_id_col] = df[source_col].map(
-        lambda x: id_map_lower.get(
-            str(x).strip().lower(), id_map.get(str(x).strip(), x)
+    if resolve:
+        df[res_id_col] = df[source_col].index.map(resolved.get)
+    else:
+        df[res_id_col] = df[source_col].map(
+            lambda x: id_map_lower.get(
+                str(x).strip().lower(), id_map.get(str(x).strip(), x)
+            )
         )
-    )
-    warnings.append(
-        f"Applied subject ID mapping from {Path(id_map_file).name} ({len(id_map)} entries)."
-    )
+        warnings.append(
+            f"Applied subject ID mapping from {Path(id_map_file).name} ({len(id_map)} entries)."
+        )
 
     return df, res_id_col, warnings
 

@@ -996,6 +996,11 @@ def _load_id_mapping(path: str | Path | None) -> dict[str, str] | None:
     try:
         df = df.iloc[:, :2].copy()
         df.columns = ["source_id", "participant_id"]
+        seen: dict[str, str] = {}
+        for source, target in df.astype(str).itertuples(index=False):
+            source, target = source.strip(), target.strip()
+            if seen.setdefault(source.casefold(), target) != target:
+                raise ValueError(f"ID map {p.name}: '{source}' is listed with two different participants.")
 
         df["source_id"] = df["source_id"].astype(str).str.strip()
         df["participant_id"] = df["participant_id"].astype(str).str.strip()
@@ -1445,24 +1450,6 @@ def _convert_survey_dataframe_to_prism_dataset(
     if res_run_col:
         print(f"[PRISM INFO] Run column detected: '{res_run_col}'")
 
-    # --- Apply subject ID mapping if provided ---
-    id_map: dict[str, str] | None = _load_id_mapping(id_map_file)
-    if not id_map:
-        require_participant_id_column(list(df.columns), res_id_col, source_format)
-    df, res_id_col, id_map_warnings = (
-        _survey_participants_logic._apply_subject_id_mapping(
-            df=df,
-            res_id_col=res_id_col,
-            id_map=id_map,
-            id_map_file=id_map_file,
-            response_table=str(source_format).lower() in {"lsa", "lss"}
-            or is_limesurvey_response_table(df.columns),
-            suggest_id_matches_fn=_suggest_id_matches,
-            missing_id_mapping_error_cls=MissingIdMappingError,
-        )
-    )
-    conversion_warnings.extend(id_map_warnings)
-
     if alias_map:
         df = _rename_item_columns(df, alias_map)
     # an .lsa/.lss already names its columns by question id: only plain tables need this
@@ -1556,6 +1543,43 @@ def _convert_survey_dataframe_to_prism_dataset(
     # Handle duplicate IDs based on duplicate_handling parameter
     from src.session_assignments import load_session_assignments
     from src.session_order import content_session_order
+
+    # --- Participant IDs (--id-map or the project's code maps) ---
+    # Here, not earlier: a code map may depend on the row's session and on the file's questionnaires.
+    def _row_session(index):
+        if timepoints == "single":
+            return "1"
+        value = str(df.at[index, res_ses_col]).strip() if res_ses_col and res_ses_col in df.columns else ""
+        if value and value.lower() != "nan":
+            return _normalize_ses_id(value)
+        return _normalize_ses_id(session) if session and session != "all" else None
+
+    def _file_tasks():
+        # every questionnaire in the file, also those left out with --survey
+        mapped = _survey_column_mapping._map_survey_columns(
+            df=df, item_to_task=item_to_task, participant_columns_lower=participant_columns_lower,
+            id_col=res_id_col, ses_col=res_ses_col, run_col=res_run_col, unknown_mode="ignore",
+            templates=templates, selected_tasks=None,
+        )[0]
+        return {mapping.task for mapping in mapped.values()}
+
+    id_map: dict[str, str] | None = _load_id_mapping(id_map_file)
+    df, res_id_col, id_map_warnings = _survey_participants_logic._apply_participant_ids(
+        df=df,
+        res_id_col=res_id_col,
+        id_map=id_map,
+        id_map_file=id_map_file,
+        project_root=_survey_core._resolve_existing_project_root(project_path),
+        file_tasks_fn=_file_tasks,
+        row_session_fn=_row_session,
+        known_tasks=set(item_to_task.values()),
+        columns_without_id_check_fn=lambda column: require_participant_id_column(list(df.columns), column, source_format),
+        response_table=str(source_format).lower() in {"lsa", "lss"}
+        or is_limesurvey_response_table(df.columns),
+        suggest_id_matches_fn=_suggest_id_matches,
+        missing_id_mapping_error_cls=MissingIdMappingError,
+    )
+    conversion_warnings.extend(id_map_warnings)
 
     all_responses = df  # every response of the file, before incomplete ones are left out
     survey_id = survey_id_of(input_path) if input_path else "default"

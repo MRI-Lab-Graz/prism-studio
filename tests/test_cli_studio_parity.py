@@ -724,3 +724,22 @@ def test_a_vocabulary_given_twice_is_refused_in_the_cli_and_in_studio(capsys):
     with Flask(__name__).test_request_context("/", method="POST", json=body):
         response = propose_metric()
     assert "twice" in str(response[0].get_json())
+
+
+def test_a_code_map_conversion_writes_the_same_files(world, tmp_path, capsys):
+    project, table = world
+    table.write_text("Code,PSS1\naaaa,0\nbbbb,1\n", encoding="utf-8")
+    (project / "code" / "survey_code_map.tsv").write_text(
+        "code\tparticipant_id\nAAAA\tsub-001\nBBBB\tsub-002\n", encoding="utf-8"
+    )
+    twin = tmp_path / "twin"
+    shutil.copytree(project, twin)
+
+    cmd_survey_convert(_cli_args(project, table, id_column="Code"))
+    result = _studio_convert(twin, table, id_column="Code")
+
+    applied = "Applied code map survey_code_map.tsv: 2 code(s)."
+    assert applied in capsys.readouterr().out
+    assert applied in result.conversion_warnings
+    assert _written(project) == _written(twin)
+    assert any(name.startswith("sub-001") for name in _written(project))
