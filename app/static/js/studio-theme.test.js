@@ -188,6 +188,18 @@ describe('offersMultilingual (descriptive header fields are English only)', () =
   });
 });
 
+describe('translationKeys (the language rows of a translated field)', () => {
+  const needsEnglish = { type: ['string', 'object'], required: ['en'] };
+
+  it('always offers the language the schema requires, first', () => {
+    expect(StudioTheme.translationKeys(needsEnglish, { de: 'Beschreibung' })).toEqual(['en', 'de']);
+  });
+
+  it('shows only the stored languages when the schema requires none', () => {
+    expect(StudioTheme.translationKeys({ type: ['string', 'object'] }, { de: 'x', fr: 'y' })).toEqual(['de', 'fr']);
+  });
+});
+
 describe('every StudioTheme function the pages call exists', () => {
   it('template-editor.js and its modules use only functions the theme exports (a missing one aborts the whole render)', () => {
     const files = ['template-editor.js', 'template-editor/author-entry.js', 'template-editor/doi-check.js'];

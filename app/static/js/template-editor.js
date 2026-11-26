@@ -1140,9 +1140,9 @@
       if (allowsObject && isTranslationObject(value)) {
         const container = document.createElement('div');
         const translationTable = document.createElement('div');
-        const langEntries = Object.entries(value || {});
 
-        for (const [lang, text] of langEntries) {
+        for (const lang of StudioTheme.translationKeys(fieldSchema, value)) {
+          const text = value[lang];
           const row = document.createElement('div');
           row.className = 'row g-2 align-items-start mb-2';
 
