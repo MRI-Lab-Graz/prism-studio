@@ -8,7 +8,13 @@ from dataclasses import dataclass
 from ..participants_paths import participants_mapping_candidates
 from ..utils.io import read_json as _read_json, write_json as _write_json
 from .id_detection import detect_id_column, IdColumnNotDetectedError
-from src.code_maps import find_code_map_files, load_code_maps, resolve_row
+from src.code_maps import (
+    CodeMapError,
+    find_code_map_files,
+    load_code_maps,
+    project_code_maps_ignored,
+    resolve_row,
+)
 from src.git_exclude import SENSITIVE_PATHS, ensure_git_excluded, tracked_sensitive_files
 from . import survey_processing as _survey_processing
 
@@ -204,11 +210,17 @@ def _apply_participant_ids(
     file_tasks_fn,
     row_session_fn,
     known_tasks: set[str],
+    known_sessions: set[str] | None,
+    id_column_chosen: bool,
     columns_without_id_check_fn,
     **mapping_kwargs,
 ):
     """Turn the ID column into participant IDs: from ``--id-map``, else from the project's code maps."""
     maps, warnings, ignored = [], [], []
+    if project_code_maps_ignored():
+        project_root = None
+    if project_root and find_code_map_files(project_root):
+        ensure_git_excluded(project_root, *SENSITIVE_PATHS)  # also when --id-map replaces the maps
     if project_root and id_map:
         ignored = [Path(rel).name for rel in find_code_map_files(project_root)
                    if Path(rel).parent.name == "code" and Path(rel).name.startswith("survey_")]
@@ -225,11 +237,15 @@ def _apply_participant_ids(
         )
         return df, res_id_col, warnings + mapped_warnings
 
-    ensure_git_excluded(project_root, *SENSITIVE_PATHS)
     tracked = {Path(rel).name for rel in tracked_sensitive_files(project_root)}
     for code_map in maps:
         if code_map.task and code_map.task not in known_tasks:
+            same = [task for task in known_tasks if task.lower() == code_map.task.lower()]
+            if same:
+                raise CodeMapError(f"Code map {code_map.name}: the task is written task-{same[0]}; rename the file.")
             warnings.append(f"Code map {code_map.name}: no template for task '{code_map.task}'.")
+        if code_map.session and known_sessions is not None and code_map.session not in known_sessions:
+            warnings.append(f"Code map {code_map.name}: the project has no session '{code_map.session}'.")
         if code_map.name in tracked:
             warnings.append(f"Code map {code_map.name} is tracked by git; it stays in the history.")
 
@@ -246,7 +262,8 @@ def _apply_participant_ids(
 
     every_code = {code: code for code_map in maps for code in code_map.entries}
     df, res_id_col, mapped_warnings = _apply_subject_id_mapping(
-        df=df, res_id_col=res_id_col, id_map=every_code, id_map_file=None, resolve=resolve, **mapping_kwargs
+        df=df, res_id_col=res_id_col, id_map=every_code, id_map_file=None, resolve=resolve,
+        keep_id_column=id_column_chosen, **mapping_kwargs
     )
     warnings += mapped_warnings
     warnings += [f"Applied code map {name}: {len(codes)} code(s)." for name, codes in sorted(used.items())]
@@ -263,13 +280,14 @@ def _apply_subject_id_mapping(
     missing_id_mapping_error_cls,
     response_table: bool = False,
     resolve=None,
+    keep_id_column: bool = False,
 ):
     """Apply optional subject ID mapping and return updated dataframe/ID column.
 
     With ``resolve(row_index, code) -> participant | None`` (project code maps) the answer may differ
     by row; ``id_map`` then only holds every known code, to choose the ID column and suggest matches."""
     warnings: list[str] = []
-    if not id_map:
+    if not id_map and not resolve:  # an unfilled project map must still stop every unlisted code
         return df, res_id_col, warnings
 
     df = df.copy()
@@ -316,7 +334,7 @@ def _apply_subject_id_mapping(
 
     best_col = res_id_col
     best_matches, best_ratio = _score_column(res_id_col)
-    for c in candidate_cols:
+    for c in [] if keep_id_column else candidate_cols:
         if response_table and c != res_id_col and c.strip().lower() == "id":
             continue  # response numbers are mapped only when the user chose them
         matches, ratio = _score_column(c)
@@ -324,7 +342,7 @@ def _apply_subject_id_mapping(
             best_col = c
             best_matches, best_ratio = matches, ratio
 
-    if best_matches == 0 and "code" in candidate_cols:
+    if best_matches == 0 and "code" in candidate_cols and not keep_id_column:
         best_col = "code"
 
     if best_col != res_id_col:

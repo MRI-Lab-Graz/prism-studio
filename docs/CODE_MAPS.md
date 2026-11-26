@@ -89,6 +89,10 @@ A dry run reports each map it used: `Applied code map survey_ses-3_code_map.tsv:
 | `must name the columns 'code' and 'participant_id'` | Add the header line. |
 | `is listed with two different participants` | Remove one of the two rows. |
 | `is not a participant ID` | Write `sub-` plus letters and digits. |
+| `the task is written task-...` | Rename the file with the task name spelled as in the dataset. |
+
+A warning `the project has no session ...` means a session map names a label your project never
+writes (for example `pre` instead of the mapped `1`), so the map has no effect.
 
 ## Privacy
 

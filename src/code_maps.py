@@ -9,8 +9,26 @@ from __future__ import annotations
 import csv
 import re
 from collections.abc import Iterable
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass
 from pathlib import Path
+
+_IGNORED: ContextVar[bool] = ContextVar("ignore_project_code_maps", default=False)
+
+
+@contextmanager
+def without_project_code_maps():
+    """For pre-checks that only look at templates and sessions: nobody is assigned to a participant."""
+    token = _IGNORED.set(True)
+    try:
+        yield
+    finally:
+        _IGNORED.reset(token)
+
+
+def project_code_maps_ignored() -> bool:
+    return _IGNORED.get()
 
 
 class CodeMapError(ValueError):
@@ -113,7 +131,7 @@ def resolve_row(maps: list[CodeMap], code: str, tasks: Iterable[str], session: s
 
 def is_code_map(rel_parts: tuple[str, ...]) -> bool:
     """True for a map, a copy or a backup of one anywhere under ``code/`` (parts relative to the project)."""
-    return len(rel_parts) > 1 and rel_parts[0] == "code" and "code_map" in rel_parts[-1].lower()
+    return len(rel_parts) > 1 and rel_parts[0] == "code" and any("code_map" in part.lower() for part in rel_parts[1:])
 
 
 def find_code_map_files(project_root: str | Path) -> list[str]:

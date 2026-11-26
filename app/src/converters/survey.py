@@ -994,12 +994,12 @@ def _load_id_mapping(path: str | Path | None) -> dict[str, str] | None:
 
 
     try:
-        df = df.iloc[:, :2].copy()
+        df = df.iloc[:, :2].fillna("")
         df.columns = ["source_id", "participant_id"]
         seen: dict[str, str] = {}
         for source, target in df.astype(str).itertuples(index=False):
             source, target = source.strip(), target.strip()
-            if seen.setdefault(source.casefold(), target) != target:
+            if source and target and seen.setdefault(source.casefold(), target) != target:
                 raise ValueError(f"ID map {p.name}: '{source}' is listed with two different participants.")
 
         df["source_id"] = df["source_id"].astype(str).str.strip()
@@ -1549,6 +1549,8 @@ def _convert_survey_dataframe_to_prism_dataset(
     def _row_session(index):
         if timepoints == "single":
             return "1"
+        if duplicate_handling == "sessions" and not (res_ses_col and res_ses_col in df.columns):
+            return None  # numbered by date after the participant is known: no session map can apply
         value = str(df.at[index, res_ses_col]).strip() if res_ses_col and res_ses_col in df.columns else ""
         if value and value.lower() != "nan":
             return _normalize_ses_id(value)
@@ -1560,6 +1562,7 @@ def _convert_survey_dataframe_to_prism_dataset(
             df=df, item_to_task=item_to_task, participant_columns_lower=participant_columns_lower,
             id_col=res_id_col, ses_col=res_ses_col, run_col=res_run_col, unknown_mode="ignore",
             templates=templates, selected_tasks=None,
+            allow_near_item_match=allow_near_item_match, near_match_tasks=near_match_tasks,
         )[0]
         return {mapping.task for mapping in mapped.values()}
 
@@ -1573,6 +1576,10 @@ def _convert_survey_dataframe_to_prism_dataset(
         file_tasks_fn=_file_tasks,
         row_session_fn=_row_session,
         known_tasks=set(item_to_task.values()),
+        known_sessions={"1"} if timepoints == "single" else (
+            {str(v).removeprefix("ses-") for v in session_map.values()} if session_map else None
+        ),
+        id_column_chosen=bool(id_column),
         columns_without_id_check_fn=lambda column: require_participant_id_column(list(df.columns), column, source_format),
         response_table=str(source_format).lower() in {"lsa", "lss"}
         or is_limesurvey_response_table(df.columns),

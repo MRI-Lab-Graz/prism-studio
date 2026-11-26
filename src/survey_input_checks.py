@@ -10,6 +10,7 @@ import tempfile
 from pathlib import Path
 from typing import Any, Callable
 
+from src.code_maps import without_project_code_maps
 from src.converters.file_reader import expected_delimiter_for_suffix
 from src.survey_library_resolution import resolve_survey_library
 from src.survey_template_check import project_template_warnings, validate_project_templates_for_tasks
@@ -260,16 +261,17 @@ def infer_tasks_against_official_templates(
             id_map_file=None, duplicate_handling=duplicate_handling, skip_participants=True,
             fallback_project_path=project_path, app_root=app_root,
         )
-        if suffix in SUPPORTED_SURVEY_TABULAR_SUFFIXES:
-            result = run_survey_with_template_sources(
-                convert_file, sheet=sheet, separator=expected_delimiter_for_suffix(suffix, separator_option), **common
-            )
-        elif suffix == ".lsa":
-            result = run_survey_with_template_sources(
-                convert_lsa, strict_levels=None, project_path=project_path, **common
-            )
-        else:
-            raise ValueError(SUPPORTED_SURVEY_INPUT_MESSAGE)
+        with without_project_code_maps():  # only templates are looked at here
+            if suffix in SUPPORTED_SURVEY_TABULAR_SUFFIXES:
+                result = run_survey_with_template_sources(
+                    convert_file, sheet=sheet, separator=expected_delimiter_for_suffix(suffix, separator_option), **common
+                )
+            elif suffix == ".lsa":
+                result = run_survey_with_template_sources(
+                    convert_lsa, strict_levels=None, project_path=project_path, **common
+                )
+            else:
+                raise ValueError(SUPPORTED_SURVEY_INPUT_MESSAGE)
 
         tasks = sorted(set(getattr(result, "tasks_included", []) or []))
         copy_summary = copy_official_templates_to_project(
@@ -426,12 +428,13 @@ def detect_version_contexts(
             task_value_offsets=task_value_offsets,
         )
         try:
-            if suffix in SUPPORTED_SURVEY_TABULAR_SUFFIXES:
-                result = convert_file(sheet=sheet, separator=expected_delimiter_for_suffix(suffix, separator_option), **common)
-            elif suffix == ".lsa":
-                result = convert_lsa(strict_levels=None, **common)
-            else:
-                raise ValueError(SUPPORTED_SURVEY_INPUT_MESSAGE)
+            with without_project_code_maps():  # only tasks, sessions and versions are looked at here
+                if suffix in SUPPORTED_SURVEY_TABULAR_SUFFIXES:
+                    result = convert_file(sheet=sheet, separator=expected_delimiter_for_suffix(suffix, separator_option), **common)
+                elif suffix == ".lsa":
+                    result = convert_lsa(strict_levels=None, **common)
+                else:
+                    raise ValueError(SUPPORTED_SURVEY_INPUT_MESSAGE)
         except TemplateIncomplete:
             # Only looking, nothing is converted: the refusal (naming the project copies to fill in) comes at
             # preview and convert. Until then there is nothing to detect.
