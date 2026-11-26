@@ -8,14 +8,8 @@ from dataclasses import dataclass
 from ..participants_paths import participants_mapping_candidates
 from ..utils.io import read_json as _read_json, write_json as _write_json
 from .id_detection import detect_id_column, IdColumnNotDetectedError
-from src.code_maps import (
-    CodeMapError,
-    find_code_map_files,
-    load_code_maps,
-    project_code_maps_ignored,
-    resolve_row,
-)
-from src.git_exclude import SENSITIVE_PATHS, ensure_git_excluded, tracked_sensitive_files
+from src.code_maps import ProjectCodeMaps, find_code_map_files, project_code_maps_ignored
+from src.git_exclude import SENSITIVE_PATHS, ensure_git_excluded
 from . import survey_processing as _survey_processing
 
 # =============================================================================
@@ -216,18 +210,14 @@ def _apply_participant_ids(
     **mapping_kwargs,
 ):
     """Turn the ID column into participant IDs: from ``--id-map``, else from the project's code maps."""
-    maps, warnings, ignored = [], [], []
-    if project_code_maps_ignored():
-        project_root = None
-    if project_root and find_code_map_files(project_root):
+    maps, ignored = None, []
+    if project_root and id_map and not project_code_maps_ignored() and find_code_map_files(project_root):
         ensure_git_excluded(project_root, *SENSITIVE_PATHS)  # also when --id-map replaces the maps
-    if project_root and id_map:
         ignored = [Path(rel).name for rel in find_code_map_files(project_root)
                    if Path(rel).parent.name == "code" and Path(rel).name.startswith("survey_")]
-    elif project_root:
-        maps = load_code_maps(project_root, "survey")
-    if ignored:
-        warnings.append(f"--id-map given: project code maps not used: {', '.join(ignored)}.")
+    elif not id_map:
+        maps = ProjectCodeMaps.open(project_root, "survey", known_tasks, known_sessions)
+    warnings = [f"--id-map given: project code maps not used: {', '.join(ignored)}."] if ignored else []
 
     if not maps:
         if not id_map:
@@ -237,37 +227,14 @@ def _apply_participant_ids(
         )
         return df, res_id_col, warnings + mapped_warnings
 
-    tracked = {Path(rel).name for rel in tracked_sensitive_files(project_root)}
-    for code_map in maps:
-        if code_map.task and code_map.task not in known_tasks:
-            same = [task for task in known_tasks if task.lower() == code_map.task.lower()]
-            if same:
-                raise CodeMapError(f"Code map {code_map.name}: the task is written task-{same[0]}; rename the file.")
-            warnings.append(f"Code map {code_map.name}: no template for task '{code_map.task}'.")
-        if code_map.session and known_sessions is not None and code_map.session not in known_sessions:
-            warnings.append(f"Code map {code_map.name}: the project has no session '{code_map.session}'.")
-        if code_map.name in tracked:
-            warnings.append(f"Code map {code_map.name} is tracked by git; it stays in the history.")
-
     tasks = file_tasks_fn()
-    used: dict[str, set[str]] = {}
-
-    def resolve(index, code):
-        hit = resolve_row(maps, str(code), tasks, row_session_fn(index))
-        if hit is None:
-            return None
-        for name in hit[1]:
-            used.setdefault(name, set()).add(str(code).strip().casefold())
-        return hit[0]
-
-    every_code = {code: code for code_map in maps for code in code_map.entries}
     df, res_id_col, mapped_warnings = _apply_subject_id_mapping(
-        df=df, res_id_col=res_id_col, id_map=every_code, id_map_file=None, resolve=resolve,
+        df=df, res_id_col=res_id_col, id_map={code: code for code in maps.codes}, id_map_file=None,
+        resolve=lambda index, code: maps.resolve(code, tasks, row_session_fn(index)),
         keep_id_column=id_column_chosen, **mapping_kwargs
     )
-    warnings += mapped_warnings
-    warnings += [f"Applied code map {name}: {len(codes)} code(s)." for name, codes in sorted(used.items())]
-    return df, res_id_col, warnings
+    notes = maps.notes()
+    return df, res_id_col, maps.warnings + mapped_warnings + notes[len(maps.warnings):]
 
 
 def _apply_subject_id_mapping(

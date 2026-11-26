@@ -14,6 +14,9 @@ from contextvars import ContextVar
 from dataclasses import dataclass
 from pathlib import Path
 
+from src.git_exclude import SENSITIVE_PATHS, ensure_git_excluded, tracked_sensitive_files
+from src.session_map import SessionMapError, project_timepoints, session_map_for_conversion
+
 _IGNORED: ContextVar[bool] = ContextVar("ignore_project_code_maps", default=False)
 
 
@@ -33,6 +36,16 @@ def project_code_maps_ignored() -> bool:
 
 class CodeMapError(ValueError):
     """A code map is invalid, or the maps do not agree about who a row belongs to."""
+
+
+class UnknownCodeError(CodeMapError):
+    def __init__(self, codes: Iterable[str]) -> None:
+        self.codes = sorted(set(codes))
+        more = "" if len(self.codes) <= 20 else f" (+{len(self.codes) - 20} more)"
+        super().__init__(
+            f"ID mapping incomplete: {len(self.codes)} IDs from data are missing in the mapping: "
+            f"{', '.join(self.codes[:20])}{more}."
+        )
 
 
 @dataclass(frozen=True)
@@ -127,6 +140,88 @@ def resolve_row(maps: list[CodeMap], code: str, tasks: Iterable[str], session: s
         )
     participant = next(iter(found.values()))[0]
     return participant, tuple(sorted({name for _, files in found.values() for name in files}))
+
+
+def _known_sessions(project_root) -> set[str] | None:
+    """The session names this project writes, or None when it does not say."""
+    try:
+        if project_timepoints(project_root) == "single":
+            return {"1"}
+        mapping = session_map_for_conversion(project_root)
+    except SessionMapError:
+        return None
+    return set(mapping.values()) if mapping else None
+
+
+class ProjectCodeMaps:
+    """One import's use of a project's code maps; every importer goes through this."""
+
+    def __init__(self, maps: list[CodeMap], warnings: list[str]) -> None:
+        self.maps = maps
+        self.warnings = warnings
+        self._used: dict[str, set[str]] = {}
+
+    @classmethod
+    def open(cls, project_root, modality: str, known_tasks=None, known_sessions=None) -> ProjectCodeMaps | None:
+        """None without a project, without maps for ``modality``, or inside ``without_project_code_maps``."""
+        if not project_root or project_code_maps_ignored():
+            return None
+        if find_code_map_files(project_root):
+            ensure_git_excluded(project_root, *SENSITIVE_PATHS)
+        maps = load_code_maps(project_root, modality)
+        if not maps:
+            return None
+
+        warnings = []
+        tracked = {Path(rel).name for rel in tracked_sensitive_files(project_root)}
+        if known_sessions is None:
+            known_sessions = _known_sessions(project_root)
+        sessions = None if known_sessions is None else {str(v).removeprefix("ses-") for v in known_sessions}
+        for code_map in maps:
+            if code_map.task and known_tasks is not None and code_map.task not in known_tasks:
+                same = [task for task in known_tasks if task.lower() == code_map.task.lower()]
+                if same:
+                    raise CodeMapError(f"Code map {code_map.name}: the task is written task-{same[0]}; rename the file.")
+                warnings.append(f"Code map {code_map.name}: no template for task '{code_map.task}'.")
+            if code_map.session and sessions is not None and code_map.session not in sessions:
+                warnings.append(f"Code map {code_map.name}: the project has no session '{code_map.session}'.")
+            if code_map.name in tracked:
+                warnings.append(f"Code map {code_map.name} is tracked by git; it stays in the history.")
+        return cls(maps, warnings)
+
+    @property
+    def codes(self) -> list[str]:
+        """Every code any map lists (to choose a column and to suggest matches)."""
+        return list({code: None for code_map in self.maps for code in code_map.entries})
+
+    def resolve(self, code, tasks: Iterable[str] = (), session=None) -> str | None:
+        hit = resolve_row(self.maps, str(code), tasks, session)
+        if hit is None:
+            return None
+        for name in hit[1]:
+            self._used.setdefault(name, set()).add(str(code).strip().casefold())
+        return hit[0]
+
+    def resolve_all(self, rows, keep_targets: bool = False) -> list[str]:
+        """Participants for ``(code, tasks, session)`` rows; every unlisted value is reported at once.
+
+        ``keep_targets``: a value that already is a participant of a map ("004" or "sub-004") stays."""
+        targets = {p.casefold(): p for m in self.maps for p in m.entries.values()} if keep_targets else {}
+        resolved, missing = [], []
+        for code, tasks, session in rows:
+            value = str(code).strip()
+            hit = self.resolve(value, tasks, session) or targets.get("sub-" + value.casefold().removeprefix("sub-"))
+            if hit is None:
+                missing.append(value)
+            resolved.append(hit)
+        if missing:
+            raise UnknownCodeError(missing)
+        return resolved
+
+    def notes(self) -> list[str]:
+        return self.warnings + [
+            f"Applied code map {name}: {len(codes)} code(s)." for name, codes in sorted(self._used.items())
+        ]
 
 
 def is_code_map(rel_parts: tuple[str, ...]) -> bool:
