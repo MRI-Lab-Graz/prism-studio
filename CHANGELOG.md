@@ -7,24 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed (term codes in participants annotations)
-- **The education level codes Studio offered were gene codes** (`ncit:C17781`-`C17785`, `C20432`); `ncit:C41185` ("study group") is "Concentration". The codes for handedness, sex "Other" and four fields of the official participants template are not in the current SNOMED CT edition, and the autism code is retired. All are removed (labels stay).
-- Validation warns about each of these codes in a project's `participants.json`. **Projects annotated earlier keep them until you remove them.**
-
-### Fixed (codebook import)
-- **Answer labels containing commas are no longer cut off.** In a comma-separated scale cell, "3 = meistens, die ganze Zeit" was imported as "meistens" and "0,5 Jahre" as "0"; different answers could end up with the same label. A comma now separates answers only in front of the next `code =`. **Templates imported earlier keep the cut labels: check them against their codebook.**
-- Codebook imports now warn when text is ignored, a code is defined twice or several codes get the same label.
-- Studio's template generation endpoint (`/api/limesurvey-to-prism`) accepted `.csv` and `.tsv` codebooks and then failed on every one of them.
-
-### Fixed (survey import, from a real longitudinal study)
-- **LimeSurvey's `id` is no longer accepted as the participant ID** by survey conversion, `participants preview`/`convert` and `sessions review`. It numbers the responses of one survey and restarts in each one, so every timepoint was filed under other people. Choose the participant column, or map the response numbers with `--id-map`.
-- A raw LimeSurvey response export (`.xlsx`/`.csv`) is now read completely: `Group[ITEM]` headers match their template items, and the responses are recorded in `code/survey_imports.json` like those of an `.lsa`.
-- A template whose file name and `TaskName` disagree is reported, so files are not silently written under another task name than recipes expect.
-- `survey convert --dry-run` shows the `--session` it was given instead of "default ses-1"; empty cells are no longer reported as rewritten decimal zeros.
-- Survey conversion no longer prints debug output, including the first rows of the input and participant codes.
-- A schema error in a sidecar is reported once, not once per data file, and says when the project pins an older schema (`modality-version update`).
-
-## [1.26.2] - 2026-11-25
+## [1.26.2] - 2026-11-26
 
 ### Removed (breaking)
 - **Sending, syncing and getting data moved to Worldline Desktop.** `prism_tools publish` and `prism_tools datalad sync | update | put-on-server | open-from-server | get-data` are gone, with their Studio routes (Sync now, Put on server, Open from server, Get data, Publish). Use [Worldline Desktop](https://worldline-desktop.readthedocs.io/) (0.6.3 or later refuses to send a project that tracks `sourcedata/` to a public host). The DataLad page keeps Enable DataLad and Save; `datalad enable | save | status | doctor | identity` and `save-gate` stay.
@@ -55,6 +38,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Recipe Builder only lists modalities that exist in the project and says 'no project loaded' instead of 'failed to load templates'. New command `recipes modalities --project P`.
 - A DOI containing `//` (for example `10.1026//0012-...`) is accepted; `.`, `..` and a trailing `/` are still refused.
 - Saving after a subject rename: a renamed `sub-*` dataset that the superproject had not registered yet was checked as a whole dataset ("Missing dataset_description.json", "No subjects found") and the save was refused.
+
+### Fixed (term codes in participants annotations)
+- **The education level codes Studio offered were gene codes** (`ncit:C17781`-`C17785`, `C20432`); `ncit:C41185` ("study group") is "Concentration". The codes for handedness, sex "Other" and four fields of the official participants template are not in the current SNOMED CT edition, and the autism code is retired. All are removed (labels stay).
+- Validation warns about each of these codes in a project's `participants.json`. **Projects annotated earlier keep them until you remove them.**
+
+### Fixed (codebook import)
+- **Answer labels containing commas are no longer cut off.** In a comma-separated scale cell, "3 = meistens, die ganze Zeit" was imported as "meistens" and "0,5 Jahre" as "0"; different answers could end up with the same label. A comma now separates answers only in front of the next `code =`. **Templates imported earlier keep the cut labels: check them against their codebook.**
+- Codebook imports now warn when text is ignored, a code is defined twice or several codes get the same label.
+- Studio's template generation endpoint (`/api/limesurvey-to-prism`) accepted `.csv` and `.tsv` codebooks and then failed on every one of them.
+
+### Fixed (survey import, from a real longitudinal study)
+- **LimeSurvey's `id` is no longer accepted as the participant ID** by survey conversion, `participants preview`/`convert` and `sessions review`. It numbers the responses of one survey and restarts in each one, so every timepoint was filed under other people. Choose the participant column, or map the response numbers with `--id-map`.
+- A raw LimeSurvey response export (`.xlsx`/`.csv`) is now read completely: `Group[ITEM]` headers match their template items, and the responses are recorded in `code/survey_imports.json` like those of an `.lsa`.
+- A template whose file name and `TaskName` disagree is reported, so files are not silently written under another task name than recipes expect.
+- `survey convert --dry-run` shows the `--session` it was given instead of "default ses-1"; empty cells are no longer reported as rewritten decimal zeros.
+- Survey conversion no longer prints debug output, including the first rows of the input and participant codes.
+- A schema error in a sidecar is reported once, not once per data file, and says when the project pins an older schema (`modality-version update`).
 
 ## [1.26.1] - 2026-11-20
 
