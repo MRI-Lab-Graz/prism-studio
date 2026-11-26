@@ -1,4 +1,5 @@
 import sys
+import tempfile
 from pathlib import Path
 
 from flask import current_app, jsonify, request, session
@@ -66,16 +67,12 @@ def handle_limesurvey_to_prism():
                 log(f"⚠ Could not validate {name}: {str(e)}", "warning")
 
         if is_excel:
-            import io
             from src.converters.excel_to_survey import extract_excel_templates
 
             log(
                 "Detected Excel/CSV source. Running data dictionary extraction...",
                 "step",
             )
-
-            file_bytes = io.BytesIO(file.read())
-            file_bytes.name = file.filename
 
             # Provide a handler that auto-selects the suggested version name instead of
             # blocking the server process on a CLI input() call.
@@ -95,11 +92,16 @@ def handle_limesurvey_to_prism():
                 return suggested_new
 
             problems = []
-            extracted = extract_excel_templates(
-                file_bytes,
-                version_merge_handler=_web_version_merge_handler,
-                problems=problems,
-            )
+            # A real file: the importer tells CSV/TSV/Excel apart by the suffix.
+            # A directory, because Windows cannot reopen an open temporary file.
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                codebook = Path(tmp_dir) / f"codebook{Path(filename).suffix}"
+                file.save(codebook)
+                extracted = extract_excel_templates(
+                    str(codebook),
+                    version_merge_handler=_web_version_merge_handler,
+                    problems=problems,
+                )
             for message in problems:
                 log(message, "warning")
 

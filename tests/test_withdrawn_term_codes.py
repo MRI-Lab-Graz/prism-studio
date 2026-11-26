@@ -55,3 +55,10 @@ def test_a_project_with_correct_codes_is_not_warned(tmp_path):
     (tmp_path / "participants.json").write_text(json.dumps(sidecar))
 
     assert check_participants_levels(str(tmp_path)) == []
+
+
+def test_a_participants_json_that_is_not_an_object_does_not_crash(tmp_path):
+    (tmp_path / "participants.tsv").write_text("participant_id\nsub-01\n")
+    (tmp_path / "participants.json").write_text('["ncit:C17782"]')
+
+    assert check_participants_levels(str(tmp_path)) == []

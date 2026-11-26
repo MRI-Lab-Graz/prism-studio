@@ -4,6 +4,7 @@ import openpyxl
 import pytest
 
 from src.converters.excel_base import level_problems, parse_levels
+from src.converters.excel_to_biometrics import process_excel_biometrics
 from src.converters.excel_to_survey import extract_excel_templates
 
 
@@ -27,6 +28,7 @@ from src.converters.excel_to_survey import extract_excel_templates
         ("A1 = gar nicht, A2, A3, A4 = sehr", {"A1": "gar nicht", "A4": "sehr"}),
         ("0=never,1,2,3,4=always", {"0": "never", "4": "always"}),
         ("4 = always, 3, 2, 1, 0 = never", {"4": "always", "0": "never"}),
+        ("m=man, with beard, f=woman", {"m": "man, with beard", "f": "woman"}),
         ("1=Never, 2=Sometimes", {"1": "Never", "2": "Sometimes"}),
         ("1=a, b; 2=c", {"1": "a, b", "2": "c"}),
     ],
@@ -66,3 +68,16 @@ def test_import_reports_problems(tmp_path, capsys):
 
     assert len(found) == 1 and found[0].startswith("ABC01")
     assert found[0] in capsys.readouterr().out
+
+
+def test_biometrics_import_reports_problems(tmp_path, capsys):
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.append(["item_id", "description", "units", "scaling"])
+    ws.append(["jump_1", "Jump", "score", "0=ja;1=ja"])
+    path = tmp_path / "bio.xlsx"
+    wb.save(path)
+
+    process_excel_biometrics(str(path), str(tmp_path / "out"))
+
+    assert "jump_1: several codes" in capsys.readouterr().out
