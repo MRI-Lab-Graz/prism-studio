@@ -5561,6 +5561,14 @@ def _init_git_repo(path: Path) -> None:
     subprocess.run(["git", "config", "user.name", "Test"], cwd=path, check=True)
 
 
+GIT_TEST_IDENTITY = {
+    "GIT_AUTHOR_NAME": "Test",
+    "GIT_AUTHOR_EMAIL": "test@example.com",
+    "GIT_COMMITTER_NAME": "Test",
+    "GIT_COMMITTER_EMAIL": "test@example.com",
+}
+
+
 def _build_nested_project_with_scans_tsv(tmp: str) -> Path:
     """A superdataset with two subject subdatasets (real git submodules, not
     mocked), each containing a scans.tsv, mirroring the sub-XXX/*_scans.tsv
@@ -5612,6 +5620,7 @@ class TestRemoveScansTsvFiles(unittest.TestCase):
     129_PK01 project -- see the false-failure/validation-ordering work in
     finalize_project_upload just above."""
 
+    @patch.dict(os.environ, GIT_TEST_IDENTITY)
     def test_removes_scans_tsv_from_every_subdataset_and_updates_superdataset_pointers(self):
         manager = ProjectManager()
         with tempfile.TemporaryDirectory() as tmp:
@@ -5864,9 +5873,10 @@ class TestDataladHealthChecks(unittest.TestCase):
 
         self.assertEqual(backlog, [])
 
+    @patch("src.project_manager.datalad_preflight", return_value=[])
     @patch("src.project_manager.shutil.which", return_value="/usr/bin/datalad")
     def test_enable_datalad_fails_fast_on_stale_lock_without_attempting_registration(
-        self, _mock_which
+        self, _mock_which, _mock_preflight
     ):
         """A known-bad repo state (stale lock) must be reported once, up
         front -- not discovered the hard way after silently attempting (and

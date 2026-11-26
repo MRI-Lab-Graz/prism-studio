@@ -84,7 +84,7 @@ jobs:
   report:
     name: Report failure
     needs: full-suite
-    if: failure()
+    if: failure() && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       issues: write

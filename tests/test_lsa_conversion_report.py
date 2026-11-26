@@ -60,7 +60,7 @@ def test_a_survey_exported_from_prism_reports_no_missing_items(tmp_path):
     fields, values = _answers_for_every_item(xml)
     lsa = _write_lsa(tmp_path / "survey_archive_1.lsa", xml.encode(), fields, [values])
     result = convert_survey_lsa_to_prism_dataset(
-        input_path=lsa, library_dir=OFFICIAL_SURVEY_LIBRARY, output_root=tmp_path / "ds", id_column="id", unknown="warn",
+        input_path=lsa, library_dir=OFFICIAL_SURVEY_LIBRARY, output_root=tmp_path / "ds", id_column="token", unknown="warn",
     )
     assert result.missing_items_by_task == {"demo": 0}
 
@@ -111,11 +111,11 @@ def _convert_mini(tmp_path):
         "note": {"Description": {"en": "Note"}, "DataType": "string"},
         "weight": {"Description": {"en": "Weight?"}, "DataType": "float"},
     }), encoding="utf-8")
-    fields = ["id", "1X1X10", "1X1X20", "1X1X30"]
+    fields = ["code", "1X1X10", "1X1X20", "1X1X30"]
     lsa = _write_lsa(tmp_path / "survey_archive_1.lsa", MINI_LSS, fields,
                      [["1", "55.0000000000", "3.50", "70.5000000000"], ["2", "23.0000000000", "n/a", "61.0000000000"]])
     result = convert_survey_lsa_to_prism_dataset(
-        input_path=lsa, library_dir=library, output_root=tmp_path / "ds", id_column="id", unknown="warn",
+        input_path=lsa, library_dir=library, output_root=tmp_path / "ds", id_column="code", unknown="warn",
     )
     tsv = {}
     for path in (tmp_path / "ds").rglob("*task-mini_survey.tsv"):
@@ -188,6 +188,6 @@ def test_converting_a_prism_export_raises_no_match_warning(tmp_path):
     fields, values = _answers_for_every_item(xml)
     lsa = _write_lsa(tmp_path / "survey_archive_1.lsa", xml.encode(), fields, [values])
     result = convert_survey_lsa_to_prism_dataset(
-        input_path=lsa, library_dir=OFFICIAL_SURVEY_LIBRARY, output_root=tmp_path / "ds", id_column="id", unknown="warn",
+        input_path=lsa, library_dir=OFFICIAL_SURVEY_LIBRARY, output_root=tmp_path / "ds", id_column="token", unknown="warn",
     )
     assert not [w for w in result.conversion_warnings if "confidence" in w]
