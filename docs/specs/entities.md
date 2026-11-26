@@ -45,6 +45,17 @@ validator reports both folders as errors with a fix hint (rename
 `physiological/` to `physio/`; move each `_events.tsv` next to its task in
 `func/`, `beh/` or `eeg/`).
 
+## Tables
+
+`tables` in `entities.schema.json` describes files that are no modality: no data folder, no suffix, no file-name rules.
+There is one, `participants` (`participants.tsv`, one row per participant). Its `terms` declaration works like a
+modality's: the terms are in `terms/participants/`, one per column, and `nonTermColumns` names the columns without one
+(`participant_id`). Free-text `*_details` columns have no term yet. Its declaration says `unitsOptional`: a term may have neither `Units` nor
+`Levels` (a date or a free category); `Levels` is given only where the codes are meant to be standard.
+
+`termsFrom` names other registries a table's columns may also resolve to: `height`, `weight` and `bmi` are body
+measurements, so their terms are in `terms/biometrics/`. A name never means two terms across them.
+
 ## Per-modality rules
 
 | Modality | Kind | Suffixes | Extensions | Notable entity constraints |

@@ -114,5 +114,6 @@
   "rxnorm": {
     "pattern": "^http://purl\\.bioontology\\.org/ontology/RXNORM/\\d+$",
     "label": "RxNorm"
-  }
+  },
+  "neurobagel": {"pattern": "^http://neurobagel\\.org/vocab/[A-Z][A-Za-z]+$", "label": "Neurobagel"}
 }

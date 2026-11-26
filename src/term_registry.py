@@ -230,7 +230,12 @@ def term_columns(sidecar_data: dict, modality: str) -> list[tuple[str, dict]]:
     from src.specification import current_specification  # lazy: specification imports this module
 
     spec = current_specification()
-    blocks = (spec.schemas.get(modality) or {}).get("properties") or {}
+    if modality in spec.rules.tables:  # no schema: the blocks a template may carry beside its columns
+        from src.instrument_ids import SECTIONS
+
+        blocks = {"@context", *SECTIONS}
+    else:
+        blocks = (spec.schemas.get(modality) or {}).get("properties") or {}
     skip = set(spec.term_modalities.get(modality, {}).get("nonTermColumns", ())) | set(blocks)
     return [
         (name, definition)

@@ -1,0 +1,10 @@
+{
+  "TermID": "prism:employment-status",
+  "Level": "variable",
+  "Label": "employment status",
+  "Aliases": [
+    "employment_status"
+  ],
+  "Description": "Current employment status",
+  "Status": "official"
+}

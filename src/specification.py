@@ -38,6 +38,13 @@ class Specification:
         """The mapping entry of an ID (official, else the project's own), or {} when it has none."""
         return next((m[term_id] for m in self.mappings.values() if term_id in m), {})
 
+    def registry_for(self, modality: str, terms: dict | None = None) -> dict[str, dict]:
+        """The terms a column of this kind may resolve to: its own, plus those of its declaration's `termsFrom`."""
+        found: dict = {}
+        for source in (*self.term_modalities.get(modality, {}).get("termsFrom", ()), modality):
+            found.update((self.terms if terms is None else terms).get(source, {}))
+        return found
+
     # Derived once per specification (the rules compute them on every access); they replace the constants
     # validator.py used to freeze at import.
     def patchable_fields(self, modality: str) -> list[str]:
@@ -98,7 +105,7 @@ def load_specification(
         terms[modality] = registry
     if project_root is not None:
         for modality in (*rules.term_modalities, "survey"):  # survey IDs are derived from templates, not a term registry
-            if modality in rules.prism_modalities:
+            if modality in rules.prism_modalities or modality in rules.tables:
                 mappings[modality] = {**load_local_mappings(project_root, modality), **mappings.get(modality, {})}  # official wins
         names, skipped = local_patch_modalities(project_root, schemas)
         problems += skipped

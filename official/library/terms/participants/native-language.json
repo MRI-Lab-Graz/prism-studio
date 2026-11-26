@@ -1,0 +1,10 @@
+{
+  "TermID": "prism:native-language",
+  "Level": "variable",
+  "Label": "native language",
+  "Aliases": [
+    "native_language"
+  ],
+  "Description": "Native language (mother tongue)",
+  "Status": "official"
+}

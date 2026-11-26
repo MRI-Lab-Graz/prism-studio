@@ -65,7 +65,10 @@ def _dangling_slug(col_def: dict) -> str | None:
 
 def _build_variable_proposal(registry: dict, column: str, col_def: dict, label: str | None, modality: str) -> dict:
     """One-level modality (environment): an unknown column becomes one `variable` term."""
-    res = resolve_column(registry, column, col_def, None)
+    from src.specification import current_specification  # lazy: it imports the term registry
+
+    spec = current_specification()
+    res = resolve_column({**spec.registry_for(modality), **registry}, column, col_def, None)  # termsFrom is official too
     if res.kind in ("term", "suggestion"):
         term_id = (res.term or {}).get("TermID")
         raise ProposalError(
@@ -74,7 +77,7 @@ def _build_variable_proposal(registry: dict, column: str, col_def: dict, label: 
         )
     if res.kind == "deprecated":
         raise ProposalError(res.message)
-    if not col_def.get("Units") and not col_def.get("Levels"):
+    if not (col_def.get("Units") or col_def.get("Levels") or spec.term_modalities.get(modality, {}).get("unitsOptional")):
         raise ProposalError(f"column {column!r} has no Units or Levels; a proposal needs one of them")
     description = col_def.get("Description")
     term = {

@@ -76,11 +76,12 @@ def load_terms(folder: Path) -> tuple[dict[str, dict], list[str]]:
     return registry, problems
 
 
-def check_registry(registry: dict[str, dict], specimen_types: list[str] | None) -> list[str]:
+def check_registry(registry: dict[str, dict], specimen_types: list[str] | None, units_optional: bool = False) -> list[str]:
     """Return human-readable problems of a registry (empty list = valid).
 
     specimen_types None = a one-level registry (only Level 'variable'); a list, even an
-    empty one, = the two-level biosample rules.
+    empty one, = the two-level biosample rules. units_optional (the declaration's `unitsOptional`, participants): a
+    column may be a date or a free category, so a one-level term may have neither Units nor Levels.
     """
     problems: list[str] = []
     one_level = specimen_types is None
@@ -132,8 +133,9 @@ def check_registry(registry: dict[str, dict], specimen_types: list[str] | None) 
                     problems.append(f"{key}: ID local part {local!r} must match {_SLUG.pattern}")
                 if not term.get("Label"):
                     problems.append(f"{key}: variable term needs a Label")
-                if bool(term.get("Units")) == bool(term.get("Levels")):  # an empty value counts as missing
-                    problems.append(f"{key}: variable term needs exactly one of Units or Levels")
+                units, levels = bool(term.get("Units")), bool(term.get("Levels"))  # an empty value counts as missing
+                if (units and levels) or not (units or levels or units_optional):
+                    problems.append(f"{key}: variable term needs {'at most' if units_optional else 'exactly'} one of Units or Levels")
         elif level == "analyte":
             if not _SLUG.fullmatch(local.split(".")[0] or "") or "." in local:
                 problems.append(f"{key}: parent ID local part {local!r} must match {_SLUG.pattern}")
@@ -236,10 +238,41 @@ def specimen_types(schema_file: Path) -> list[str]:
     return context_values(schema_file, "Technical.SpecimenType") or []
 
 
+def _entities(repo: Path) -> dict:
+    return json.loads((Path(repo) / "schemas" / "stable" / "entities.schema.json").read_text(encoding="utf-8"))
+
+
+def table_names(repo: Path) -> set[str]:
+    """The `tables` of the repository, which have no modality schema (empty without schemas/, as vendored)."""
+    try:
+        return set(_entities(repo).get("tables", {}))
+    except (OSError, ValueError):
+        return set()
+
+
 def term_modalities(repo: Path) -> dict[str, dict]:
-    """Modality -> its `terms` declaration, from REPO/schemas/stable/entities.schema.json (the one reader)."""
-    entities = json.loads((Path(repo) / "schemas" / "stable" / "entities.schema.json").read_text(encoding="utf-8"))
-    return {n: m["terms"] for n, m in entities.get("modalities", {}).items() if isinstance(m.get("terms"), dict)}
+    """Modality or table -> its `terms` declaration, from REPO/schemas/stable/entities.schema.json (the one reader).
+
+    `tables` are described files that are no modality (participants): no folder in the data and no suffix.
+    """
+    entities = _entities(repo)
+    return {n: m["terms"] for block in ("modalities", "tables") for n, m in entities.get(block, {}).items()
+            if isinstance(m.get("terms"), dict)}
+
+
+def terms_from_problems(declared: dict[str, dict], registries: dict[str, dict[str, dict]]) -> list[str]:
+    """`termsFrom` lets a table resolve to another registry's terms: that registry exists, and no name means two terms."""
+    problems = []
+    for name, declaration in declared.items():
+        for source in declaration.get("termsFrom", []):
+            if source not in registries:
+                problems.append(f"{name}: termsFrom {source!r} declares no terms")
+                continue
+            names = [{str(n).lower() for key, t in reg.items() if not type_problems(t, key)  # reported by check_registry
+                      for n in (key, t.get("Label"), *t.get("Aliases", []), *t.get("Equivalents", [])) if n}
+                     for reg in (registries[name], registries[source])]
+            problems += [f"{name}: {n!r} also names a term of {source} (termsFrom)" for n in sorted(names[0] & names[1])]
+    return problems
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -264,18 +297,20 @@ def main(argv: list[str] | None = None) -> int:
                 ap.error(f"{name!r} does not declare terms in entities.schema.json")
             schema = args.repo / "schemas" / "stable" / f"{name}.schema.json"
             prefix = f"{name}/" if args.all else ""
-            jobs.append((prefix, args.repo / "terms" / name, context_values(schema, declared[name].get("contextField"))))
+            jobs.append((prefix, args.repo / "terms" / name, context_values(schema, declared[name].get("contextField")),
+                         declared[name].get("unitsOptional", False)))
     elif args.terms and args.schema:
-        jobs = [("", args.terms, specimen_types(args.schema))]
+        jobs = [("", args.terms, specimen_types(args.schema), False)]
     else:
         ap.error("give --all, --modality NAME, or --terms DIR and --schema FILE")
     problems = []
     registries = {}
-    for prefix, terms, context in jobs:
+    for prefix, terms, context, units_optional in jobs:
         registry, found = load_terms(terms)
         registries[terms.name] = registry
-        problems += [prefix + p for p in found + check_registry(registry, context)]
+        problems += [prefix + p for p in found + check_registry(registry, context, units_optional)]
     if args.all:
+        problems += terms_from_problems(declared, registries)
         registries["survey"], found = survey_registry(args.repo)
         problems += found
         problems += cross_registry_problems(registries)

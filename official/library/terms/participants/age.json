@@ -1,0 +1,8 @@
+{
+  "TermID": "prism:age",
+  "Level": "variable",
+  "Label": "age",
+  "Description": "Your age in years",
+  "Units": "years",
+  "Status": "official"
+}

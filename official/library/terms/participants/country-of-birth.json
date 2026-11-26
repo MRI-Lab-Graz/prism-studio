@@ -1,0 +1,10 @@
+{
+  "TermID": "prism:country-of-birth",
+  "Level": "variable",
+  "Label": "country of birth",
+  "Aliases": [
+    "country_of_birth"
+  ],
+  "Description": "Country of birth",
+  "Status": "official"
+}

@@ -320,6 +320,7 @@ def _specimens_of(schema: dict) -> list[str]:
 def check_proposal(
     proposal: dict, registry: dict[str, dict], specimens: list[str] | None, schema: dict | None = None,
     *, schemas: dict[str, dict] | None = None, modalities=None, mappings_dir: Path | None = None,
+    others: dict[str, dict] | None = None,
 ) -> tuple[list[dict], list[str]]:
     """Return (the new terms with Status "official", problems); checked together with the registry.
 
@@ -333,7 +334,8 @@ def check_proposal(
     One kind of data per proposal: the term files and the patches of term modalities name one modality.
     Links (`mappings/<modality>/<family>.json`) are checked against `mappings_dir` (vocabularies.json and what is
     already mapped): the ID must be a term of the registry or proposed with them, and an ID that is already mapped
-    is refused (a changed link is a maintainer's edit).
+    is refused (a changed link is a maintainer's edit). `others` = the other registries (modality -> terms, survey
+    included): an ID or, across `termsFrom`, a name that CI would refuse is refused here too.
     """
     declared = _declared(modalities)
     pairs, problems = normalize(proposal, declared)
@@ -365,7 +367,14 @@ def check_proposal(
         merged[local] = term
     if problems:
         return [], problems
-    problems = check_terms.check_registry(merged, specimens)
+    kind = next(iter(_kinds(pairs, declared)), None)
+    problems = check_terms.check_registry(merged, specimens, declared.get(kind, {}).get("unitsOptional", False))
+    if not problems and kind and others:
+        registries = {**others, kind: merged}
+        concerned = {n: d for n, d in declared.items()
+                     if n in registries and (n == kind or kind in d.get("termsFrom", []))}
+        problems = [p for p in check_terms.cross_registry_problems(registries) if p.partition(":")[0] in merged]
+        problems += check_terms.terms_from_problems(concerned, registries)
     if not problems and (links := links_of(pairs)):
         problems = _mapping_problems(links, merged, mappings_dir)
     return ([] if problems else terms), problems
@@ -473,7 +482,8 @@ def _run_check(args) -> int:
             schema_file = Path(repo) / "schemas" / "stable" / f"{kind}.schema.json"
             terms_dir = Path(repo) / "terms" / str(kind)
         registry, problems = check_terms.load_terms(terms_dir) if kind or args.terms else ({}, [])
-        has_schema = bool(kind or args.schema)  # a schema that should be there but is not is an error bundle
+        # a schema that should be there but is not is an error bundle; a table (participants) has none
+        has_schema = bool(args.schema or (kind and kind not in check_terms.table_names(repo)))
         schema = json.loads(Path(schema_file).read_text(encoding="utf-8")) if has_schema else None
         context = modalities.get(kind, {}).get("contextField") if kind else "Technical.SpecimenType"
         specimens = check_terms.context_values(schema_file, context) if has_schema else ([] if context else None)
@@ -486,8 +496,13 @@ def _run_check(args) -> int:
             else:
                 missing.append(f"{path}: no modality {modality} in schemas/stable")
         mappings_dir = args.mappings or Path(repo) / "mappings"
+        others = {}
+        if args.terms is None and kind:  # a complete checkout; PRISM Studio's explicit registry has no neighbours
+            others = {m: check_terms.load_terms(Path(repo) / "terms" / m)[0] for m in modalities if m != kind}
+            if (Path(repo) / "ids" / "survey-ids.txt").is_file():
+                others["survey"] = check_terms.survey_registry(Path(repo))[0]
         terms, found = check_proposal(proposal, registry, specimens, schema, schemas=schemas, modalities=modalities,
-                                      mappings_dir=mappings_dir)
+                                      mappings_dir=mappings_dir, others=others)
         found = missing or found
         problems += found
         if not found:

@@ -57,14 +57,15 @@ free-text `*_details` columns). Done: (1) the substring match that labelled `nat
 (2) specification v1.5.28 (prism-specification #71): `terms/participants/`, `height`/`weight` under biometrics, level
 `SameAs`, vocabulary `neurobagel`. No links yet: nobody has checked any, and who does is open.
 
-**(3) next - Studio sync of v1.5.28:**
+**(3) DONE (branch `chore/sync-spec-v1.5.28`) - Studio sync of v1.5.28.** Not covered: the Contribute page and `spec
+propose-metric` do not offer participants (they list modalities only). Was:
 - `src/entity_rules.py` reads term declarations from `modalities` only: it must also read `tables`, with `termsFrom`
   (participants also resolves to biometrics terms) and `unitsOptional` (passed to `check_registry`).
 - `participants.json` columns resolve to terms (notices only, never new errors); `"Term"` in
   `official/participants.json`; `terms list|show|coverage` include participants; parity test.
 - Check that the sync vendors `terms/participants/`.
 
-**(4) after that:** build `Annotations` from `mappings/`; remove the hard-coded lists in `src/neurobagel.py` and
+**(4) next:** build `Annotations` from `mappings/`; remove the hard-coded lists in `src/neurobagel.py` and
 `src/participant_columns.py` and the `nb:` logic in `participants.js`. The SSSOM export (`src/mappings_export.py`) skips
 links under `Levels`. Neurobagel writes SNOMED codes under `http://purl.bioontology.org/ontology/SNOMEDCT/`, PRISM
 requires `https://snomed.info/id/`: the export converts.

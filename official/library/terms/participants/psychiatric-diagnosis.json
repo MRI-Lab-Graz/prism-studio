@@ -1,0 +1,10 @@
+{
+  "TermID": "prism:psychiatric-diagnosis",
+  "Level": "variable",
+  "Label": "psychiatric diagnosis",
+  "Aliases": [
+    "psychiatric_diagnosis"
+  ],
+  "Description": "History of psychiatric/mental health diagnosis?",
+  "Status": "official"
+}

@@ -1,0 +1,10 @@
+{
+  "TermID": "prism:smoking-status",
+  "Level": "variable",
+  "Label": "smoking status",
+  "Aliases": [
+    "smoking_status"
+  ],
+  "Description": "Smoking status",
+  "Status": "official"
+}

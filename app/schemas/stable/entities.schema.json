@@ -90,5 +90,15 @@
     "dwi": {"kind": "bidsPassthrough", "description": "Diffusion MRI (BIDS, passed through)"},
     "eeg": {"kind": "bidsPassthrough", "description": "EEG recordings (BIDS, passed through)"},
     "beh": {"kind": "bidsPassthrough", "description": "Behavioral task data (BIDS, passed through)"}
+  },
+  "tables": {
+    "participants": {
+      "description": "participants.tsv: one row per participant (sociodemographics); no modality of its own",
+      "terms": {
+        "nonTermColumns": ["participant_id"],
+        "unitsOptional": true,
+        "termsFrom": ["biometrics"]
+      }
+    }
   }
 }

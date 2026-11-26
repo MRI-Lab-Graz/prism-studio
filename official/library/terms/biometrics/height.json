@@ -1,0 +1,8 @@
+{
+  "TermID": "prism:height",
+  "Level": "variable",
+  "Label": "height",
+  "Description": "Height in centimeters",
+  "Units": "cm",
+  "Status": "official"
+}

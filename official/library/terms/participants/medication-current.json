@@ -1,0 +1,10 @@
+{
+  "TermID": "prism:medication-current",
+  "Level": "variable",
+  "Label": "medication current",
+  "Aliases": [
+    "medication_current"
+  ],
+  "Description": "Currently taking medications?",
+  "Status": "official"
+}

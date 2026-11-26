@@ -85,6 +85,7 @@ redirects (302) to this repository; below it, one rule per modality redirects a 
 
 A survey ID that is released but has no template in `library/survey/` yet redirects to a file that does not exist
 (404) until its stub is added; `scripts/check_mappings.py` lists those IDs as a warning. A new modality adds one rule.
+Missing (checked 2026-11-25): `biometrics` and `participants` have no rule yet, so their IRIs reach the front page.
 
 `prism:<slug>` only means something inside PRISM. An IRI gives outside tools a unique, persistent, resolvable identity
 (mappings, citations, FAIR). The base stays fixed while the redirect target can move.

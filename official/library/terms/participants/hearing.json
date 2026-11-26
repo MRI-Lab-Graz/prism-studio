@@ -1,0 +1,7 @@
+{
+  "TermID": "prism:hearing",
+  "Level": "variable",
+  "Label": "hearing",
+  "Description": "Hearing ability",
+  "Status": "official"
+}

@@ -1,0 +1,10 @@
+{
+  "TermID": "prism:country-of-residence",
+  "Level": "variable",
+  "Label": "country of residence",
+  "Aliases": [
+    "country_of_residence"
+  ],
+  "Description": "Current country of residence",
+  "Status": "official"
+}

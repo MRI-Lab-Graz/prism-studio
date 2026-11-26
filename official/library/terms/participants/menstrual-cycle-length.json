@@ -1,0 +1,11 @@
+{
+  "TermID": "prism:menstrual-cycle-length",
+  "Level": "variable",
+  "Label": "menstrual cycle length",
+  "Aliases": [
+    "menstrual_cycle_length"
+  ],
+  "Description": "Average menstrual cycle length (days)",
+  "Units": "days",
+  "Status": "official"
+}

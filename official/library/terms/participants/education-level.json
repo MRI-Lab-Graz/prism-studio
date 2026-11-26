@@ -1,0 +1,10 @@
+{
+  "TermID": "prism:education-level",
+  "Level": "variable",
+  "Label": "education level",
+  "Aliases": [
+    "education_level"
+  ],
+  "Description": "Highest level of education completed",
+  "Status": "official"
+}

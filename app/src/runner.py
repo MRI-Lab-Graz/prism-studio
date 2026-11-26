@@ -370,6 +370,7 @@ def _validate_dataset(
 
     # Check for recipes/derivatives (BIDS-derivatives style)
     if run_prism:
+        issues.extend(validator.validate_table_sidecars(root_dir))
         for folder_name in ["recipes", "derivatives"]:
             folder_dir = os.path.join(root_dir, folder_name)
             if os.path.exists(folder_dir) and os.path.isdir(folder_dir):

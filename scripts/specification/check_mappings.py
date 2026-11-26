@@ -18,7 +18,7 @@ import check_terms  # noqa: E402
 import survey_ids  # noqa: E402
 
 FIELDS = ("SameAs", "Measures", "ValueRules", "Levels")
-LEVEL_FIELDS = ("Measures", "ValueRules")
+LEVEL_FIELDS = ("SameAs", "Measures", "ValueRules")
 MEASURES_KEYS = ("URL", "Match", "Higher", "Source", "Checked", "Status")
 MATCH = ("exact", "broader", "narrower", "related")
 HIGHER = ("more", "less")
@@ -151,8 +151,8 @@ def _levels(value, where, vocabs, defined) -> list[str]:
         if not isinstance(entry, dict):
             out.append(f"{at} must be an object")
             continue
-        out += [f"{at}: only {' and '.join(LEVEL_FIELDS)} are allowed, not {k!r}" for k in entry if k not in LEVEL_FIELDS]
-        for field, check in (("Measures", _measures), ("ValueRules", _value_rules)):
+        out += [f"{at}: only {', '.join(LEVEL_FIELDS)} are allowed, not {k!r}" for k in entry if k not in LEVEL_FIELDS]
+        for field, check in (("SameAs", _same_as), ("Measures", _measures), ("ValueRules", _value_rules)):
             if field in entry:
                 out += check(entry[field], at, vocabs)
     return out

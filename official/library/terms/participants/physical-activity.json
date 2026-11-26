@@ -1,0 +1,10 @@
+{
+  "TermID": "prism:physical-activity",
+  "Level": "variable",
+  "Label": "physical activity",
+  "Aliases": [
+    "physical_activity"
+  ],
+  "Description": "Physical activity level",
+  "Status": "official"
+}

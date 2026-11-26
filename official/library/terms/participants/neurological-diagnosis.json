@@ -1,0 +1,10 @@
+{
+  "TermID": "prism:neurological-diagnosis",
+  "Level": "variable",
+  "Label": "neurological diagnosis",
+  "Aliases": [
+    "neurological_diagnosis"
+  ],
+  "Description": "History of neurological diagnosis?",
+  "Status": "official"
+}

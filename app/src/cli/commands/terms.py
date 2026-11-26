@@ -6,6 +6,7 @@ import json
 import sys
 from pathlib import Path
 
+from src.specification import current_specification
 from src.term_proposal import (
     ProposalError,
     attach_links,
@@ -120,7 +121,7 @@ def cmd_terms_show(args) -> None:
 
 def cmd_terms_suggest(args) -> None:
     """Relate a column name to the registry, as the validator does."""
-    res = resolve_column(load_registry(args.modality), args.column, {}, args.specimen)
+    res = resolve_column(current_specification().registry_for(args.modality), args.column, {}, args.specimen)
     similar = ", ".join(res.similar) or "none"
     _emit(
         args,
@@ -222,7 +223,7 @@ def cmd_terms_propose(args) -> None:
     if problems:
         _fail(args, "the proposal does not pass the specification checks: " + "; ".join(problems), proposal=proposal, problems=problems)
     column_def = sidecar[args.column]
-    similar = list(resolve_column(registry, args.column, column_def, context_value(sidecar, args.modality)).similar)
+    similar = list(resolve_column(current_specification().registry_for(args.modality), args.column, column_def, context_value(sidecar, args.modality)).similar)
     delivered = deliver_proposal(
         proposal, out=getattr(args, "out", None), open_browser=args.open, similar=similar, alias=args.column
     )

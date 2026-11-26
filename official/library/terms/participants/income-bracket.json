@@ -1,0 +1,10 @@
+{
+  "TermID": "prism:income-bracket",
+  "Level": "variable",
+  "Label": "income bracket",
+  "Aliases": [
+    "income_bracket"
+  ],
+  "Description": "Annual household income (before taxes)",
+  "Status": "official"
+}

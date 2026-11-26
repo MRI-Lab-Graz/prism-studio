@@ -141,9 +141,11 @@ def _checked_modality(modality) -> str:
     """`modality` when it is a kind of data with an official stable schema; every caller-supplied name that becomes a path passes here."""
     from src.specification import current_specification  # lazy: specification imports this module
 
+    spec = current_specification()
     if not (
         isinstance(modality, str) and re.fullmatch(MODALITY_NAME, modality)
-        and modality in current_specification().prism_modalities and isinstance(_official_schema(modality), dict)
+        and (modality in spec.rules.tables
+             or (modality in spec.prism_modalities and isinstance(_official_schema(modality), dict)))
     ):
         raise OverlayError(f"{modality}: not a kind of data of this specification")
     return modality
