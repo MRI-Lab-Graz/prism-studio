@@ -12,6 +12,7 @@ from pathlib import Path
 
 from src.biosample_template import load_biosample_schema
 from src.biosample_template_reader import _fmt, read_template
+from src.code_maps import CodeMapError, ProjectCodeMaps, UnknownCodeError
 from src.participant_ids import normalize_participant_id
 from src.session_map import SessionMapError, resolve_import_session
 from src.subject_id_matching import load_existing_participant_ids
@@ -122,6 +123,12 @@ def import_biosample(input_path: Path, project: Path, specimen: str | None = Non
         res.errors = problems
         return res
 
+    try:  # no task scope: the panel is a biosample- entity, not a task-
+        maps = ProjectCodeMaps.open(project, "biosample", known_tasks=set())
+    except CodeMapError as exc:
+        res.errors.append(str(exc))
+        return res
+
     schema = load_biosample_schema()
     schema_tech = schema["properties"]["Technical"]["properties"]
     registry = load_registry("biosample")
@@ -132,7 +139,8 @@ def import_biosample(input_path: Path, project: Path, specimen: str | None = Non
     groups: dict[tuple, dict[tuple, dict[str, tuple[str, int, float | None]]]] = {}
     for row in rows:
         n = row["row"]
-        sub = normalize_participant_id(row["participant_id"])
+        code = str(row["participant_id"]).strip()
+        sub = code if maps else normalize_participant_id(code)  # a code is looked up as typed
         if not sub:
             res.errors.append(f"data row {n}: participant_id {row['participant_id']!r} has no letters or digits")
             continue
@@ -149,6 +157,15 @@ def import_biosample(input_path: Path, project: Path, specimen: str | None = Non
         ses = sessions[label]
         if ses is _BAD:
             continue  # reported once, at its first row
+        if maps:
+            try:
+                hit = maps.resolve(code, (), ses or None)
+                if hit is None:
+                    raise UnknownCodeError([code])
+            except CodeMapError as exc:
+                res.errors.append(f"data row {n}: {exc}")
+                continue
+            sub = normalize_participant_id(hit)
         for what, value, rule, need in (("session", ses, _LABEL, "letters and digits only"),
                                         ("panel", row["panel"], _LABEL, "letters and digits only"),
                                         ("run", row["run"], _RUN, "a number (run index)")):
@@ -215,6 +232,8 @@ def import_biosample(input_path: Path, project: Path, specimen: str | None = Non
             cols[col] = entry
         definitions[name] = cols
 
+    if maps:
+        res.warnings.extend(maps.notes())
     for sub in sorted({key[0] for key in groups} - known):
         res.warnings.append(f"{sub} is not in participants.tsv; written anyway, participants.tsv is not changed")
 
