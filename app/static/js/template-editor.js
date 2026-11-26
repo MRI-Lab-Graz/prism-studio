@@ -1803,7 +1803,8 @@
             onChange(Object.assign({}, tableData));
           }
         }
-        for (const [k, v] of Object.entries(tableData)) {
+        for (const k of StudioTheme.translationKeys(fieldSchema, tableData)) {
+          const v = tableData[k];
           const row = document.createElement('div');
           row.className = 'row g-2 align-items-center mb-1';
 
