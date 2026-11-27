@@ -11,6 +11,7 @@ if str(APP_ROOT) not in sys.path:
     sys.path.insert(0, str(APP_ROOT))
 
 import src.cli.commands.save_gate as cmd  # noqa: E402
+import src.save_gate as sg  # noqa: E402
 from src.cli.parser import build_prism_tools_parsers  # noqa: E402
 from src.save_gate import SaveCheck  # noqa: E402
 
@@ -34,15 +35,15 @@ def test_parser_contract_used_by_the_hook():
 
 
 def test_check_allowed_exit_0(monkeypatch, capsys):
-    monkeypatch.setattr(cmd, "check_save", lambda p: SaveCheck(True, [], "valid"))
-    monkeypatch.setattr(cmd, "audit_save", lambda *a, **k: None)
+    monkeypatch.setattr(sg, "check_save", lambda p: SaveCheck(True, [], "valid"))
+    monkeypatch.setattr(sg, "audit_save", lambda *a, **k: None)
     code, out = run(capsys, check=True)
     assert code == 0 and json.loads(out.out)["allowed"] is True
 
 
 def test_check_refused_exit_1_and_text_names_the_gate(monkeypatch, capsys):
-    monkeypatch.setattr(cmd, "check_save", lambda p: SaveCheck(False, [f"E{i}" for i in range(30)], "validation_errors"))
-    monkeypatch.setattr(cmd, "audit_save", lambda *a, **k: None)
+    monkeypatch.setattr(sg, "check_save", lambda p: SaveCheck(False, [f"E{i}" for i in range(30)], "validation_errors"))
+    monkeypatch.setattr(sg, "audit_save", lambda *a, **k: None)
     code, out = run(capsys, check=True, json=False)
     assert code == 1
     assert out.out.startswith("PRISM save gate: 30 validation error(s). Fix them, then save.")
@@ -51,8 +52,8 @@ def test_check_refused_exit_1_and_text_names_the_gate(monkeypatch, capsys):
 
 def test_check_audits_every_decision(monkeypatch, capsys):
     seen = []
-    monkeypatch.setattr(cmd, "check_save", lambda p: SaveCheck(False, ["E"], "validation_errors"))
-    monkeypatch.setattr(cmd, "audit_save", lambda root, check: seen.append((Path(root).as_posix(), check.allowed)))
+    monkeypatch.setattr(sg, "check_save", lambda p: SaveCheck(False, ["E"], "validation_errors"))
+    monkeypatch.setattr(sg, "audit_save", lambda root, check: seen.append((Path(root).as_posix(), check.allowed)))
     run(capsys, check=True)
     assert seen == [("/p", False)]
 
@@ -81,8 +82,8 @@ def test_status_lists_hook_per_dataset(tmp_path, monkeypatch, capsys):
 
 @pytest.mark.parametrize("reason,code", [("validation_errors", 1), ("git_error", 2), ("validator_crash", 2)])
 def test_check_refusal_exit_code_by_reason(monkeypatch, capsys, reason, code):
-    monkeypatch.setattr(cmd, "check_save", lambda p: SaveCheck(False, ["E"], reason))
-    monkeypatch.setattr(cmd, "audit_save", lambda *a, **k: None)
+    monkeypatch.setattr(sg, "check_save", lambda p: SaveCheck(False, ["E"], reason))
+    monkeypatch.setattr(sg, "audit_save", lambda *a, **k: None)
     got, out = run(capsys, check=True, json=False)
     assert got == code
     assert out.out.startswith("PRISM save gate: 1 validation error(s). Fix them, then save.")

@@ -122,6 +122,10 @@ def resolve_effective_library_path(
 
 def main():  # noqa: C901
     """Main CLI entry point"""
+    if sys.argv[1:2] == ["save-gate"]:  # the datasets' commit hook; no PRISM Studio needed
+        from src.save_gate import validator_cli
+
+        sys.exit(validator_cli(sys.argv[2:]))
     if len(sys.argv) > 1 and sys.argv[1] in ("wide-to-long", "file-management", "merge-versions"):
         print(
             f"'{sys.argv[1]}' is not part of the validator. "

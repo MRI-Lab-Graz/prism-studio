@@ -7,16 +7,11 @@ import sys
 from pathlib import Path
 
 from src.save_gate import (
-    SAVE_GATE_MARKER,
-    audit_save,
-    check_save,
     has_save_hook,
     install_save_hooks,
+    run_check,
 )
 from src.share_publish import _dataset_roots
-
-_MAX_LISTED = 20
-
 
 def _emit(args, payload: dict, text: str, code: int) -> None:
     print(json.dumps(payload, indent=2, ensure_ascii=False) if args.json else text)
@@ -30,16 +25,8 @@ def _fail(args, message: str) -> None:
 def cmd_save_gate(args) -> None:
     root = Path(args.project)
     if args.check:
-        check = check_save(root)
-        audit_save(root, check)
-        text = ""
-        if not check.allowed:
-            lines = [f"{SAVE_GATE_MARKER}: {len(check.errors)} validation error(s). Fix them, then save."]
-            lines += [f"  - {e}" for e in check.errors[:_MAX_LISTED]]
-            text = "\n".join(lines)
-        # 1 = refused for validation errors; 2 = anything else (git_error, validator_crash)
-        code = 0 if check.allowed else 1 if check.reason == "validation_errors" else 2
-        _emit(args, {"allowed": check.allowed, "reason": check.reason, "errors": check.errors}, text, code)
+        payload, text, code = run_check(root)
+        _emit(args, payload, text, code)
     if args.install_hooks:
         try:
             result = install_save_hooks(root)

@@ -134,6 +134,19 @@ def test_installed_wheel_runs_in_clean_venv(wheel, tmp_path):
     out = run.stdout + run.stderr
     assert "PRISM303" in out and "'title' is a required property" in out, out
     assert "No module named" not in out, out
+    # The dataset's commit hook can run with this package alone (no PRISM Studio).
+    repo = tmp_path / "repo"
+    subprocess.run(["git", "init", "-q", str(repo)], check=True)
+    run = subprocess.run([exe, "save-gate", "--check", "--project", str(repo), "--json"], capture_output=True, text=True, encoding="utf-8", errors="replace", env=env, cwd=tmp_path)
+    assert run.returncode == 0, run.stdout + run.stderr
+    assert json.loads(run.stdout)["reason"] == "exempt_initial", run.stdout
+    # With history the dataset is really validated, through the packaged modules.
+    (repo / "dataset_description.json").write_text('{"Name":"Test","BIDSVersion":"1.9.0","DatasetType":"raw"}')
+    git = ["git", "-C", str(repo), "-c", "user.name=t", "-c", "user.email=t@t.t"]
+    for message in ("one", "two"):
+        subprocess.run([*git, "commit", "-q", "--allow-empty", "-m", message], check=True)
+    run = subprocess.run([exe, "save-gate", "--check", "--project", str(repo), "--json"], capture_output=True, text=True, encoding="utf-8", errors="replace", env=env, cwd=tmp_path)
+    assert json.loads(run.stdout)["reason"] in ("valid", "validation_errors"), run.stdout + run.stderr
 
 
 def test_wheel_depends_on_bids_validator_deno_not_on_the_pypi_bids_validator(wheel):
