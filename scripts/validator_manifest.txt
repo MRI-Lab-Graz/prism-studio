@@ -47,6 +47,8 @@ src/recipes_formula_engine.py
 src/recipes_path_utils.py
 src/recipes_surveys.py
 src/safe_excel.py
+src/save_gate.py
+src/share_publish.py
 src/session_map.py
 src/session_order.py
 src/ssh_safety.py
