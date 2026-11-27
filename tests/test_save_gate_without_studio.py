@@ -1,5 +1,6 @@
 """The save gate works with the PyPI package alone: no PRISM Studio checkout, no prism_tools."""
 
+import json
 import os
 import shutil
 import stat
@@ -101,3 +102,23 @@ def test_validator_entry_point_refuses_what_cannot_be_checked(tmp_path):
 def test_validator_entry_point_requires_check(repo, tmp_path):
     """Only checking ships in the package; anything else must not look like a passed check."""
     assert validator("--project", str(repo), cwd=tmp_path).returncode == 2
+
+
+def test_validator_cli_prints_the_payload_as_json(repo, capsys):
+    assert sg.validator_cli(["--check", "--project", str(repo), "--json"]) == 0
+    assert json.loads(capsys.readouterr().out) == {"allowed": True, "reason": "exempt_initial", "errors": []}
+
+
+def test_validator_cli_keeps_stdout_for_the_answer(monkeypatch, capsys):
+    """The validator prints progress; it must not break --json."""
+    def noisy(_root):
+        print("progress")
+        return sg.SaveCheck(False, ["E1"], "validation_errors")
+
+    monkeypatch.setattr(sg, "check_save", noisy)
+    monkeypatch.setattr(sg, "audit_save", lambda *a: None)
+    assert sg.validator_cli(["--check", "--project", "/p", "--json"]) == 1
+    out = capsys.readouterr()
+    assert json.loads(out.out)["errors"] == ["E1"] and "progress" in out.err
+    assert sg.validator_cli(["--check", "--project", "/p"]) == 1
+    assert capsys.readouterr().out.startswith("PRISM save gate: 1 validation error(s).")
