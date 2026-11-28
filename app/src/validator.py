@@ -10,7 +10,9 @@ import gzip
 from pathlib import Path
 from datetime import datetime
 from typing import Callable
-from jsonschema import validate, ValidationError
+from jsonschema import ValidationError
+from jsonschema.exceptions import best_match
+from jsonschema.validators import validator_for
 from src.schema_manager import validate_schema_version, apply_schema_validation_profile
 from src.modality_versions import current_version, read_pins
 from src.entity_rules import check_entities, load_entity_rules
@@ -534,6 +536,10 @@ class DatasetValidator:
         self._sidecar_json_error_cache = {}
         self._original_name_cache = {}
         self._biosample_warned = set()
+        # a run's schemas never change: prepare each (modality, profile) once, not once per data file
+        self._profile_schemas = {}
+        self._schema_validators = {}
+        self._schema_results = {}  # many data files carry the same sidecar content
         self._terms_checked = set()
         self._registries = current_specification().terms  # one registry per term modality
         # One directory listing per directory for the whole run, replacing tens
@@ -672,7 +678,23 @@ class DatasetValidator:
         profile = (
             "official" if self._is_official_template_path(sidecar_path) else "project"
         )
-        return apply_schema_validation_profile(schema, profile=profile)
+        key = (modality, profile)
+        if key not in self._profile_schemas:
+            self._profile_schemas[key] = apply_schema_validation_profile(schema, profile=profile)
+        return self._profile_schemas[key]
+
+    def _validate_against(self, instance, schema) -> None:
+        """`jsonschema.validate()`, once per schema and sidecar content instead of once per data file."""
+        key = (id(schema), json.dumps(instance))  # the schema lives in _profile_schemas
+        if key not in self._schema_results:
+            compiled = self._schema_validators.get(id(schema))
+            if compiled is None:
+                cls = validator_for(schema)
+                cls.check_schema(schema)
+                compiled = self._schema_validators[id(schema)] = cls(schema)
+            self._schema_results[key] = best_match(compiled.iter_errors(instance))
+        if self._schema_results[key] is not None:
+            raise self._schema_results[key]
 
     @staticmethod
     def _enum_addition_hint(modality: str, error, root_dir: str) -> str:
@@ -1495,7 +1517,7 @@ class DatasetValidator:
             if schema:
                 # Version compatibility checks (only warns when explicitly specified and incompatible)
                 issues.extend(validate_schema_version(sidecar_data, schema))
-                validate(instance=sidecar_data, schema=schema)
+                self._validate_against(sidecar_data, schema)
                 if modality == "biosample":
                     issues.extend(
                         self._check_biosample_sidecar(sidecar_data, sidecar_path, file_path, root_dir)
