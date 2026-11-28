@@ -118,10 +118,11 @@ python prism_tools.py recipes biometrics --prism /path/to/dataset --format xlsx
 **`recipes validate-file`** — validate a recipe JSON file's structure on its own,
 without running a scoring job. Matches the validation Studio's Recipe Builder
 "Save" action uses; pass `--known-items-from` a matched template to also catch
-typo'd item IDs in `Scores`/`Transforms`:
+typo'd item IDs in `Scores`/`Transforms`, and `--project` so that the project's
+`participants.tsv` columns count as known variables (see [Recipes](RECIPES.md)):
 
 ```bash
-python prism_tools.py recipes validate-file recipe-demo.json --known-items-from survey-demo.json
+python prism_tools.py recipes validate-file recipe-demo.json --known-items-from survey-demo.json --project /path/to/project
 ```
 
 **`recipes save`** — validate a recipe against its matching template (project library

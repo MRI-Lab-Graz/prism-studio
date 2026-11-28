@@ -166,6 +166,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const state = {
         allItems:         [],           // string[]
+        participantVariables: [],       // participants.tsv columns, offered in formulas
         inverted:         new Set(),    // globally reverse-coded item IDs
         invertMin:        null,          // null until a range is detected -- never a fabricated default
         invertMax:        null,
@@ -666,6 +667,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Full state reset
             state.allItems         = itemsData.items || [];
+            state.participantVariables = itemsData.participant_variables || [];
             state.inverted         = new Set(itemsData.template_reversed_items || []);
             state.scaleRanges      = itemsData.scale_ranges || {};
             state.itemRanges       = itemsData.item_ranges  || {};
@@ -1134,7 +1136,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // One item picker: a pull-down of `options()` minus the chosen items, the chosen ones as green chips below.
     // `get()`/`set(items)` read and write the owner's item list; `onAdd(name)` runs after a pick.
-    function mountItemPicker(picker, chips, { options, get, set, onAdd = () => {}, onChange = () => {} }) {
+    function mountItemPicker(picker, chips, { options, get, set, label = (name) => name, onAdd = () => {}, onChange = () => {} }) {
         const fill = () => {
             picker.innerHTML = '';
             const first = document.createElement('option');
@@ -1144,7 +1146,7 @@ document.addEventListener('DOMContentLoaded', function () {
             options().filter((name, i, all) => !get().includes(name) && all.indexOf(name) === i).forEach(name => {
                 const opt = document.createElement('option');
                 opt.value = name;
-                opt.textContent = name;
+                opt.textContent = label(name);
                 picker.appendChild(opt);
             });
         };
@@ -1182,7 +1184,8 @@ document.addEventListener('DOMContentLoaded', function () {
         const chips = document.createElement('div');
         chips.className = 'mt-1';
         const fillPicker = mountItemPicker(picker, chips, {
-            options: () => [...state.allItems, ...derivedNames()],
+            options: () => [...state.allItems, ...derivedNames(), ...state.participantVariables],
+            label: (name) => (state.participantVariables.includes(name) ? name + ' (participant)' : name),
             get: () => scale.items,
             set: (items) => { scale.items = items; },
             onAdd: (name) => {

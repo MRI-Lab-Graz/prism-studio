@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 from src.config import get_effective_library_paths
-from src.recipe_validation import validate_recipe
+from src.recipe_validation import read_participant_variables, validate_recipe
 from src.recipes_surveys import anonymize_recipe_output, compute_survey_recipes
 
 _APP_ROOT = Path(__file__).resolve().parents[3]
@@ -325,7 +325,16 @@ def cmd_recipes_validate_file(args) -> None:
 
     recipe_id = getattr(args, "recipe_id", None) or recipe_path.stem
 
-    errors = validate_recipe(recipe, recipe_id=recipe_id, known_items=known_items)
+    project = getattr(args, "project", None)
+    if project and not Path(project).is_dir():
+        print(f"Error: --project not found: {project}")
+        sys.exit(1)
+    errors = validate_recipe(
+        recipe,
+        recipe_id=recipe_id,
+        known_items=known_items,
+        participant_variables=read_participant_variables(project) if project else None,
+    )
 
     if getattr(args, "json", False):
         print(json.dumps({"success": not errors, "errors": errors}, indent=2))

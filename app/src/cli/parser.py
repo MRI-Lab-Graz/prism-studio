@@ -1612,6 +1612,11 @@ def build_prism_tools_parsers(
         "IDs referenced by the recipe (Scores/Transforms) are checked for typos",
     )
     parser_recipes_validate_file.add_argument(
+        "--project",
+        default=None,
+        help="Project root folder, so its participants.tsv columns count as known variables",
+    )
+    parser_recipes_validate_file.add_argument(
         "--recipe-id",
         default=None,
         help="Label used in error messages (default: the recipe filename)",

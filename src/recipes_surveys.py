@@ -33,7 +33,7 @@ from src.datalad_execution import (
     run_datalad_save,
     run_datalad_unlock,
 )
-from src.recipe_validation import validate_recipe
+from src.recipe_validation import read_participant_variables, validate_recipe
 from src.safe_excel import to_excel_safe
 from src.utils.io import read_json as _read_json, write_json as _write_json
 from src.survey_scale_inference import get_survey_item_map
@@ -250,6 +250,12 @@ def _known_item_ids_for_recipe_task(
         and "Description" in v
     }
     return known_items or None
+
+
+def _template_item_names(dataset_path: Path | None, *, modality: str, task: str) -> set[str]:
+    """Lowercase item IDs of the task's template (empty when there is none)."""
+    known = _known_item_ids_for_recipe_task(dataset_path, modality=modality, task=task)
+    return {item.lower() for item in known or ()}
 
 
 def _normalize_output_format(out_format: str | None) -> str:
@@ -796,17 +802,24 @@ def _merge_all_output_column_name(
 
 
 def _inject_participant_values_into_rows(
-    rows: list[dict[str, str]], participant_values: dict[str, str]
+    rows: list[dict[str, str]],
+    participant_values: dict[str, str],
+    item_names: set[str] = frozenset(),
 ) -> list[dict[str, str]]:
-    """Return row copies with participant-level values filled where missing."""
+    """Return row copies with participant values added.
+
+    A questionnaire item (``item_names``, lowercase) or a column of the row wins,
+    whatever its case, even when the answer is absent or n/a.
+    """
     if not participant_values:
         return rows
 
     out_rows: list[dict[str, str]] = []
     for row in rows:
         merged = row.copy()
+        taken = item_names | {str(c).lower() for c in row}
         for col, val in participant_values.items():
-            if col not in merged or _is_missing_cell_value(merged.get(col)):
+            if col.lower() not in taken:
                 merged[col] = val
         out_rows.append(merged)
     return out_rows
@@ -1351,7 +1364,10 @@ def _load_and_validate_recipes(
             template_dataset_path, modality=modality, task=task
         )
         errs = validate_recipe(
-            recipe_json, recipe_id=recipe_id, known_items=known_items
+            recipe_json,
+            recipe_id=recipe_id,
+            known_items=known_items,
+            participant_variables=read_participant_variables(template_dataset_path),
         )
         rec_path = rec.get("path")
         rec_name = rec_path.name if isinstance(rec_path, Path) else str(recipe_id)
@@ -1393,7 +1409,9 @@ def _recipe_input_warnings(
         _, rows = _read_tsv_rows(path)
         labelled.extend((" ".join(filter(None, [sub_id, ses_id])), row) for row in rows)
     template = _get_sidecar_for_task(prism_root, modality, task)
-    return recipe_data_warnings(recipe_id, recipe, labelled, template)
+    item_names = _template_item_names(prism_root, modality=modality, task=task)
+    participant_only = {v for v in read_participant_variables(prism_root) if v.lower() not in item_names}
+    return recipe_data_warnings(recipe_id, recipe, labelled, template, participant_only)
 
 
 def _find_tsv_files(prism_root: Path, modality: str) -> list[Path]:
@@ -1595,6 +1613,7 @@ def _export_recipe_aggregated(
     participant_columns = _participant_export_columns(participants_df)
     raw_exclude_columns = _participant_raw_exclude_columns(participants_df)
 
+    item_names = _template_item_names(output_prism_root, modality=modality, task=survey_task)
     for in_path in matching:
         processed_count += 1
         sub_id, ses_id = _infer_sub_ses_from_path(in_path)
@@ -1615,7 +1634,7 @@ def _export_recipe_aggregated(
         participant_values = (
             participant_lookup.get(participant_key, {}) if participant_key else {}
         )
-        scoring_rows = _inject_participant_values_into_rows(in_rows, participant_values)
+        scoring_rows = _inject_participant_values_into_rows(in_rows, participant_values, item_names)
 
         resolved_ver = _resolve_variant_for_path(
             output_prism_root,
@@ -1891,6 +1910,7 @@ def _export_recipe_legacy(
         (recipe.get(info_key, {}) or {}).get(task_key) or recipe_id
     )
 
+    item_names = _template_item_names(output_prism_root, modality=modality, task=survey_task)
     for in_path in matching:
         processed_count += 1
         sub_id, ses_id = _infer_sub_ses_from_path(in_path)
@@ -1911,7 +1931,7 @@ def _export_recipe_legacy(
         participant_values = (
             participant_lookup.get(participant_key, {}) if participant_key else {}
         )
-        scoring_rows = _inject_participant_values_into_rows(in_rows, participant_values)
+        scoring_rows = _inject_participant_values_into_rows(in_rows, participant_values, item_names)
 
         resolved_ver = (
             _resolve_variant_for_path(
@@ -2259,6 +2279,7 @@ def compute_survey_recipes(
                 participant_lookup = _build_participant_value_lookup(participants_df)
                 raw_exclude_columns = _participant_raw_exclude_columns(participants_df)
 
+                item_names = _template_item_names(output_prism_root, modality=modality, task=survey_task)
                 for in_path in matching:
                     processed_files += 1
                     sub_id, ses_id = _infer_sub_ses_from_path(in_path)
@@ -2281,9 +2302,7 @@ def compute_survey_recipes(
                         if participant_key
                         else {}
                     )
-                    scoring_rows = _inject_participant_values_into_rows(
-                        in_rows, participant_values
-                    )
+                    scoring_rows = _inject_participant_values_into_rows(in_rows, participant_values, item_names)
 
                     resolved_ver = _resolve_variant_for_path(
                         output_prism_root,

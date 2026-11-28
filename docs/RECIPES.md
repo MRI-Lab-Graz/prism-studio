@@ -79,6 +79,11 @@ builder's help block "How formulas and best-of work" shows these examples.
 - **Missing data:** the score is left empty if any column in `Items` is missing (see above).
 - **Chaining:** an item may be a `Transforms.Derived` entry or an earlier `Scores` entry. Derived
   values are calculated first, scores in the order written.
+- **Participant variables:** every column of the project's `participants.tsv` (except
+  `participant_id`) can be used like an item, for example `{age}` or
+  `ifelse({sex} == "F", {total} - 2, {total})`; the formula pull-down marks them "(participant)".
+  A questionnaire item of the same name wins. They cannot be reverse-scored. A recipe that names a
+  column the project does not have is an error.
 - Formulas are evaluated by a restricted calculator, never as code; anything else in a formula
   leaves the score empty.
 

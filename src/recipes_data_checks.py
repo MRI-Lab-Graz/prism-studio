@@ -33,12 +33,14 @@ def _scale(template: dict, item: str) -> tuple[float, float] | None:
 
 
 def recipe_data_warnings(
-    recipe_id: str, recipe: dict, files: Iterable[tuple[str, dict[str, str]]], template: dict
+    recipe_id: str, recipe: dict, files: Iterable[tuple[str, dict[str, str]]], template: dict,
+    participant_variables: Iterable[str] = (),
 ) -> list[str]:
     """Warnings for one recipe: answers outside the scale, text answers, and sums over partial answers.
 
     ``files`` are (participant/session label, row) pairs of the questionnaire data.
     """
+    participant = {str(v).lower() for v in participant_variables}
     scores = _scores(recipe)
     items = sorted({str(i) for s in scores for i in (s.get("Items") or [])})
     rows = list(files)
@@ -70,7 +72,7 @@ def recipe_data_warnings(
     from src.recipes_formula_engine import effective_missing
 
     for score in scores:
-        names = [str(i) for i in (score.get("Items") or [])]
+        names = [str(i) for i in (score.get("Items") or []) if str(i).lower() not in participant]
         method = str(score.get("Method", "sum")).strip().lower()
         if method not in {"sum", "mean"} or len(names) < 2 or effective_missing(score) != "require_all":
             continue
