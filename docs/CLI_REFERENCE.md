@@ -684,6 +684,8 @@ Options: `--project` (required), `--check`, `--install-hooks`, `--status`, `--js
 
 Hook requirements and limits:
 
+- Without PRISM Studio: `pip install prism-validator` provides `prism-validator save-gate --check --project <root>`, and the
+  hook uses it when `prism_tools` is not found. The commit is still refused when neither is on `PATH`.
 - The hook runs `$PRISM_TOOLS save-gate --check ...` (default `prism_tools`). `PRISM_TOOLS` must be
   an **executable file**; if the hook cannot find it, the commit is blocked.
 - `git commit --no-verify` bypasses the hook.

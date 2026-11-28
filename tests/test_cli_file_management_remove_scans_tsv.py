@@ -27,6 +27,7 @@ from src.project_manager import ProjectManager  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from test_project_manager import (  # noqa: E402
+    GIT_TEST_IDENTITY,
     _build_nested_project_with_scans_tsv,
 )
 
@@ -135,7 +136,9 @@ class TestOutput:
 
 
 class TestEndToEnd:
-    def test_removes_scans_tsv_across_real_nested_project(self, capsys):
+    def test_removes_scans_tsv_across_real_nested_project(self, capsys, monkeypatch):
+        for name, value in GIT_TEST_IDENTITY.items():
+            monkeypatch.setenv(name, value)
         with tempfile.TemporaryDirectory() as tmp:
             project_path = _build_nested_project_with_scans_tsv(tmp)
 

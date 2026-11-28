@@ -106,7 +106,7 @@ def test_ci_workflow_reports_coverage_from_the_ubuntu_pytest_run() -> None:
     content = CI_WORKFLOW.read_text(encoding="utf-8")
 
     assert "pytest tests/ --ignore=tests/e2e --cov=src --cov=app/src" in content
-    assert "--cov-report=xml" in content
+    assert "coverage xml" in content  # separate step: names files from the repo root
     assert "os: [ubuntu-latest]" in content  # the only matrix entry, so tests + upload run there
     assert "codecov/codecov-action" in content
 

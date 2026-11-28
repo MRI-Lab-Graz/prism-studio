@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
-- **Recipe formulas can use `participants.tsv` columns.** Saving and scoring rejected them as unknown items, and the Recipe Builder's formula pull-down did not offer them. `recipes validate-file` takes `--project`. An unanswered item is no longer filled from a participant column of the same name.
+- **A dataset's save check no longer needs PRISM Studio.** `pip install prism-validator` now provides `prism-validator save-gate --check`, and the commit hook uses it when `prism_tools` is not there. Hooks written earlier keep asking for `prism_tools`: run `prism_tools save-gate --install-hooks --project <root>` once to update them.
 
 ### Added
 - **Participant columns have shared term IDs** (specification v1.5.28). `participants.json` columns carry `"Term"`, the validator gives notices for them (never errors), and the `terms` and `spec local add-term` commands take `--modality participants`. `height` and `weight` are new biometrics terms.

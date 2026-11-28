@@ -1,7 +1,8 @@
 """Save gate: a commit in a PRISM dataset is allowed only if the dataset validates.
 
 Enforced by a git pre-commit hook in every dataset root (see install_save_hooks);
-the hook calls `prism_tools save-gate --check`. One implementation: the CLI and
+the hook calls `prism_tools save-gate --check`, or `prism-validator save-gate --check`
+where PRISM Studio is not installed. One implementation: the CLI and
 PRISM's own saves go through the same hook. See
 docs/superpowers/specs/2026-10-02-save-gate-design.md (removed after v1.24.0; in git history).
 """
@@ -9,9 +10,13 @@ docs/superpowers/specs/2026-10-02-save-gate-design.md (removed after v1.24.0; in
 from __future__ import annotations
 
 from dataclasses import dataclass
+import argparse
+import contextlib
+import json
 import os
 import stat
 import subprocess
+import sys
 from pathlib import Path
 
 from src.datalad_execution import SAVE_GATE_MARKER
@@ -159,8 +164,9 @@ def _save_hook_script(chain_annex: bool = False) -> str:
 {SAVE_HOOK_MARKER}
 # Refuses a commit unless the dataset validates (PRISM save gate).
 TOOLS="${{PRISM_TOOLS:-prism_tools}}"
+command -v "$TOOLS" >/dev/null 2>&1 || TOOLS=prism-validator
 if ! command -v "$TOOLS" >/dev/null 2>&1; then
-  echo "{SAVE_GATE_MARKER}: '$TOOLS' not found. Set PRISM_TOOLS to the prism_tools executable. Commit blocked." >&2
+  echo "{SAVE_GATE_MARKER}: prism_tools or prism-validator not found. Install the validator (pip install prism-validator) or set PRISM_TOOLS to the prism_tools executable. Commit blocked." >&2
   exit 1
 fi
 ROOT="$(git rev-parse --show-toplevel)" || exit 1
@@ -170,6 +176,38 @@ ROOT="$(git rev-parse --show-toplevel)" || exit 1
         # git-annex's own hook, run last in the original environment (it needs the commit's index)
         script += ANNEX_CHAIN_LINE + "\n"
     return script
+
+
+_MAX_LISTED = 20
+
+
+def run_check(project) -> tuple[dict, str, int]:
+    """`save-gate --check`: (payload, text, exit code). Shared by prism_tools and prism-validator."""
+    root = Path(project)
+    check = check_save(root)
+    audit_save(root, check)
+    text = ""
+    if not check.allowed:
+        lines = [f"{SAVE_GATE_MARKER}: {len(check.errors)} validation error(s). Fix them, then save."]
+        lines += [f"  - {e}" for e in check.errors[:_MAX_LISTED]]
+        text = "\n".join(lines)
+    # 1 = refused for validation errors; 2 = anything else (git_error, validator_crash)
+    code = 0 if check.allowed else 1 if check.reason == "validation_errors" else 2
+    return {"allowed": check.allowed, "reason": check.reason, "errors": check.errors}, text, code
+
+
+def validator_cli(argv) -> int:
+    """`prism-validator save-gate`: only the check; hooks are installed by prism_tools."""
+    parser = argparse.ArgumentParser(prog="prism-validator save-gate")
+    parser.add_argument("--project", required=True, help="Dataset root")
+    parser.add_argument("--check", action="store_true", required=True, help="Exit 1 if the commit must be refused")
+    parser.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+    args = parser.parse_args(argv)
+    # the validator prints progress; --json must stay parseable
+    with contextlib.redirect_stdout(sys.stderr):
+        payload, text, code = run_check(args.project)
+    print(json.dumps(payload, indent=2, ensure_ascii=False) if args.json else text)
+    return code
 
 
 def _read_hook(hook: Path) -> str | None:
