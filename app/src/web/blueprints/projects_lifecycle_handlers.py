@@ -12,10 +12,10 @@ from src.project_delete import (
     derive_project_name,
 )
 from .projects_helpers import (
+    _forget_recent_project,
     _load_recent_projects,
     _record_recent_project,
     _save_recent_projects,
-    _stored_recent_projects,
 )
 from .projects_helpers import _resolve_project_json_path, _resolve_project_root_path
 from .projects_citation_helpers import _validate_recruitment_payload
@@ -563,12 +563,7 @@ def handle_delete_project(project_manager, get_current_project, clear_current_pr
         # Drop it from the recent-projects list and clear it as the active
         # project if it was loaded, so the UI doesn't point at a dead path.
         try:
-            remaining = [
-                entry
-                for entry in _stored_recent_projects()
-                if str(entry.get("path") or "") != root_path
-            ]
-            _save_recent_projects(remaining)
+            _forget_recent_project(root_path)
         except Exception:
             pass
 

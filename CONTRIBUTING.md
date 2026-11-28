@@ -82,7 +82,7 @@ release refresh it, run the tests, and commit the result as a reviewed change:
 
 ```bash
 uv pip compile requirements-runtime.txt requirements-build.txt --universal \
-  --python-version 3.10 --generate-hashes -o requirements-release.lock
+  --python-version 3.14 --generate-hashes -o requirements-release.lock
 ```
 
 ## Documentation

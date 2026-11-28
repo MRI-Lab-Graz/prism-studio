@@ -44,3 +44,27 @@ def test_edf_writer_keeps_a_fractional_sampling_rate(tmp_path):
     writer.close()
 
     assert edfio.read_edf(tmp_path / "out.edf").signals[0].sampling_frequency == pytest.approx(512 / 3, abs=1e-4)
+
+
+def test_edf_writer_takes_nul_padded_header_names(tmp_path):
+    """The RAW header pads names with NULs; they end the name, as they did for pyedflib."""
+    from helpers.physio.convert_varioport import _EdfWriter
+
+    writer = _EdfWriter(tmp_path / "out.edf")
+    writer.setSignalHeaders([_header("EKG\x00\x00\x00", "uV\x00\x00", -1, 1), _header("a\x01b", "V", -1, 1)])
+    writer.writeSamples([np.zeros(256), np.zeros(256)])
+    writer.close()
+
+    edf = edfio.read_edf(tmp_path / "out.edf")
+    assert edf.labels == ("EKG", "a?b") and edf.signals[0].physical_dimension == "uV"
+
+
+@pytest.mark.parametrize("headers, samples", [([], []), ([_header("EKG", "uV", -1, 1)], [np.zeros(0)])])
+def test_edf_writer_says_when_there_is_nothing_to_write(tmp_path, headers, samples):
+    from helpers.physio.convert_varioport import _EdfWriter
+
+    writer = _EdfWriter(tmp_path / "out.edf")
+    writer.setSignalHeaders(headers)
+    writer.writeSamples(samples)
+    with pytest.raises(ValueError, match="no samples were written"):
+        writer.close()

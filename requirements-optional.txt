@@ -4,9 +4,7 @@
 # Neuroimaging tooling
 Nibabel
 
-# Optional export formats and physio support
-#
-
+# Optional export formats
 # openMINDS metadata export (BIDS → openMINDS schema)
 bids2openminds
 

@@ -971,8 +971,12 @@ class _EdfWriter(_BidsCollector):
     def close(self):
         import edfio
 
-        def ascii_field(text, size):  # EDF header fields are fixed-width ASCII
-            return str(text).replace("µ", "u").encode("ascii", "replace").decode()[:size]
+        def ascii_field(text, size):  # fixed-width printable ASCII; the RAW header pads with NULs
+            text = str(text).split("\0")[0].replace("µ", "u")
+            return re.sub(r"[^ -~]", "?", text)[:size]
+
+        if not self.signals or not all(len(x) for x in self.signals):
+            raise ValueError("no samples were written")
 
         signals = []
         for header, samples in zip(self.headers, self.signals):

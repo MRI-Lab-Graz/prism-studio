@@ -203,3 +203,9 @@ def _record_recent_project(project: dict) -> list[dict]:
         return _stored_recent_projects()
     with _RECENT_LOCK:
         return _save_recent_projects(record_recent(_stored_recent_projects(), entry[0]))
+
+
+def _forget_recent_project(path: str) -> None:
+    """Take the project at `path` out of the stored history."""
+    with _RECENT_LOCK:
+        _save_recent_projects([p for p in _stored_recent_projects() if str(p.get("path") or "") != path])
