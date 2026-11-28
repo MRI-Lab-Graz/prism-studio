@@ -17,10 +17,10 @@ DATA = "participant_id,session,DEMO01,DEMO02,DEMO03,DEMO04,DEMO05,DEMO06,DEMO07,
 
 def make_project_ready(root):
     """create_project leaves Name, Authors, Keywords and Timepoints empty; the tools are blocked until they are set."""
-    meta = json.loads((root / "project.json").read_text())
+    meta = json.loads((root / "project.json").read_text(encoding="utf-8"))
     meta.setdefault("Basics", {}).update(Name=root.name, Authors=["Lovelace, Ada"], Keywords=["psychology", "experiment", "PRISM"])
     meta.setdefault("StudyDesign", {})["Timepoints"] = "single"
-    (root / "project.json").write_text(json.dumps(meta))
+    (root / "project.json").write_text(json.dumps(meta), encoding="utf-8")
 
 
 @pytest.fixture

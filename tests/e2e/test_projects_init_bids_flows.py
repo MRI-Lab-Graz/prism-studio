@@ -27,7 +27,7 @@ def open_init_form(page, studio_url, path):
 
 
 def test_init_adds_prism_files_and_leaves_the_data_alone(bare_page, studio_url, bids):
-    before = (bids / "participants.tsv").read_text()
+    before = (bids / "participants.tsv").read_text(encoding="utf-8")
     open_init_form(bare_page, studio_url, bids)
 
     bare_page.click("#initBidsSubmitBtn")
@@ -38,7 +38,7 @@ def test_init_adds_prism_files_and_leaves_the_data_alone(bare_page, studio_url, 
     for folder in ("sourcedata", "derivatives", "code"):
         assert (bids / folder).is_dir(), folder
     assert (bids / "sub-01" / "anat" / "sub-01_T1w.nii.gz").read_bytes() == SCAN
-    assert (bids / "participants.tsv").read_text() == before
+    assert (bids / "participants.tsv").read_text(encoding="utf-8") == before
     current = bare_page.request.get(f"{studio_url}/api/projects/current").json()
     assert current["path"] == str(bids)
 

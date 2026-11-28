@@ -81,7 +81,7 @@ def test_study_metadata_edit_is_saved_to_the_project_and_survives_reload(app_pag
     app_page.click("#createProjectSubmitBtn")
 
     expect(app_page.locator("#metadataSaveStatus")).to_contain_text("aved")
-    description = json.loads((project / "dataset_description.json").read_text())
+    description = json.loads((project / "dataset_description.json").read_text(encoding="utf-8"))
     assert description["Name"] == "Sleep and memory"
 
     app_page.reload()
@@ -114,7 +114,7 @@ def test_create_project_never_overwrites_an_existing_folder(bare_page, studio_ur
     bare_page.click("#createProjectSubmitBtnTop")
     bare_page.wait_for_timeout(1500)
 
-    assert (existing / "precious.txt").read_text() == "keep me"
+    assert (existing / "precious.txt").read_text(encoding="utf-8") == "keep me"
     assert not (existing / "project.json").exists()
 
 
@@ -267,7 +267,7 @@ def test_timepoints_is_required_and_saved_with_the_project(bare_page, studio_url
     bare_page.click("#createProjectSubmitBtnTop")
 
     expect(bare_page.locator("#createResult")).to_contain_text("long_study")
-    saved = json.loads((tmp_path / "long_study" / "project.json").read_text())
+    saved = json.loads((tmp_path / "long_study" / "project.json").read_text(encoding="utf-8"))
     assert saved["StudyDesign"]["Timepoints"] == "multiple"
     assert saved["StudyDesign"]["SessionLabels"] == "time"
 

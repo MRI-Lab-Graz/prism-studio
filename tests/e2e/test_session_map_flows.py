@@ -14,7 +14,7 @@ DETECT = "/api/survey-detect-version-contexts"
 
 
 def make_longitudinal(project):
-    meta = json.loads((project / "project.json").read_text())  # keep the complete project, change the timepoints
+    meta = json.loads((project / "project.json").read_text(encoding="utf-8"))  # keep the complete project, change the timepoints
     meta["StudyDesign"] = {"Timepoints": "multiple"}
     (project / "project.json").write_text(json.dumps(meta))
 
@@ -56,7 +56,7 @@ def test_mapping_the_labels_unlocks_preview_and_convert_uses_the_names(app_page,
     app_page.click("#sessionMapSaveBtn")
 
     expect(app_page.locator("#sessionMapPanel")).to_be_hidden(timeout=30000)
-    saved = json.loads((project / "code" / "session_map.json").read_text())
+    saved = json.loads((project / "code" / "session_map.json").read_text(encoding="utf-8"))
     assert set(saved.values()) == {"1", "2"} and set(saved) == {"pre", "post"}
     app_page.select_option("#convertSessionSelect", "all")
     expect(app_page.locator("#previewBtn")).to_be_enabled()
@@ -117,9 +117,9 @@ def test_participants_import_runs_once_the_session_is_mapped(app_page, studio_ur
     expect(app_page.locator("#participantsConvertBtn")).to_be_enabled(timeout=30000)
     app_page.click("#participantsConvertBtn")
     expect(app_page.locator("#participantsSuccess")).to_be_visible(timeout=30000)
-    saved = json.loads((project / "code" / "session_map.json").read_text())
+    saved = json.loads((project / "code" / "session_map.json").read_text(encoding="utf-8"))
     assert saved == {"pre": "1"}
-    rows = (project / "participants.tsv").read_text().splitlines()
+    rows = (project / "participants.tsv").read_text(encoding="utf-8").splitlines()
     assert [line.split("\t")[0] for line in rows[1:]] == ["sub-P001", "sub-P002"]
 
 

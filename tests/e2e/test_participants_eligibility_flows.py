@@ -15,7 +15,7 @@ AGE = {"id": "age", "label": "Age", "term": "nb:Age", "type": "numeric",
 
 
 def test_mapping_age_leaves_the_criterion_to_the_user_and_saves_only_the_link(app_page, studio_url, tmp_path, project):
-    meta = json.loads((project / "project.json").read_text())
+    meta = json.loads((project / "project.json").read_text(encoding="utf-8"))
     meta["Eligibility"] = {"Criteria": [AGE]}
     (project / "project.json").write_text(json.dumps(meta))
     page = app_page
@@ -33,7 +33,7 @@ def test_mapping_age_leaves_the_criterion_to_the_user_and_saves_only_the_link(ap
     page.click("#participantsConvertBtn")
     expect(page.locator("#participantsSuccess")).to_be_visible(timeout=30000)
 
-    sidecar = json.loads((project / "participants.json").read_text())
+    sidecar = json.loads((project / "participants.json").read_text(encoding="utf-8"))
     assert sidecar["age"]["EligibilityCriterion"] == "age"
     assert "EligibilityCriterion" not in sidecar.get("sex", {})
     assert "min" not in json.dumps(sidecar)  # limits stay in project.json
@@ -42,7 +42,7 @@ def test_mapping_age_leaves_the_criterion_to_the_user_and_saves_only_the_link(ap
 def test_merge_into_existing_files_also_offers_the_criterion(app_page, studio_url, tmp_path, project):
     from tests.e2e.test_converter_participants_flows import start_merge
 
-    meta = json.loads((project / "project.json").read_text())
+    meta = json.loads((project / "project.json").read_text(encoding="utf-8"))
     meta["Eligibility"] = {"Criteria": [AGE]}
     (project / "project.json").write_text(json.dumps(meta))
     start_merge(app_page, studio_url, project, tmp_path, "participant_id,age\nP003,50\n")
@@ -51,7 +51,7 @@ def test_merge_into_existing_files_also_offers_the_criterion(app_page, studio_ur
 
 
 def test_annotating_existing_files_without_a_preview_offers_the_criterion(app_page, studio_url, project):
-    meta = json.loads((project / "project.json").read_text())
+    meta = json.loads((project / "project.json").read_text(encoding="utf-8"))
     meta["Eligibility"] = {"Criteria": [AGE]}
     (project / "project.json").write_text(json.dumps(meta))
     (project / "participants.tsv").write_text("participant_id\tage\nsub-P001\t21\n")
@@ -63,7 +63,7 @@ def test_annotating_existing_files_without_a_preview_offers_the_criterion(app_pa
 
 
 def test_modify_existing_files_offers_the_criterion(app_page, studio_url, project):
-    meta = json.loads((project / "project.json").read_text())
+    meta = json.loads((project / "project.json").read_text(encoding="utf-8"))
     meta["Eligibility"] = {"Criteria": [AGE]}
     (project / "project.json").write_text(json.dumps(meta))
     (project / "participants.tsv").write_text("participant_id\tage\nsub-P001\t21\n")
@@ -77,7 +77,7 @@ def test_modify_existing_files_offers_the_criterion(app_page, studio_url, projec
 
 
 def test_an_unchosen_criterion_is_not_saved(app_page, studio_url, tmp_path, project):
-    meta = json.loads((project / "project.json").read_text())
+    meta = json.loads((project / "project.json").read_text(encoding="utf-8"))
     meta["Eligibility"] = {"Criteria": [AGE]}
     (project / "project.json").write_text(json.dumps(meta))
     page = app_page
@@ -90,4 +90,4 @@ def test_an_unchosen_criterion_is_not_saved(app_page, studio_url, tmp_path, proj
     confirm_annotation(page)
     page.click("#participantsConvertBtn")
     expect(page.locator("#participantsSuccess")).to_be_visible(timeout=30000)
-    assert "EligibilityCriterion" not in json.loads((project / "participants.json").read_text())["age"]
+    assert "EligibilityCriterion" not in json.loads((project / "participants.json").read_text(encoding="utf-8"))["age"]

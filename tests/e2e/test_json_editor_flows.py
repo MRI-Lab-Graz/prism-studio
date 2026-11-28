@@ -23,7 +23,7 @@ def test_a_project_file_opens_ready_to_edit(app_page, studio_url, project):
 
     expect(app_page.locator("#jsonEditor")).to_be_visible()
     shown = json.loads(app_page.locator("#jsonEditor").input_value())
-    assert shown == json.loads((project / "dataset_description.json").read_text())
+    assert shown == json.loads((project / "dataset_description.json").read_text(encoding="utf-8"))
     expect(app_page.locator("#editorFileName")).to_have_text("dataset_description.json")
 
 
@@ -37,7 +37,7 @@ def test_saving_writes_the_edit_to_the_project_file(app_page, studio_url, projec
     app_page.click("#saveToProjectBtn")
 
     expect(app_page.locator("#alertContainer")).to_contain_text("Saved dataset_description.json")
-    assert json.loads((project / "dataset_description.json").read_text())["Name"] == "Renamed in the editor"
+    assert json.loads((project / "dataset_description.json").read_text(encoding="utf-8"))["Name"] == "Renamed in the editor"
 
 
 def test_saved_file_with_gaps_warns_what_is_missing(app_page, studio_url):
@@ -52,7 +52,7 @@ def test_saved_file_with_gaps_warns_what_is_missing(app_page, studio_url):
 
 
 def test_broken_json_is_refused_and_the_file_stays_as_it_was(app_page, studio_url, project):
-    before = (project / "dataset_description.json").read_text()
+    before = (project / "dataset_description.json").read_text(encoding="utf-8")
     open_project_file(app_page, studio_url, "dataset_description")
     expect(app_page.locator("#jsonEditor")).to_be_visible()
     set_text(app_page, '{"Name": "oops",')
@@ -61,11 +61,11 @@ def test_broken_json_is_refused_and_the_file_stays_as_it_was(app_page, studio_ur
 
     expect(app_page.locator("#alertContainer .alert-danger")).to_be_visible()
     assert "Error:" in alerts(app_page)
-    assert (project / "dataset_description.json").read_text() == before
+    assert (project / "dataset_description.json").read_text(encoding="utf-8") == before
 
 
 def test_download_copy_gives_the_edit_and_leaves_the_project_alone(app_page, studio_url, project, tmp_path):
-    before = (project / "dataset_description.json").read_text()
+    before = (project / "dataset_description.json").read_text(encoding="utf-8")
     open_project_file(app_page, studio_url, "dataset_description")
     expect(app_page.locator("#jsonEditor")).to_be_visible()
     data = json.loads(app_page.locator("#jsonEditor").input_value())
@@ -78,8 +78,8 @@ def test_download_copy_gives_the_edit_and_leaves_the_project_alone(app_page, stu
     info.value.save_as(target)
 
     assert info.value.suggested_filename == "dataset_description.json"
-    assert json.loads(target.read_text())["Name"] == "Copy only"
-    assert (project / "dataset_description.json").read_text() == before
+    assert json.loads(target.read_text(encoding="utf-8"))["Name"] == "Copy only"
+    assert (project / "dataset_description.json").read_text(encoding="utf-8") == before
 
 
 def test_a_file_the_project_does_not_have_says_so(app_page, studio_url):
@@ -104,7 +104,7 @@ def test_participants_json_opens_as_a_form_and_saves_the_edited_value(app_page, 
 
     expect(app_page.locator("#alertContainer")).to_contain_text("Saved participants.json")
     assert "validation found issues" not in alerts(app_page)
-    saved = json.loads((project / "participants.json").read_text())
+    saved = json.loads((project / "participants.json").read_text(encoding="utf-8"))
     assert saved["age"]["Description"] == "Age at first visit"
     assert saved["age"]["Units"] == "years" and saved["sex"] == {"Description": "Sex"}
 
@@ -183,7 +183,7 @@ def test_a_new_file_is_written_where_the_save_dialog_says(app_page, studio_url, 
     app_page.click("#saveToProjectBtn")
 
     expect(app_page.locator("#alertContainer")).to_contain_text("Saved to")
-    assert json.loads(target.read_text()) == {"note": "hello"}
+    assert json.loads(target.read_text(encoding="utf-8")) == {"note": "hello"}
 
 
 def test_cancelling_the_save_dialog_writes_nothing(app_page, studio_url, project):
@@ -201,7 +201,7 @@ def test_cancelling_the_save_dialog_writes_nothing(app_page, studio_url, project
 
 
 def test_a_key_twice_in_one_object_is_refused_and_the_file_stays_as_it_was(app_page, studio_url, project):
-    before = (project / "dataset_description.json").read_text()
+    before = (project / "dataset_description.json").read_text(encoding="utf-8")
     open_project_file(app_page, studio_url, "dataset_description")
     expect(app_page.locator("#jsonEditor")).to_be_visible()
     set_text(app_page, '{"Timepoint": 1, "Name": "x", "Timepoint": 2}')
@@ -209,4 +209,4 @@ def test_a_key_twice_in_one_object_is_refused_and_the_file_stays_as_it_was(app_p
     app_page.click("#saveToProjectBtn")
 
     expect(app_page.locator("#alertContainer .alert-danger")).to_contain_text('"Timepoint" appears twice')
-    assert (project / "dataset_description.json").read_text() == before
+    assert (project / "dataset_description.json").read_text(encoding="utf-8") == before

@@ -91,8 +91,8 @@ def test_subject_rewrite_needs_a_preview_then_renames_folders_files_and_particip
         "sub-004/ses-1/survey/sub-004_ses-1_task-wb_survey.json",
         "sub-004/ses-1/survey/sub-004_ses-1_task-wb_survey.tsv",
     ]
-    assert (project / "participants.tsv").read_text() == "participant_id\tage\nsub-003\t20\nsub-004\t21\n"
-    assert (project / "sub-004/ses-1/survey/sub-004_ses-1_task-wb_survey.tsv").read_text() == "WB01\n1\n"  # data intact
+    assert (project / "participants.tsv").read_text(encoding="utf-8") == "participant_id\tage\nsub-003\t20\nsub-004\t21\n"
+    assert (project / "sub-004/ses-1/survey/sub-004_ses-1_task-wb_survey.tsv").read_text(encoding="utf-8") == "WB01\n1\n"  # data intact
 
 
 def test_undo_restores_the_project_exactly(app_page, studio_url, project):
@@ -172,8 +172,8 @@ def test_delete_removes_only_the_selected_subjects_files_and_their_empty_folders
     app_page.click("#fileDeleteApplyBtn")
 
     assert eventually(lambda: not (project / "sub-1291003").exists()), project_files(project)  # files and emptied folders
-    assert (project / "sub-1291004/ses-1/survey/sub-1291004_ses-1_task-wb_survey.tsv").read_text() == "WB01\n1\n"
-    assert "sub-1291003" in (project / "participants.tsv").read_text()  # documented: not updated
+    assert (project / "sub-1291004/ses-1/survey/sub-1291004_ses-1_task-wb_survey.tsv").read_text(encoding="utf-8") == "WB01\n1\n"
+    assert "sub-1291003" in (project / "participants.tsv").read_text(encoding="utf-8")  # documented: not updated
 
 
 def test_an_entity_filter_deletes_only_the_matching_task(app_page, studio_url, project):
@@ -320,11 +320,11 @@ def test_organizer_folder_upload_previews_then_copies_into_the_prism_layout(app_
 
     first = project / "sub-01/ses-1/survey/sub-01_ses-1_task-wb_survey.tsv"
     assert eventually(first.exists), project_files(project)
-    assert first.read_text() == "WB01\n1\n"  # content unchanged
+    assert first.read_text(encoding="utf-8") == "WB01\n1\n"  # content unchanged
     assert (project / "sub-01/ses-1/survey/sub-01_ses-1_task-wb_survey.json").exists()
-    assert (project / "sub-02/ses-t2/survey/sub-02_ses-t2_task-wb_survey.tsv").read_text() == "WB01\n2\n"  # ses-t2 as is
+    assert (project / "sub-02/ses-t2/survey/sub-02_ses-t2_task-wb_survey.tsv").read_text(encoding="utf-8") == "WB01\n2\n"  # ses-t2 as is
     assert eventually(lambda: (project / "participants.tsv").exists())
-    listed = (project / "participants.tsv").read_text().splitlines()[1:]
+    listed = (project / "participants.tsv").read_text(encoding="utf-8").splitlines()[1:]
     assert sorted(line.split("\t")[0] for line in listed) == ["sub-01", "sub-02"]  # new subjects are registered
 
 
@@ -353,7 +353,7 @@ def test_wide_to_long_previews_then_saves_the_long_table_into_sourcedata(app_pag
 
     out = project / "sourcedata/wide_to_long/wide_long.csv"
     assert eventually(out.exists), [p for p in project.rglob("*") if "wide" in p.name]
-    assert out.read_text().splitlines() == [
+    assert out.read_text(encoding="utf-8").splitlines() == [
         "participant_id,ADS01,ADS02,session",
         "P1,1,2,T1",
         "P2,5,6,T1",
@@ -371,7 +371,7 @@ def test_wide_to_long_keeps_typed_session_labels_exactly(app_page, studio_url, p
 
     out = project / "sourcedata/wide_to_long/wide_long.csv"
     assert eventually(out.exists)
-    sessions = [line.split(",")[-1] for line in out.read_text().splitlines()[1:]]
+    sessions = [line.split(",")[-1] for line in out.read_text(encoding="utf-8").splitlines()[1:]]
     assert sessions == ["1", "1", "01", "01"]
 
 
@@ -426,8 +426,8 @@ def test_run_renumbering_closes_the_gap_and_only_the_gap(app_page, studio_url, p
     survey = project / "sub-01/ses-1/survey"
     assert eventually(lambda: (survey / "sub-01_ses-1_task-wb_run-02_survey.tsv").exists()), project_files(project)
     assert not (survey / "sub-01_ses-1_task-wb_run-03_survey.tsv").exists()
-    assert (survey / "sub-01_ses-1_task-wb_run-02_survey.tsv").read_text() == "WB01\n03\n"  # run 03's data
-    assert (survey / "sub-01_ses-1_task-wb_run-01_survey.tsv").read_text() == "WB01\n01\n"
+    assert (survey / "sub-01_ses-1_task-wb_run-02_survey.tsv").read_text(encoding="utf-8") == "WB01\n03\n"  # run 03's data
+    assert (survey / "sub-01_ses-1_task-wb_run-01_survey.tsv").read_text(encoding="utf-8") == "WB01\n01\n"
 
 
 def test_filename_part_rename_changes_the_task_in_every_matching_file(app_page, studio_url, project):
@@ -443,7 +443,7 @@ def test_filename_part_rename_changes_the_task_in_every_matching_file(app_page, 
     assert eventually(lambda: any("task-wellbeing" in n for n in project_files(project))), project_files(project)
     names = sorted(p.name for p in survey.iterdir())
     assert not [n for n in names if "task-wb_" in n or "task-wb." in n], names
-    sidecar = json.loads((survey / "sub-01_ses-1_task-wellbeing_survey.json").read_text())
+    sidecar = json.loads((survey / "sub-01_ses-1_task-wellbeing_survey.json").read_text(encoding="utf-8"))
     assert sidecar["Study"]["TaskName"] == "wellbeing"  # the sidecar follows the filename
 
 

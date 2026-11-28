@@ -78,7 +78,7 @@ def test_merge_with_a_conflicting_value_is_blocked_and_leaves_the_file_alone(app
     expect(app_page.locator("#participantsMergeConflictList")).to_contain_text("sub-P002")
     expect(app_page.locator("#participantsMergeConflictList")).to_contain_text("already has 34, incoming file has 35")
     expect(app_page.locator("#participantsConvertBtn")).to_be_disabled()
-    assert (project / "participants.tsv").read_text() == EXISTING
+    assert (project / "participants.tsv").read_text(encoding="utf-8") == EXISTING
 
 
 def test_merge_without_conflicts_adds_new_people_and_columns_but_keeps_existing_values(app_page, studio_url, tmp_path, project):

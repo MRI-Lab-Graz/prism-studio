@@ -75,7 +75,7 @@ def test_the_export_carries_the_survey_name_and_one_group_per_template(app_page,
 
     lss = export(app_page, tmp_path, "s.lss", survey_name="Demo and stress")
 
-    assert "Demo and stress" in lss.read_text()
+    assert "Demo and stress" in lss.read_text(encoding="utf-8")
     names = " ".join(lss_group_names(lss))
     assert "demonstration" in names and "Depression, Anxiety" in names
     codes = lss_codes(lss)
