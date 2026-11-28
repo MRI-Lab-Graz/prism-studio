@@ -1787,15 +1787,14 @@ def _launch_app_mode_window(url: str) -> Optional[subprocess.Popen]:
 
 
 def _install_exit_handlers() -> None:
-    """Only for the running app: at import this would force exit code 0 on the
-    importer (it hid every failing test)."""
+    """Only when run as the program: in an importer, or an in-process caller of
+    main(), this forces exit code 0 (it hid every failing test)."""
     atexit.register(lambda: cleanup_and_exit(0))
     sys.excepthook = _handle_uncaught_exception
 
 
 def main():
     """Run the web application"""
-    _install_exit_handlers()
     from src.save_gate import ensure_prism_tools_env
     from src.share_publish import apply_env_identity
 
@@ -2074,4 +2073,5 @@ def main():
 
 
 if __name__ == "__main__":
+    _install_exit_handlers()
     main()

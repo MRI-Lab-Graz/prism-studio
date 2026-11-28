@@ -34,3 +34,19 @@ def test_an_importer_keeps_its_exit_code():
 
 def test_an_importer_still_fails_on_an_uncaught_exception():
     assert _run("raise RuntimeError('boom')") == 1
+
+
+# main() as the port-conflict tests call it: in-process, and it returns early
+# because an instance of this version is already running.
+RUN_MAIN = """
+studio = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(studio)
+from src import __version__
+studio._probe_health = lambda h, p: {"status": "ok", "running": True, "version": __version__}
+studio.webbrowser.open = lambda url: None
+studio.main()
+"""
+
+
+def test_a_caller_of_main_keeps_its_exit_code():
+    assert _run(RUN_MAIN + "sys.exit(3)") == 3
