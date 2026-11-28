@@ -7,7 +7,7 @@
 # are required to validate a dataset. The BIDS engine is part of the validator.
 jsonschema
 defusedxml
-PyYAML>=6.0.3
+PyYAML>=6.0.4
 # The BIDS check runs by default and needs this engine; the PyPI package `deno` it depends on
 # ships the Deno runtime as a wheel for these platforms only, so the requirement is skipped on other
 # architectures (e.g. Windows ARM64: install succeeds, a run reports PRISM902 and the --no-bids hint).
