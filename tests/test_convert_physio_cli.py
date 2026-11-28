@@ -157,10 +157,7 @@ def test_task_without_destination_exits_2_and_writes_nothing(
 
 
 def test_task_with_destination_writes_bids_files(tmp_path, monkeypatch) -> None:
-    import sys as _sys
-
     inp, out = _dir_input(tmp_path)
-    monkeypatch.setitem(_sys.modules, "pyedflib", None)
     monkeypatch.setattr("src.cli.commands.convert.convert_varioport", _fake_bids)
     cmd_convert_physio(_args(inp, out, task="rest", destination="beh"))
     folder = out / "sub-01" / "ses-01" / "beh"

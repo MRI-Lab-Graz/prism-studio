@@ -3,7 +3,6 @@
 import json as _json
 import sys
 import os
-import types
 import pytest
 import shutil
 from unittest.mock import patch, MagicMock
@@ -542,31 +541,8 @@ class TestGeneratePhysioHtmlReport:
         )
         assert result is None
 
-    def test_creates_minimal_report_when_pyedflib_unavailable(self, tmp_path):
-        fake_edf = tmp_path / "file.edf"
-        fake_edf.write_bytes(b"fake edf data")
-        converted = ConvertedFile(
-            source_path=tmp_path / "file.raw",
-            output_files=[fake_edf],
-            modality="physio",
-            subject="sub-001",
-            session=None,
-            task="task-rest",
-            success=True,
-        )
-        with patch.dict("sys.modules", {"pyedflib": None}):
-            result = _generate_physio_html_report(
-                converted=converted,
-                output_folder=tmp_path,
-            )
-        assert result is not None
-        assert result.exists()
-        content = result.read_text(encoding="utf-8")
-        assert "unavailable" in content.lower() or "pyedflib" in content.lower()
-
-    def test_creates_minimal_report_with_session(self, tmp_path):
-        fake_edf = tmp_path / "file.edf"
-        fake_edf.write_bytes(b"fake edf data")
+    def test_report_name_keeps_the_session(self, tmp_path, make_edf):
+        fake_edf = make_edf(tmp_path / "file.edf", {"ECG": (np.zeros(256), 256)})
         converted = ConvertedFile(
             source_path=tmp_path / "file.raw",
             output_files=[fake_edf],
@@ -576,18 +552,15 @@ class TestGeneratePhysioHtmlReport:
             task="task-rest",
             success=True,
         )
-        with patch.dict("sys.modules", {"pyedflib": None}):
-            result = _generate_physio_html_report(
-                converted=converted,
-                output_folder=tmp_path,
-            )
+        result = _generate_physio_html_report(converted=converted, output_folder=tmp_path)
         assert result is not None
         assert "ses-1" in str(result)
 
-    @pytest.mark.skipif(not HAS_NUMPY, reason="numpy required")
-    def test_generates_full_report_when_pyedflib_available(self, tmp_path):
+    def test_generates_full_report_from_an_edf(self, tmp_path, make_edf):
         fake_edf = tmp_path / "sub-001_ses-1_task-rest_recording-ecg_physio.edf"
-        fake_edf.write_bytes(b"fake edf data")
+        ecg = np.zeros(2560)
+        ecg[256::256] = 5.0  # clear peaks once per second
+        make_edf(fake_edf, {"ECG": (ecg, 256), "EDA": (np.linspace(0.0, 1.0, 1280), 128)}, duration=10.0)
         fake_sidecar = fake_edf.with_suffix(".json")
         fake_sidecar.write_text(
             _json.dumps(
@@ -620,44 +593,7 @@ class TestGeneratePhysioHtmlReport:
             success=True,
         )
 
-        class FakeReader:
-            def __init__(self, _path):
-                self.signals_in_file = 2
-
-            def __enter__(self):
-                return self
-
-            def __exit__(self, exc_type, exc, tb):
-                return False
-
-            def getLabel(self, idx):
-                return ["ECG", "EDA"][idx]
-
-            def getSampleFrequency(self, idx):
-                return [256.0, 128.0][idx]
-
-            def getPhysicalDimension(self, idx):
-                if idx == 1:
-                    raise RuntimeError("no dimension")
-                return "uV"
-
-            def readSignal(self, idx):
-                n = 256 * 10
-                if idx == 0:
-                    signal = np.zeros(n, dtype=float)
-                    # Create clear synthetic peaks once per second.
-                    for i in range(1, 10):
-                        signal[i * 256] = 5.0
-                    return signal
-                return np.linspace(0.0, 1.0, n, dtype=float)
-
-        fake_pyedflib = types.SimpleNamespace(EdfReader=FakeReader)
-
-        with patch.dict("sys.modules", {"pyedflib": fake_pyedflib}):
-            result = _generate_physio_html_report(
-                converted=converted,
-                output_folder=tmp_path,
-            )
+        result = _generate_physio_html_report(converted=converted, output_folder=tmp_path)
 
         assert result is not None
         assert result.exists()

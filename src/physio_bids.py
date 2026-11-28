@@ -1,4 +1,4 @@
-"""Write BIDS physio files (`*_physio.tsv.gz` + `.json`) and read EDF without pyedflib."""
+"""Write BIDS physio files (`*_physio.tsv.gz` + `.json`) and read EDF."""
 
 from __future__ import annotations
 

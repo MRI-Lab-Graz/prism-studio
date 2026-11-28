@@ -203,7 +203,6 @@ def _build_pyinstaller_args(name: str, hooks_dir: Path) -> list[str]:
         # Explicitly exclude optional packages (only for dev/scripts, not release builds)
         "--exclude-module=pyarrow",
         "--exclude-module=nibabel",
-        "--exclude-module=pyedflib",
         # Explicitly exclude docs/build packages (never needed in release builds)
         "--exclude-module=sphinx",
         "--exclude-module=sphinx_rtd_theme",
