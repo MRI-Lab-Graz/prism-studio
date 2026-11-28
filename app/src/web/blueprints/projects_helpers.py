@@ -1,4 +1,5 @@
 import json
+import threading
 from pathlib import Path
 
 from src.recent_projects import RECENT_MAX, record_recent
@@ -100,6 +101,11 @@ def _looks_like_wrong_delimiter(df, used_delimiter: str | None) -> bool:
     return any(delimiter in header for delimiter in suspicious_delimiters)
 
 
+# The page reads the list while recording a project: without this a read can meet a half-written
+# (empty) file, and the next record then drops the history. Re-entrant: recording reads and saves.
+_RECENT_LOCK = threading.RLock()
+
+
 def _recent_projects_file() -> Path:
     import src.config  # the settings folder tests redirect
 
@@ -165,7 +171,9 @@ def _stored_recent_projects() -> list[dict]:
     if not file_path.exists():
         return []
     try:
-        data = json.loads(file_path.read_text(encoding="utf-8"))
+        with _RECENT_LOCK:
+            text = file_path.read_text(encoding="utf-8")
+        data = json.loads(text)
         return _normalize_recent_projects(data) if isinstance(data, list) else []
     except Exception:
         return []
@@ -183,7 +191,8 @@ def _load_recent_projects() -> list[dict]:
 def _save_recent_projects(projects: list[dict]) -> list[dict]:
     normalized = _normalize_recent_projects(projects)
     file_path = _recent_projects_file()
-    file_path.write_text(json.dumps(normalized, indent=2), encoding="utf-8")
+    with _RECENT_LOCK:
+        file_path.write_text(json.dumps(normalized, indent=2), encoding="utf-8")
     return normalized
 
 
@@ -192,4 +201,5 @@ def _record_recent_project(project: dict) -> list[dict]:
     entry = _normalize_recent_projects([project])
     if not entry:
         return _stored_recent_projects()
-    return _save_recent_projects(record_recent(_stored_recent_projects(), entry[0]))
+    with _RECENT_LOCK:
+        return _save_recent_projects(record_recent(_stored_recent_projects(), entry[0]))

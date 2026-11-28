@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - EDF files are read and written with `edfio` (installed by default) instead of `pyedflib`. Converted Varioport files now name microvolts `uV` (before: `AuV`) and leave the unknown start date empty (before: the time of conversion).
 
 ### Fixed
+- The recent-projects list could be emptied when Studio read it while saving it.
 - Recipe Builder: confirming a scale name very quickly left the name dialog open over the page.
 - Export page: an output folder typed while the saved preferences were still loading was blanked, so the ZIP was written next to the project.
 - **Windows: the Projects, DataLad, Settings and Export pages lost the backslashes of the current project's path** (`C:\Users\...`), so their requests failed with "Invalid project path".

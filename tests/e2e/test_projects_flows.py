@@ -166,7 +166,10 @@ def test_switching_projects_from_the_recent_list_replaces_the_metadata_form(bare
     bare_page.fill("#metadataName", "Unsaved edit of the first project")
 
     bare_page.click("#projectsDropdown")
-    bare_page.locator(f'#projectsRecentList .navbar-recent-project[data-path={json.dumps(str(other), ensure_ascii=False)}]').click()
+    entry = bare_page.locator(f'#projectsRecentList .navbar-recent-project[data-path={json.dumps(str(other), ensure_ascii=False)}]')
+    stored = bare_page.request.get(f"{studio_url}/api/projects/recent").json()["projects"]
+    expect(entry, f"menu: {bare_page.inner_text('#projectsRecentList')!r}; server: {stored[:5]}").to_have_count(1)
+    entry.click()
 
     bare_page.wait_for_url("**/projects?preserve_current=1")
     open_study_metadata(bare_page)
