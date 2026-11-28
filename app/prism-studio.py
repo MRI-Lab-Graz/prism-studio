@@ -647,10 +647,6 @@ def cleanup_and_exit(exit_code=0):
         os._exit(exit_code)
 
 
-# Register cleanup on normal exit
-atexit.register(lambda: cleanup_and_exit(0))
-
-
 def _handle_uncaught_exception(exc_type, exc_value, exc_traceback):
     """Exit non-zero on crashes instead of letting atexit mask them as a clean exit.
 
@@ -666,8 +662,6 @@ def _handle_uncaught_exception(exc_type, exc_value, exc_traceback):
     )
     cleanup_and_exit(1)
 
-
-sys.excepthook = _handle_uncaught_exception
 
 # Secret key for session management.
 # Set PRISM_SECRET_KEY to pin sessions across restarts (e.g. reverse-proxy
@@ -1792,8 +1786,16 @@ def _launch_app_mode_window(url: str) -> Optional[subprocess.Popen]:
         return None
 
 
+def _install_exit_handlers() -> None:
+    """Only for the running app: at import this would force exit code 0 on the
+    importer (it hid every failing test)."""
+    atexit.register(lambda: cleanup_and_exit(0))
+    sys.excepthook = _handle_uncaught_exception
+
+
 def main():
     """Run the web application"""
+    _install_exit_handlers()
     from src.save_gate import ensure_prism_tools_env
     from src.share_publish import apply_env_identity
 

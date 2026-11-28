@@ -1,5 +1,6 @@
 """install.sh must get uv onto a bare machine itself (after asking), not just
 print a curl command and exit: users may have nothing relevant installed."""
+import shutil
 import subprocess
 from pathlib import Path
 import pytest
@@ -21,6 +22,16 @@ def _fake(path, body):
     path.chmod(0o755)
 
 
+def _tools_without_downloaders(tmp_path):
+    """Only what the script needs: on Linux /bin also holds the real curl and wget."""
+    tools = tmp_path / "tools"
+    tools.mkdir(exist_ok=True)
+    for name in ("bash", "sh", "cat", "chmod", "mkdir"):
+        if not (tools / name).exists():
+            (tools / name).symlink_to(shutil.which(name))
+    return tools
+
+
 def _run_ensure_uv(tmp_path, answer, downloader=None):
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir(exist_ok=True)
@@ -37,10 +48,9 @@ ensure_uv && command -v uv
 """
     home = tmp_path / "home"
     home.mkdir(exist_ok=True)
-    # /bin only: no real curl/wget/uv (those live in /usr/bin or elsewhere)
     return subprocess.run(
         ["bash", "-c", script], input=answer,
-        env={"PATH": f"{bin_dir}:/bin", "HOME": str(home)},
+        env={"PATH": f"{bin_dir}:{_tools_without_downloaders(tmp_path)}", "HOME": str(home)},
         capture_output=True, text=True,
     )
 
