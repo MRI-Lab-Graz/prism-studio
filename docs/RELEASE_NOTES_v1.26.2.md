@@ -21,6 +21,10 @@ orphan: true
 - **IDs:** biometrics measures have shared IDs, survey IDs can be deprecated, and two new commands report which IDs link to outside vocabularies (`terms coverage`) and export those links (`terms export-links`).
 - **Your own surveys:** a project can recognise them by the wording of their items, without storing the item text.
 
+- **Much faster validation** of projects with many files (a 121-subject project: 19 s to 1.4 s for the PRISM rules, same messages).
+- **Participant columns have shared term IDs** (`"Term"` in `participants.json`); the validator gives notices, never errors.
+- **The save check works with `pip install prism-validator` alone.** Hooks written earlier still ask for `prism_tools`: run `prism_tools save-gate --install-hooks --project <root>` once.
+- **Recipe formulas can use participant variables** from `participants.tsv`.
 - **Imports tell you what they lose:** codebook imports warn about ignored text, repeated codes and equal answer labels.
 - **Raw LimeSurvey response exports** (`.xlsx`/`.csv`) are read completely.
 
