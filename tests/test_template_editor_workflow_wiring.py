@@ -508,6 +508,11 @@ class TestTemplateEditorWorkflowWiring(unittest.TestCase):
         self.assertIn("languageRequiredFor", editor)
         self.assertIn("data.languages.length === 0", source)
 
+    def test_both_translation_widgets_offer_the_languages_the_schema_requires(self):
+        """Description uses one widget, License and RecallPeriod the other: both need the English row."""
+        editor = (REPO_ROOT / "app" / "static" / "js" / "template-editor.js").read_text(encoding="utf-8")
+        self.assertEqual(editor.count("StudioTheme.translationKeys(fieldSchema, "), 2)
+
     def test_excel_group_load_sends_the_project_so_the_library_match_sees_its_templates(self):
         source = TEMPLATE_EDITOR_SOURCE_WORKFLOW_SCRIPT.read_text(encoding="utf-8")
         loader = source[source.index("async function loadExcelGroup") :]

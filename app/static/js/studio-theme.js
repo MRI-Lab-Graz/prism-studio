@@ -83,6 +83,9 @@
   const offersMultilingual = (sectionKey, fieldName, modality = 'survey') =>
     !(ENGLISH_ONLY[sectionKey] || []).includes(fieldName) && !(sectionKey === 'ITEM' && fieldName === 'Description' && modality !== 'survey');
 
+  // The language rows of a translated field: what the schema requires (English for the header) is always offered.
+  const translationKeys = (fieldSchema, value) => [...new Set([...(fieldSchema?.required || []), ...Object.keys(value || {})])];
+
   // Long text (a citation, a description): a full-width text area that grows with its text, never a one-line input.
   // It starts at 6 rows (a citation 4), grows to 25 rows and scrolls inside the box from there.
   const LONG_TEXT = ['Citation', 'Description', 'Reliability', 'Validity', 'Norming', 'Notes', 'PermissionsNote', 'Construct']
@@ -122,6 +125,7 @@
 
   const api = {
     offersMultilingual,
+    translationKeys,
     isLongText,
     longTextRows,
     autoGrow,

@@ -36,19 +36,23 @@ describe('applyPrimaryLanguage', () => {
         expect(template.ARSQ2.Description).toEqual({ de: 'Ich fühlte mich unruhig' });
     });
 
-    it('does the same for the Study texts', () => {
+    it('does the same for the Study texts a participant sees', () => {
         const template = plain();
+        template.Study.OriginalName = 'Fragebogen';
         applyPrimaryLanguage(template, 'de');
         expect(template.Study.Instructions).toEqual({ de: 'Bitte antworten Sie' });
-        expect(template.Study.Description).toEqual({ de: 'Imported from Pavlovia survey: ARSQ' });
+        expect(template.Study.OriginalName).toEqual({ de: 'Fragebogen' });
         expect(template.Study.TaskName).toBe('arsq'); // identifiers stay plain
     });
 
-    it('keys Study.RecallPeriod under the language too', () => {
+    it('leaves the English-only header texts plain: keyed under "de" they would fail the required "en"', () => {
         const template = plain();
-        template.Study.RecallPeriod = 'die letzten 2 Wochen';
+        template.Study.RecallPeriod = 'past 2 weeks';
+        template.Study.License = 'CC-BY';
         applyPrimaryLanguage(template, 'de');
-        expect(template.Study.RecallPeriod).toEqual({ de: 'die letzten 2 Wochen' });
+        expect(template.Study.Description).toBe('Imported from Pavlovia survey: ARSQ');
+        expect(template.Study.RecallPeriod).toBe('past 2 weeks');
+        expect(template.Study.License).toBe('CC-BY');
     });
 
     it('leaves texts that already have languages, and non-text fields, alone', () => {

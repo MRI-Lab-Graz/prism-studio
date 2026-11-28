@@ -1140,9 +1140,9 @@
       if (allowsObject && isTranslationObject(value)) {
         const container = document.createElement('div');
         const translationTable = document.createElement('div');
-        const langEntries = Object.entries(value || {});
 
-        for (const [lang, text] of langEntries) {
+        for (const lang of StudioTheme.translationKeys(fieldSchema, value)) {
+          const text = value[lang];
           const row = document.createElement('div');
           row.className = 'row g-2 align-items-start mb-2';
 
@@ -1803,7 +1803,8 @@
             onChange(Object.assign({}, tableData));
           }
         }
-        for (const [k, v] of Object.entries(tableData)) {
+        for (const k of StudioTheme.translationKeys(fieldSchema, tableData)) {
+          const v = tableData[k];
           const row = document.createElement('div');
           row.className = 'row g-2 align-items-center mb-1';
 
