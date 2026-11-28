@@ -1008,11 +1008,11 @@ class TestAPI:
         data = response.get_json()
         assert "error" in data
 
-    def test_validate_nonexistent_path(self, api_blueprint):
+    def test_validate_nonexistent_path(self, api_blueprint, tmp_path):
         """Test validation with non-existent path"""
         response = api_blueprint.post(
             "/api/v1/validate",
-            json={"path": "/nonexistent/path/to/dataset"},
+            json={"path": str(tmp_path / "does_not_exist")},
             content_type="application/json",
         )
         assert response.status_code == 404

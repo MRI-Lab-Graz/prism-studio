@@ -130,12 +130,12 @@ class TestValidateEndpointWithMock:
         )
         assert resp.status_code == 400
 
-    def test_nonexistent_path_returns_404(self, client, monkeypatch):
+    def test_nonexistent_path_returns_404(self, client, monkeypatch, tmp_path):
         monkeypatch.setattr(_api_module, "validate_dataset", self._mock_validate)
         resp = client.post(
             "/api/v1/validate",
             content_type="application/json",
-            data=json.dumps({"path": "/nonexistent/dataset/path"}),
+            data=json.dumps({"path": str(tmp_path / "does_not_exist")}),
         )
         assert resp.status_code == 404
 
