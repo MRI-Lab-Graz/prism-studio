@@ -39,3 +39,22 @@ def test_standard_export_without_validation_writes_a_zip_with_the_project_files(
     assert len(zips) == 1, app_page.inner_text("#exportProjectCard")[-400:]
     with zipfile.ZipFile(zips[0]) as z:
         assert "dataset_description.json" in " ".join(z.namelist())
+
+
+def test_preferences_that_arrive_late_keep_the_typed_output_folder(app_page, studio_url, tmp_path):
+    """They used to blank it, and the export then landed next to the project."""
+    held = []
+    app_page.route("**/api/projects/preferences/export?*", lambda route: held.append(route))
+    app_page.goto(f"{studio_url}/projects/share")
+    expect(app_page.locator("#exportProjectCard")).to_be_visible()
+    if not app_page.locator("#exportOutputFolder").is_visible():
+        app_page.locator('[data-bs-target="#exportSection"]').click()
+    app_page.fill("#exportOutputFolder", str(tmp_path))
+    app_page.wait_for_timeout(500)
+    assert held, "the page asked for its saved preferences"
+
+    for route in held:
+        route.continue_()
+
+    app_page.wait_for_timeout(1000)
+    expect(app_page.locator("#exportOutputFolder")).to_have_value(str(tmp_path))

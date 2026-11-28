@@ -36,12 +36,10 @@ setup(
     include_package_data=True,
     install_requires=read_requirements("requirements-runtime.txt"),
     extras_require={
-        "dev": ["pytest", "pytest-cov", "codecov-cli", "black", "flake8"],
+        "dev": ["pytest", "pytest-cov", "black", "flake8"],
         "docs": read_requirements("requirements-docs.txt"),
         "optional": read_requirements("requirements-optional.txt"),
         "full": ["bidsschematools", "nibabel"],
-        "demo": ["Pillow", "numpy", "matplotlib"],
-        "edf": ["pyedflib"],  # EDF/EDF+ file support (optional)
     },
     scripts=[
         "prism.py",
@@ -55,6 +53,9 @@ setup(
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
+        "Programming Language :: Python :: 3.14",
     ],
     python_requires=">=3.10",
     keywords="bids validation psychology neuroscience research data",

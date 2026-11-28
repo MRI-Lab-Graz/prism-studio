@@ -1,5 +1,6 @@
 import struct
 import json
+from fractions import Fraction
 import argparse
 import re
 from datetime import date
@@ -919,7 +920,7 @@ def _extract_trigger_annotations_from_signal(
 
 
 class _BidsCollector:
-    """Stands in for pyedflib.EdfWriter when writing BIDS `.tsv.gz` + flat `.json` (no pyedflib)."""
+    """Collects what the converter writes and makes BIDS `.tsv.gz` + flat `.json` of it."""
 
     def __init__(self, bids_base):
         self.bids_base = Path(bids_base)
@@ -955,6 +956,54 @@ class _BidsCollector:
         )
 
 
+class _EdfWriter(_BidsCollector):
+    """The same interface, written as EDF+ with edfio on close()."""
+
+    def __init__(self, path):
+        self.path = str(path)
+        self.headers: list[dict] = []
+        self.signals: list = []
+        self.annotations: list[tuple] = []
+
+    def writeAnnotation(self, onset, duration, text):
+        self.annotations.append((onset, duration, text))
+
+    def close(self):
+        import edfio
+
+        def ascii_field(text, size):  # fixed-width printable ASCII; the RAW header pads with NULs
+            text = str(text).split("\0")[0].replace("µ", "u")
+            return re.sub(r"[^ -~]", "?", text)[:size]
+
+        if not self.signals or not all(len(x) for x in self.signals):
+            raise ValueError("no samples were written")
+
+        signals = []
+        for header, samples in zip(self.headers, self.signals):
+            # an EDF data record holds a whole number of samples: 1 s, longer for a fractional rate
+            rate = Fraction(float(header["sample_frequency"])).limit_denominator(100)
+            low, high = header["physical_min"], header["physical_max"]
+            data = np.asarray(samples, dtype=float)
+            data = np.pad(data, (0, -len(data) % rate.numerator))  # zeros fill the last record
+            signals.append(
+                edfio.EdfSignal(
+                    np.clip(data, low, high),
+                    float(rate),
+                    label=ascii_field(header["label"], 16),
+                    transducer_type=ascii_field(header["transducer"], 80),
+                    physical_dimension=ascii_field(header["dimension"], 8),
+                    physical_range=(low, high),
+                    digital_range=(header["digital_min"], header["digital_max"]),
+                    prefiltering=ascii_field(header["prefilter"], 80),
+                )
+            )
+        edfio.Edf(
+            signals,
+            annotations=[edfio.EdfAnnotation(*a) for a in self.annotations],
+            data_record_duration=rate.denominator,
+        ).write(self.path)
+
+
 def convert_varioport(
     raw_path,
     output_path,
@@ -969,7 +1018,7 @@ def convert_varioport(
 
     With ``bids_base`` set, ``output_path``/``sidecar_path`` are ignored and the
     signals are written as ``<bids_base>.tsv.gz`` + flat ``<bids_base>.json``
-    without pyedflib.
+    without writing EDF.
 
     Returns:
         dict: Written sidecar metadata (includes AverageHeartRateBPM when estimable)
@@ -1181,30 +1230,8 @@ def convert_varioport(
 
             signal_headers.append(header)
 
-        # Initialize EDF Writer
-        # pyedflib is an optional dependency (no wheels for Python 3.13+), so
-        # it is imported here rather than at module import time -- everything
-        # in this module except EDF writing works without it.
-        if bids_base is not None:
-            f_edf = _BidsCollector(bids_base)
-            f_edf.setSignalHeaders(signal_headers)
-        else:
-            try:
-                import pyedflib
-            except ImportError as exc:  # pragma: no cover - exercised via test double
-                raise RuntimeError(
-                    "Writing EDF output requires pyedflib. Install it with: "
-                    "pip install pyedflib"
-                ) from exc
-
-            try:
-                f_edf = pyedflib.EdfWriter(
-                    output_path, len(active_channels), file_type=pyedflib.FILETYPE_EDFPLUS
-                )
-                f_edf.setSignalHeaders(signal_headers)
-            except Exception as e:
-                print(f"Error initializing EDF writer: {e}")
-                return
+        f_edf = _BidsCollector(bids_base) if bids_base is not None else _EdfWriter(output_path)
+        f_edf.setSignalHeaders(signal_headers)
 
         channel_data: dict[str, np.ndarray] = {}  # Only used for Type 6
         trigger_annotations: list[tuple[float, float, str]] = []

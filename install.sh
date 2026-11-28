@@ -194,23 +194,22 @@ ensure_min_python_version() {
     "$candidate" - <<'PY'
 import sys
 
-# Upper bound: several pinned scientific wheels (pyedflib, ...) have no
-# builds for Python 3.13+, and pip then falls back to a source build.
+# One version only: the one the release lock and CI use.
 current = sys.version_info[:3]
-if not ((3, 10) <= current[:2] <= (3, 12)):
+if current[:2] != (3, 14):
     raise SystemExit(1)
 print(f"{current[0]}.{current[1]}.{current[2]}")
 PY
     local status=$?
 
-    # Prefer an installed 3.10-3.12 over a uv-managed one: uv's Python can abort in
+    # Prefer an installed 3.14 over a uv-managed one: uv's Python can abort in
     # ensurepip with --copies on macOS, forcing the symlinked-venv fallback.
     if [ $status -ne 0 ] && [ -z "${PRISM_PYTHON:-}" ]; then
         local minor found
-        for minor in 12 11 10; do
+        for minor in 14; do
             found="$(PATH="$PATH:/opt/homebrew/bin:/usr/local/bin" command -v "python3.$minor" || true)"
             if [ -n "$found" ] && [ -x "$found" ]; then
-                # A venv built through a symlink (uv's ~/.local/bin/python3.12 shim)
+                # A venv built through a symlink (uv's ~/.local/bin/python3.14 shim)
                 # records the symlink's dir as `home` and cannot find its stdlib.
                 while [ -L "$found" ]; do
                     local link
@@ -228,11 +227,11 @@ PY
     fi
 
     if [ $status -ne 0 ] && [ -z "${PRISM_PYTHON:-}" ] && command -v uv >/dev/null 2>&1; then
-        echo_info "System Python ($candidate) is not 3.10-3.12; asking uv to provide one..."
+        echo_info "System Python ($candidate) is not 3.14; asking uv to provide one..."
         local uv_python
-        uv_python="$(uv python find --system '>=3.10,<3.13' 2>/dev/null)"
+        uv_python="$(uv python find --system '>=3.14,<3.15' 2>/dev/null)"
         if [ -z "$uv_python" ]; then
-            uv python install 3.12 && uv_python="$(uv python find --system '>=3.10,<3.13' 2>/dev/null)"
+            uv python install 3.14 && uv_python="$(uv python find --system '>=3.14,<3.15' 2>/dev/null)"
         fi
         if [ -n "$uv_python" ] && [ -x "$uv_python" ]; then
             echo_success "Using uv-managed Python: $uv_python"
@@ -243,8 +242,8 @@ PY
 
     if [ $status -ne 0 ]; then
         echo_error "Unsupported Python interpreter: $candidate"
-        echo_error "PRISM source setup requires Python 3.10-3.12."
-        echo_info "Install Python 3.10, 3.11 or 3.12 and rerun setup (or set PRISM_PYTHON to a compatible interpreter)."
+        echo_error "PRISM source setup requires Python 3.14."
+        echo_info "Install Python 3.14 and rerun setup (or set PRISM_PYTHON to a compatible interpreter)."
         exit 1
     fi
 }
@@ -267,6 +266,9 @@ reset_unusable_venv() {
         rm -rf "$VENV_DIR"
     elif ! is_python_executable_usable "$VENV_PYTHON_UNIX"; then
         echo_info "Existing '$VENV_DIR' has an unusable Python interpreter; recreating it."
+        rm -rf "$VENV_DIR"
+    elif ! "$VENV_PYTHON_UNIX" -c "import sys; raise SystemExit(sys.version_info[:2] != (3, 14))"; then
+        echo_info "Existing '$VENV_DIR' uses another Python version; recreating it."
         rm -rf "$VENV_DIR"
     else
         echo_info "Virtual environment already exists in '$VENV_DIR' - reusing it."

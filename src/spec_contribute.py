@@ -369,10 +369,11 @@ def proposal_for_new_kind(description: str | None, sample: str, closest: str | N
         quote_via=quote,
     )
     url = f"https://github.com/{ISSUE_REPO}/issues/new?{query}"
+    unix_sample = sample.replace("\r\n", "\n")
     too_long = not problems and len(url) > URL_LIMIT
     return {
         "issue_url": url if not problems and not too_long else None,
         "note": "too long for a link: use the download and paste it into the form" if too_long else None,
-        "text": f"Description:\n{description}\n\nSuggested name: {name or 'not given'}\n\nClosest kind of data: {closest or 'not given'}\n\nSample file:\n{sample}\n",
+        "text": f"Description:\n{description}\n\nSuggested name: {name or 'not given'}\n\nClosest kind of data: {closest or 'not given'}\n\nSample file:\n{unix_sample}\n",
         "problems": problems,
     }

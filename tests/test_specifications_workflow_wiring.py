@@ -19,7 +19,7 @@ sys.stdout.write(m.app.test_client().get(sys.argv[1]).get_data(as_text=True))
 def render(path):
     """The page as a fresh visitor (no project open) sees it."""
     return subprocess.run(
-        [sys.executable, "-c", _RENDER, path], capture_output=True, text=True, check=True, cwd=REPO_ROOT
+        [sys.executable, "-c", _RENDER, path], capture_output=True, encoding="utf-8", check=True, cwd=REPO_ROOT
     ).stdout
 
 

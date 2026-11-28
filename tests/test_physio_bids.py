@@ -77,13 +77,6 @@ def test_read_edf_rejects_truncated(tmp_path, make_edf):
     assert list(out.iterdir()) == []
 
 
-def test_edf_to_bids_works_without_pyedflib(tmp_path, make_edf, monkeypatch):
-    monkeypatch.setitem(sys.modules, "pyedflib", None)
-    p = make_edf(tmp_path / "a.edf", {"ecg": (np.arange(8.0), 4)})
-    out = edf_to_bids_physio(p, tmp_path, "sub-01", "ecg")
-    assert [x.name for x in out] == ["sub-01_recording-ecg_physio.tsv.gz", "sub-01_recording-ecg_physio.json"]
-
-
 def test_edf_to_bids_groups_by_rate(tmp_path, make_edf):
     p = make_edf(tmp_path / "a.edf", {"ecg": (np.zeros(512), 256), "resp": (np.zeros(64), 32)}, duration=2.0)
     out = edf_to_bids_physio(p, tmp_path, "sub-01", "phys")

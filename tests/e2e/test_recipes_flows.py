@@ -33,7 +33,7 @@ def scored_project(project, tmp_path):
     shutil.copy(DEMO, project / "code" / "library" / "survey" / "survey-demo.json")
     # two sessions per subject: a "single" project would write both as ses-1
     (project / "project.json").write_text(json.dumps({
-        **json.loads((project / "project.json").read_text()), "StudyDesign": {"Timepoints": "multiple"},
+        **json.loads((project / "project.json").read_text(encoding="utf-8")), "StudyDesign": {"Timepoints": "multiple"},
     }))
     save_session_map(project, {"1": "1", "2": "2"})
     source = tmp_path / "demo.csv"
@@ -159,7 +159,7 @@ def test_anonymizing_replaces_the_ids_consistently_and_keeps_the_scores(app_page
     # The re-identification key stays in the project's code/, never in the shareable folder.
     assert not list(out.rglob("participants_mapping.json"))
     key_file = scored_project / "code/anonymization/participants_mapping.json"
-    mapping = json.loads(key_file.read_text())["mapping"]
+    mapping = json.loads(key_file.read_text(encoding="utf-8"))["mapping"]
     assert set(mapping) == {"sub-P001", "sub-P002"}
     assert mapping["sub-P001"] == ids[0] and mapping["sub-P002"] == ids[2]
 
@@ -192,7 +192,7 @@ def test_sav_export_keeps_the_value_labels(app_page, studio_url, scored_project)
 def test_a_custom_recipe_folder_overrides_the_official_recipe(app_page, studio_url, scored_project, tmp_path):
     custom = tmp_path / "my-recipes"
     custom.mkdir()
-    recipe = json.loads(RECIPE.read_text())
+    recipe = json.loads(RECIPE.read_text(encoding="utf-8"))
     recipe["Scores"][0]["Method"] = "mean"
     recipe["Scores"][0]["Range"] = {"min": 0, "max": 4}
     (custom / "recipe-demo.json").write_text(json.dumps(recipe))

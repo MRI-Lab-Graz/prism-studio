@@ -1,5 +1,6 @@
 """Run the PyPI validator the way a user gets it: only the files the wheel build stages."""
 
+import os
 import importlib.util
 import subprocess
 import sys
@@ -20,6 +21,6 @@ def stage_wheel(dest: Path) -> Path:
 def run_validator(prism: Path, dataset: Path, cwd: Path, *args: str) -> subprocess.CompletedProcess:
     return subprocess.run(
         [sys.executable, str(prism), str(dataset), "--no-bids", *args],
-        capture_output=True, text=True, timeout=300, cwd=cwd,
-        env={"PATH": "/usr/bin:/bin", "PRISM_SKIP_VENV_CHECK": "1", "HOME": str(cwd)},
+        capture_output=True, encoding="utf-8", timeout=300, cwd=cwd,
+        env={"SYSTEMROOT": os.environ.get("SYSTEMROOT", ""), "USERPROFILE": str(cwd), "PATH": "/usr/bin:/bin", "PRISM_SKIP_VENV_CHECK": "1", "HOME": str(cwd)},
     )

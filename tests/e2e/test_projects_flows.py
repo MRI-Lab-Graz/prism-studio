@@ -81,7 +81,7 @@ def test_study_metadata_edit_is_saved_to_the_project_and_survives_reload(app_pag
     app_page.click("#createProjectSubmitBtn")
 
     expect(app_page.locator("#metadataSaveStatus")).to_contain_text("aved")
-    description = json.loads((project / "dataset_description.json").read_text())
+    description = json.loads((project / "dataset_description.json").read_text(encoding="utf-8"))
     assert description["Name"] == "Sleep and memory"
 
     app_page.reload()
@@ -114,7 +114,7 @@ def test_create_project_never_overwrites_an_existing_folder(bare_page, studio_ur
     bare_page.click("#createProjectSubmitBtnTop")
     bare_page.wait_for_timeout(1500)
 
-    assert (existing / "precious.txt").read_text() == "keep me"
+    assert (existing / "precious.txt").read_text(encoding="utf-8") == "keep me"
     assert not (existing / "project.json").exists()
 
 
@@ -122,6 +122,7 @@ def test_open_project_with_a_wrong_path_shows_an_error(bare_page, studio_url, tm
     bare_page.goto(f"{studio_url}/projects")
     bare_page.click("#card-open")
     bare_page.fill("#existingPath", str(tmp_path / "does_not_exist"))
+    bare_page.allowed_http = {400: "/api/projects/current"}
 
     bare_page.click("#loadProjectBtn")
 
@@ -165,7 +166,10 @@ def test_switching_projects_from_the_recent_list_replaces_the_metadata_form(bare
     bare_page.fill("#metadataName", "Unsaved edit of the first project")
 
     bare_page.click("#projectsDropdown")
-    bare_page.locator(f'#projectsRecentList .navbar-recent-project[data-path="{other}"]').click()
+    entry = bare_page.locator(f'#projectsRecentList .navbar-recent-project[data-path={json.dumps(str(other), ensure_ascii=False)}]')
+    stored = bare_page.request.get(f"{studio_url}/api/projects/recent").json()["projects"]
+    expect(entry, f"menu: {bare_page.inner_text('#projectsRecentList')!r}; server: {stored[:5]}").to_have_count(1)
+    entry.click()
 
     bare_page.wait_for_url("**/projects?preserve_current=1")
     open_study_metadata(bare_page)
@@ -266,7 +270,7 @@ def test_timepoints_is_required_and_saved_with_the_project(bare_page, studio_url
     bare_page.click("#createProjectSubmitBtnTop")
 
     expect(bare_page.locator("#createResult")).to_contain_text("long_study")
-    saved = json.loads((tmp_path / "long_study" / "project.json").read_text())
+    saved = json.loads((tmp_path / "long_study" / "project.json").read_text(encoding="utf-8"))
     assert saved["StudyDesign"]["Timepoints"] == "multiple"
     assert saved["StudyDesign"]["SessionLabels"] == "time"
 

@@ -148,7 +148,7 @@ def _sheet(path, name):
 
 def _tiny(tmp_path, text, name="in.csv"):
     p = tmp_path / name
-    p.write_text(text, encoding="utf-8")
+    p.write_bytes(text.encode("utf-8"))  # no newline translation: cells hold the exact bytes
     return p
 
 

@@ -73,10 +73,10 @@ if %ERRORLEVEL% equ 0 (
 )
 
 echo.
-echo Checking pyedflib...
-python -c "import pyedflib; print('✓ pyedflib version:', pyedflib.__version__)" 2> nul
+echo Checking edfio...
+python -c "import edfio; print('✓ edfio version:', edfio.__version__)" 2> nul
 if %ERRORLEVEL% neq 0 (
-    echo ✗ pyedflib not available
+    echo ✗ edfio not available
     echo   RAW files will be copied instead of converted to EDF
 )
 

@@ -113,31 +113,8 @@ DOCS_BUILD_WARNING_BASELINE = 16
 # Remove GHSA-5239-wwwm-4pmq once a fixed Pygments release is available
 # in the project's package index/resolver.
 #
-# PYSEC-2026-3552 (cryptography, fixed in 50.0.0): Bleichenbacher oracle in
-# PKCS#7 EnvelopedData/S-MIME decryption (pkcs7_decrypt_der/_pem/_smime).
-# This codebase never calls those APIs -- cryptography is only used here for
-# TLS/hashing primitives, not S/MIME decryption -- so the finding is not
-# reachable. Cannot upgrade past 49.x to pick up the fix anyway: cryptography
-# 50.0.0 still ships no macOS x86_64 wheel (confirmed via PyPI's file
-# listing, arm64-only since 49.0.0), and bumping the pin breaks the Intel
-# macOS PyInstaller build the same way reverted in commit 00213061. Remove
-# this entry once cryptography restores an Intel-mac wheel and the pin in
-# requirements-runtime.txt can move to >=50.
-#
-# filelock 4.1.0 (CVE-2026-112906/112907/112913/112914/112937/112940, fixed in
-# 4.2.1): the fix needs Python >= 3.11, and we still support 3.10, which is also
-# the Python the nightly audit runs on. Python >= 3.11 already resolves to 4.2.4.
-# filelock only comes in through nipype (requirements-optional.txt), so it is not
-# in the release lock. Remove these entries once Python 3.10 support ends.
 PIP_AUDIT_IGNORED_ADVISORIES = {
     "GHSA-5239-wwwm-4pmq",
-    "PYSEC-2026-3552",
-    "CVE-2026-112906",
-    "CVE-2026-112907",
-    "CVE-2026-112913",
-    "CVE-2026-112914",
-    "CVE-2026-112937",
-    "CVE-2026-112940",
 }
 
 # npm advisories we cannot fix yet. GHSA-fc5q-39xc-vjpf (picomatch ReDoS, 2026-10-19):

@@ -134,7 +134,7 @@ def test_boilerplate_names_the_picked_instrument(app_page, studio_url, tmp_path)
     target = tmp_path / files[0].suggested_filename
     files[0].save_as(target)
 
-    assert "demonstration" in target.read_text() or "DEMO" in target.read_text()
+    assert "demonstration" in target.read_text(encoding="utf-8") or "DEMO" in target.read_text(encoding="utf-8")
 
 
 def test_select_all_and_clear_work_on_a_whole_section(app_page, studio_url):
@@ -151,7 +151,7 @@ def test_select_all_and_clear_work_on_a_whole_section(app_page, studio_url):
 
 
 def test_a_template_saved_in_the_project_shows_up_as_a_project_template(app_page, studio_url, project):
-    source = json.loads((OFFICIAL / "survey-demo.json").read_text())
+    source = json.loads((OFFICIAL / "survey-demo.json").read_text(encoding="utf-8"))
     (project / "code" / "library" / "survey" / "survey-mine.json").write_text(
         json.dumps({**source, "Study": {**source["Study"], "OriginalName": {"en": "My own scale"}}})
     )

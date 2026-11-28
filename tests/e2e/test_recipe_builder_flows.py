@@ -80,7 +80,7 @@ def test_save_writes_the_recipe_into_the_project_and_says_where(app_page, studio
     app_page.click("#rbSaveBtn")
 
     expect(app_page.locator("#rbStatus")).to_contain_text("Recipe saved", timeout=30000)
-    saved = json.loads((project / RECIPE_FILE).read_text())
+    saved = json.loads((project / RECIPE_FILE).read_text(encoding="utf-8"))
     assert saved["Survey"]["TaskName"] == "demo"
     assert saved["Scores"][0]["Items"] == ["DEMO01", "DEMO02", "DEMO03"]
     expect(app_page.locator("#rbStatus")).to_contain_text("recipe-demo.json")
@@ -131,7 +131,7 @@ def test_saving_keeps_everything_in_the_recipe_that_the_builder_does_not_edit(ap
     app_page.click("#rbSaveBtn")
 
     expect(app_page.locator("#rbStatus")).to_contain_text("Recipe saved", timeout=30000)
-    saved = json.loads(recipe_path.read_text())
+    saved = json.loads(recipe_path.read_text(encoding="utf-8"))
     assert saved["Psychometrics"] == hand_written["Psychometrics"]
     assert saved["Usage"] == hand_written["Usage"]
 
@@ -232,3 +232,17 @@ def test_a_scale_named_like_an_item_or_the_id_column_is_refused_on_save(app_page
 
     expect(app_page.locator("#rbStatus")).to_contain_text("collides with an ID column or an item", timeout=30000)
     assert not (project / RECIPE_FILE).exists()
+
+
+def test_a_name_confirmed_while_the_dialog_still_fades_in_closes_it(app_page, studio_url, project):
+    """Bootstrap ignores hide() during the fade, so the dialog stayed open over the page."""
+    open_builder(app_page, studio_url, project)
+    app_page.evaluate("""() => {
+        document.getElementById('rbAddScaleBtn').click();
+        document.getElementById('rbScaleNameInput').value = 'Total';
+        document.getElementById('rbScaleNameConfirmBtn').click();
+    }""")
+
+    expect(app_page.locator("#rbScaleCanvas .rb-scale-card")).to_have_count(1)
+    app_page.wait_for_timeout(1000)  # the dialog is not displayed yet at once: let the fade finish
+    expect(app_page.locator("#rbScaleNameModal")).to_be_hidden()

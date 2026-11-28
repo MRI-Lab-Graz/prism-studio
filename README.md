@@ -7,7 +7,7 @@
 <p align="center"><strong>Principled Research Information & Sidecar Model</strong></p>
 
 <p align="center">
-	<img src="https://img.shields.io/badge/python-3.10--3.12-blue" alt="Python 3.10-3.12">
+	<img src="https://img.shields.io/badge/python-3.14-blue" alt="Python 3.14">
 	<img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="Platform">
 	<img src="https://img.shields.io/badge/BIDS-compatible-green" alt="BIDS compatible">
 	<a href="https://prism-studio.readthedocs.io/en/latest/ONTOLOGY_READY.html"><img src="https://img.shields.io/badge/ontology-ready-blueviolet" alt="Ontology-ready"></a>
@@ -61,11 +61,8 @@ officially accepts PRISM-formatted datasets alongside plain BIDS — see the
 
 ## Installation
 
-Python 3.10, 3.11, or 3.12 is required for the installer (3.9 and older
-lack required features; 3.13+ has no wheels yet for some pinned scientific
-dependencies). `install.sh` checks this automatically and, if your default
-`python3` is outside that range, uses `uv` to find or install a compatible
-version for you — no manual Python install needed.
+The installer uses Python 3.14. `install.sh` checks this automatically and, if your default
+`python3` is another version, uses `uv` to find or install 3.14 for you — no manual Python install needed.
 
 ### Installer (recommended)
 

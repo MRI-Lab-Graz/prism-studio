@@ -10,7 +10,7 @@ AGE = {"id": "age", "label": "Age", "term": "nb:Age", "type": "numeric",
 def test_eligibility_criteria_load_edit_and_save(app_page, studio_url, project):
     """Criteria in project.json show as rows; a criterion added in the form is saved back."""
     page = app_page
-    meta = json.loads((project / "project.json").read_text())
+    meta = json.loads((project / "project.json").read_text(encoding="utf-8"))
     meta["Eligibility"] = {"Criteria": [AGE]}
     (project / "project.json").write_text(json.dumps(meta))
     page.goto(f"{studio_url}/projects")
@@ -35,7 +35,7 @@ def test_eligibility_criteria_load_edit_and_save(app_page, studio_url, project):
 
     page.click("#createProjectSubmitBtn")
     expect(page.locator("#metadataSaveStatus")).to_contain_text("aved")
-    saved = json.loads((project / "project.json").read_text())["Eligibility"]["Criteria"]
+    saved = json.loads((project / "project.json").read_text(encoding="utf-8"))["Eligibility"]["Criteria"]
     assert saved[0] == AGE
     assert saved[1] == {"id": "sex", "label": "Sex", "term": "nb:Sex", "type": "categorical",
                         "mode": "exclude", "values": ["Male"]}

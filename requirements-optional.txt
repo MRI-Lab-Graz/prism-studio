@@ -4,14 +4,7 @@
 # Neuroimaging tooling
 Nibabel
 
-# Optional export formats and physio support
-#
-# pyedflib is NOT installed by default: it has no prebuilt wheels for Python
-# 3.13+, so installing it there triggers a source build needing a C compiler.
-# It is only required for writing EDF output (Varioport/ECG physio
-# conversion). Install it on demand: pip install pyedflib
-#   (or: pip install -e .[edf])
-
+# Optional export formats
 # openMINDS metadata export (BIDS → openMINDS schema)
 bids2openminds
 

@@ -61,6 +61,7 @@ def test_project_inside_another_git_repository_is_reported(clean_git, tmp_path):
     assert any("inside another git repository" in p for p in datalad_preflight(proj, which=_which_all))
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="chmod cannot make a folder unwritable on Windows")
 def test_unwritable_project_is_reported(clean_git, tmp_path):
     proj = tmp_path / "proj"
     proj.mkdir()
@@ -77,7 +78,7 @@ def test_git_that_cannot_commit_is_reported(clean_git, tmp_path):
     hook = hooks / "pre-commit"
     hook.write_text("#!/bin/sh\nexit 1\n")
     hook.chmod(0o755)
-    clean_git.write_text(clean_git.read_text() + f"[core]\n\thooksPath = {hooks}\n")
+    clean_git.write_text(clean_git.read_text() + f"[core]\n\thooksPath = {hooks.as_posix()}\n")
     proj = tmp_path / "proj"
     proj.mkdir()
     assert any("test commit" in p for p in datalad_preflight(proj, which=_which_all))

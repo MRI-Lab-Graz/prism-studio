@@ -1686,9 +1686,13 @@ document.addEventListener('DOMContentLoaded', function () {
         dropZone.appendChild(chip);
     }
 
+    let nameDialogOpening = false;
+    document.getElementById('rbScaleNameModal').addEventListener('shown.bs.modal', () => { nameDialogOpening = false; });
+
     addScaleBtn.addEventListener('click', () => {
         scaleNameInput.value = '';
         scaleNameInput.classList.remove('is-invalid');
+        nameDialogOpening = true;
         scaleNameModal.show();
         setTimeout(() => scaleNameInput.focus(), 300);
     });
@@ -1719,7 +1723,12 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         initSortable();
         renderCompatibilityNotice();
-        scaleNameModal.hide();
+        // Bootstrap ignores hide() while the dialog still fades in: close it once it is there.
+        if (nameDialogOpening) {
+            document.getElementById('rbScaleNameModal').addEventListener('shown.bs.modal', () => scaleNameModal.hide(), { once: true });
+        } else {
+            scaleNameModal.hide();
+        }
     });
 
     document.getElementById('rbScaleNameModal').addEventListener('keydown', e => {

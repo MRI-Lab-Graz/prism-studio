@@ -4,6 +4,7 @@ It used to push app/src/json_editor/src onto sys.path, so its modules were
 importable as the top-level names `backend` and `schema_loader`.
 """
 
+import os
 import json
 import subprocess
 import sys
@@ -31,7 +32,7 @@ def test_json_editor_needs_no_sys_path_entries():
         capture_output=True,
         text=True,
         cwd=ROOT,
-        env={"PRISM_STARTUP_HIDE_DETAILS": "1", "PATH": ""},
+        env={"SYSTEMROOT": os.environ.get("SYSTEMROOT", ""), "PRISM_STARTUP_HIDE_DETAILS": "1", "PATH": ""},
     )
     assert r.returncode == 0, r.stderr
     got = json.loads(r.stdout.strip().splitlines()[-1])

@@ -46,7 +46,7 @@ def test_the_command_line_validator_leaves_participants_tsv_alone(study):
     before = _digest(study / "participants.tsv")
     out = subprocess.run(
         [sys.executable, str(ROOT / "app" / "prism.py"), str(study), "--no-bids"],
-        capture_output=True, text=True, timeout=300, cwd=ROOT,
+        capture_output=True, encoding="utf-8", timeout=300, cwd=ROOT,
     ).stdout
 
     assert _digest(study / "participants.tsv") == before

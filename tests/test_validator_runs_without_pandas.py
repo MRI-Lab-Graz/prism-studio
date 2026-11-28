@@ -5,6 +5,7 @@ through survey_core, must import and work without it. CI's docker smoke test cau
 this once; this test catches it in seconds.
 """
 
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -25,7 +26,7 @@ def run_without_pandas(code: str) -> subprocess.CompletedProcess:
     return subprocess.run(
         [sys.executable, "-c", BLOCK_PANDAS + code],
         cwd=REPO,
-        env={"PRISM_SKIP_VENV_CHECK": "1", "PATH": "/usr/bin:/bin"},
+        env={"SYSTEMROOT": os.environ.get("SYSTEMROOT", ""), "PRISM_SKIP_VENV_CHECK": "1", "PATH": "/usr/bin:/bin"},
         capture_output=True,
         text=True,
         timeout=120,

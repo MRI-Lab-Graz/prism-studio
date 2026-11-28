@@ -73,7 +73,7 @@ def _no_user_app_settings(monkeypatch, tmp_path_factory):
 
 @pytest.fixture
 def make_edf():
-    """Factory building a minimal valid EDF by hand (no pyedflib needed).
+    """Factory building a minimal valid EDF by hand.
 
     make_edf(path, {label: (physical_samples, rate_hz)}, pmin=-100, pmax=100,
     dmin=-32768, dmax=32767, duration=1.0) -> path. Samples are encoded to

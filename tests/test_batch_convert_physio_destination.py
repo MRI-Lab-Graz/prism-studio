@@ -11,11 +11,6 @@ import pytest
 from src.batch_convert import batch_convert_folder, parse_bids_filename
 
 
-@pytest.fixture(autouse=True)
-def no_pyedflib(monkeypatch):
-    monkeypatch.setitem(sys.modules, "pyedflib", None)  # task-bound paths must never need it
-
-
 def _rel(folder):
     return sorted(p.relative_to(folder).as_posix() for p in folder.rglob("*") if p.is_file())
 
@@ -216,7 +211,7 @@ def _converted(**kw):
 
 
 def test_physio_report_for_task_free_file_does_not_say_none(tmp_path, make_edf):
-    """Placeholder report (no pyedflib) for a task-free file: no 'None' in its name."""
+    """Report for a task-free file: no 'None' in its name."""
     from src.batch_convert import _generate_physio_html_report
 
     edf = tmp_path / "sub-01_ses-pre_recording-ecg_physio.edf"
@@ -228,9 +223,7 @@ def test_physio_report_for_task_free_file_does_not_say_none(tmp_path, make_edf):
 
 
 def test_physio_report_main_path_handles_task_none(tmp_path, make_edf, monkeypatch):
-    """The full report (needs pyedflib) must not crash on task=None; here a stub reader is enough to reach the task fields."""
-    monkeypatch.delitem(sys.modules, "pyedflib", raising=False)  # drop the autouse block
-    pytest.importorskip("pyedflib")
+    """The full report must not crash on task=None."""
     from src.batch_convert import _generate_physio_html_report
 
     edf = tmp_path / "sub-01_ses-pre_recording-ecg_physio.edf"

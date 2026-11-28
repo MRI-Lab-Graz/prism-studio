@@ -83,7 +83,7 @@ def test_list_shows_local_now_official_and_invalid(tmp_path):
         {"TermID": "prism:cortisol", "Level": "analyte", "Label": "mine", "Aliases": [], "Description": "d"},
     ])
     (project / "code" / "specification" / "terms" / "biosample" / "broken.json").write_text("{no", encoding="utf-8")
-    status = {item["id"] or item["path"].split("/")[-1]: item["status"] for item in list_local_items(project)}
+    status = {item["id"] or Path(item["path"]).name: item["status"] for item in list_local_items(project)}
     assert status == {"local:dhea-s": "local", "local:cortisol": "now-official", "broken.json": "invalid"}
     assert all(item["layer"] == 3 and item["modality"] == "biosample" for item in list_local_items(project))
 

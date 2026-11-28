@@ -10,11 +10,6 @@ from src.batch_convert import batch_convert_folder
 from src.session_map import save_session_map
 
 
-@pytest.fixture(autouse=True)
-def no_pyedflib(monkeypatch):
-    monkeypatch.setitem(sys.modules, "pyedflib", None)
-
-
 def _project(tmp_path, timepoints):
     out = tmp_path / "out"
     out.mkdir()

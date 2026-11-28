@@ -7,7 +7,7 @@ from playwright.sync_api import expect
 
 
 def _make_unfinished(project):
-    meta = json.loads((project / "project.json").read_text())
+    meta = json.loads((project / "project.json").read_text(encoding="utf-8"))
     meta["Basics"]["Authors"] = []  # the gate blocks until Name, Authors, Keywords and Timepoints are set
     (project / "project.json").write_text(json.dumps(meta))
 

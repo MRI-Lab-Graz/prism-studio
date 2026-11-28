@@ -197,7 +197,7 @@ def test_overwrite_keeps_the_existing_creation_date(tmp_path):
     side = project / f"{STEM}.json"
     data = json.loads(side.read_text(encoding="utf-8"))
     data["Metadata"]["CreationDate"] = "2020-01-02"
-    side.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    side.write_bytes((json.dumps(data, indent=2, ensure_ascii=False) + "\n").encode("utf-8"))
     before = {p: (project / p).read_bytes() for p in first.written}
 
     forced = import_biosample(book, project, overwrite=True)

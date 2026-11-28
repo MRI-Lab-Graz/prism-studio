@@ -91,7 +91,7 @@ repository only — it does not touch anything else on your system, install
 anything system-wide, or need administrator/root access.
 
 It does need a terminal (Terminal.app on macOS, PowerShell on Windows) and
-Python 3.10 or newer ([python.org/downloads](https://www.python.org/downloads/)
+Python 3.14 ([python.org/downloads](https://www.python.org/downloads/)
 if you don't already have it) — a bigger one-time step than double-clicking
 a ZIP, but a terminal here is just a window you paste a handful of exact
 commands into, one at a time, waiting for each to finish before the next.

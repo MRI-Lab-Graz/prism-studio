@@ -1,6 +1,7 @@
 """Converter page: convert real input files the way a user does."""
 
 import json
+from pathlib import Path
 
 import pytest
 from playwright.sync_api import expect
@@ -14,7 +15,7 @@ DEMO_CSV = "participant_id,DEMO01,DEMO02,DEMO03,DEMO04,DEMO05,DEMO06,DEMO07,DEMO
 def longitudinal(project):
     """Choosing and typing a session is what a project with several timepoints offers (a one-timepoint
     project greys the session out: see test_single_timepoint_session_ui.py). Labels map to themselves."""
-    meta = json.loads((project / "project.json").read_text())
+    meta = json.loads((project / "project.json").read_text(encoding="utf-8"))
     meta["StudyDesign"] = {"Timepoints": "multiple"}
     (project / "project.json").write_text(json.dumps(meta))
     save_session_map(project, {label: label for label in ("1", "01", "2", "3", "pre", "post")})
@@ -109,7 +110,7 @@ def test_previewing_with_only_the_official_template_names_what_is_missing_and_le
 
     error = app_page.locator("#convertError")
     expect(error).to_contain_text("Technical/Respondent", timeout=30000)
-    expect(error).to_contain_text("code/library/survey/survey-demo.json")
+    expect(error).to_contain_text(str(Path("code/library/survey/survey-demo.json")))
     assert (project / "code" / "library" / "survey" / "survey-demo.json").is_file()  # to fill in, in the Template editor
     expect(app_page.locator("#convertBtn")).to_be_disabled()
     assert written_files(project) == []
@@ -222,7 +223,7 @@ def test_dates_mode_refreshes_the_session_map_panel_with_the_real_labels(app_pag
 
     app_page.allowed_http[409] = "/api/survey-detect-version-contexts"  # unmapped labels are the point
     app_page.allowed_http[400] = "/api/survey-detect-version-contexts"  # error mode has no session yet
-    meta = json.loads((project / "project.json").read_text())  # keep the complete project, change the timepoints
+    meta = json.loads((project / "project.json").read_text(encoding="utf-8"))  # keep the complete project, change the timepoints
     meta["StudyDesign"] = {"Timepoints": "multiple"}
     (project / "project.json").write_text(json.dumps(meta))
     shutil.copy(make_library(tmp_path) / "survey-wellbeing.json", project / "code" / "library" / "survey")
@@ -262,7 +263,7 @@ def test_review_table_shows_the_responses_and_a_skip_changes_the_preview(app_pag
     row2.locator("input[type=checkbox][data-role=skip]").check()   # skip a's first completed response
     expect(app_page.locator("#sessionAssignmentsBody tr[data-response-id='3'] .session-cell")).to_have_text("1")
     import json
-    saved = json.loads((project / "code" / "session_assignments.json").read_text())
+    saved = json.loads((project / "code" / "session_assignments.json").read_text(encoding="utf-8"))
     assert saved == {"version": 2, "surveys": {"999999": {"responses": {"2": {"skip": True}}}}}
 
 
@@ -289,7 +290,7 @@ def test_review_table_pre_skips_incomplete_rows_and_unticking_includes_them(app_
 
     expect(row1.locator(".session-cell")).to_have_text("1", timeout=15000)
     expect(row1.locator("input[data-role=skip]")).not_to_be_checked()
-    saved = json.loads((project / "code" / "session_assignments.json").read_text())
+    saved = json.loads((project / "code" / "session_assignments.json").read_text(encoding="utf-8"))
     assert saved == {"version": 2, "surveys": {"999999": {"responses": {"1": {"include": True}}}}}
 
 

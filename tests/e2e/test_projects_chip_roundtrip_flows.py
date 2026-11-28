@@ -15,7 +15,7 @@ def _open(page, studio_url, *targets):
 
 
 def _edit_project(project, **sections):
-    meta = json.loads((project / "project.json").read_text())
+    meta = json.loads((project / "project.json").read_text(encoding="utf-8"))
     for name, value in sections.items():
         meta.setdefault(name, {}).update(value)
     (project / "project.json").write_text(json.dumps(meta))
@@ -44,10 +44,10 @@ def test_untouched_lists_are_saved_exactly_as_they_were_loaded(app_page, studio_
     page.wait_for_timeout(1500)
     page.click("#createProjectSubmitBtn")
     expect(page.locator("#metadataSaveStatus")).to_contain_text("aved")
-    saved = json.loads((project / "project.json").read_text())
+    saved = json.loads((project / "project.json").read_text(encoding="utf-8"))
     assert saved["Overview"]["IndependentVariables"] == independent
     assert saved["Eligibility"]["InclusionCriteria"] == inclusion
-    assert json.loads((project / "dataset_description.json").read_text())["Funding"] == funding
+    assert json.loads((project / "dataset_description.json").read_text(encoding="utf-8"))["Funding"] == funding
 
 
 def test_criteria_with_odd_ids_load_and_each_chip_removes_only_itself(app_page, studio_url, project):
@@ -106,6 +106,6 @@ def test_removing_and_re_adding_a_criterion_keeps_its_hand_written_id(app_page, 
     expect(chips).to_have_count(1)
     page.click("#createProjectSubmitBtn")
     expect(page.locator("#metadataSaveStatus")).to_contain_text("aved")
-    saved = json.loads((project / "project.json").read_text())["Eligibility"]["Criteria"]
+    saved = json.loads((project / "project.json").read_text(encoding="utf-8"))["Eligibility"]["Criteria"]
     assert [c["id"] for c in saved] == ["min_age"]  # participants.json links to it keep working
     assert saved[0]["min"] == 21

@@ -304,26 +304,16 @@ def _create_physio_sidecar(
 
 
 def _extract_edf_metadata(edf_path: Path) -> dict:
-    """Extract metadata from an EDF file using pyedflib."""
+    """Extract metadata from an EDF file."""
     try:
-        import pyedflib
+        import edfio
         from collections import Counter
 
-        f = pyedflib.EdfReader(str(edf_path))
-
-        # Get basic info
-        n_channels = f.signals_in_file
-        duration = f.file_duration
-        start_datetime = f.getStartdatetime()
-
-        # Get channel info
-        channels = []
-        sampling_rates = []
-        for i in range(n_channels):
-            channels.append(f.getLabel(i))
-            sampling_rates.append(f.getSampleFrequency(i))
-
-        f.close()
+        edf = edfio.read_edf(edf_path, header_encoding="latin-1")
+        channels = list(edf.labels)
+        sampling_rates = [signal.sampling_frequency for signal in edf.signals]
+        duration = edf.duration
+        start_time = edf.starttime
 
         # Use the most common sampling rate as the default
         common_sr = (
@@ -333,9 +323,7 @@ def _extract_edf_metadata(edf_path: Path) -> dict:
         return {
             "SamplingFrequency": common_sr,
             "RecordingDuration": duration,
-            "StartTime": (
-                start_datetime.strftime("%H:%M:%S") if start_datetime else None
-            ),
+            "StartTime": start_time.strftime("%H:%M:%S"),
             "Channels": channels,
             "AllSamplingRates": sampling_rates,
         }
@@ -622,57 +610,32 @@ def _generate_physio_html_report(
 
     edf_path = edf_files[0]
 
-    try:
-        import pyedflib
-    except Exception:
-        report_dir = _physio_report_dir(output_folder, converted)
-        report_path = report_dir / _physio_report_name(converted)
-        report_path.write_text(
-            "<html><body><h1>Physio report unavailable</h1><p>pyedflib is required to generate reports.</p></body></html>",
-            encoding="utf-8",
-        )
-        return report_path
+    import edfio
 
-    with pyedflib.EdfReader(str(edf_path)) as reader:
-        labels = [reader.getLabel(i).strip() for i in range(reader.signals_in_file)]
-        if not labels:
-            return None
+    edf = edfio.read_edf(edf_path, lazy_load_data=False, header_encoding="latin-1")
+    channel_specs = [
+        {
+            "index": idx,
+            "label": signal.label.strip() or f"channel-{idx}",
+            "fs": float(signal.sampling_frequency),
+            "unit": signal.physical_dimension or "n/a",
+            "signal": np.asarray(signal.data, dtype=float),
+        }
+        for idx, signal in enumerate(edf.signals)
+    ]
+    if not channel_specs:
+        return None
 
-        channel_specs = []
-        for idx, label in enumerate(labels):
-            fs = float(reader.getSampleFrequency(idx))
-            try:
-                unit = reader.getPhysicalDimension(idx)
-            except Exception:
-                unit = ""
-            signal = np.asarray(reader.readSignal(idx), dtype=float)
-            channel_specs.append(
-                {
-                    "index": idx,
-                    "label": label or f"channel-{idx}",
-                    "fs": fs,
-                    "unit": unit or "n/a",
-                    "signal": signal,
-                }
-            )
-
-        ecg_idx = None
-        for idx, label in enumerate(labels):
-            lower = label.lower()
-            if "ecg" in lower or "ekg" in lower:
-                ecg_idx = idx
-                break
-        if ecg_idx is None:
-            ecg_idx = 0
-
-        ecg_label = labels[ecg_idx]
-        ecg_unit = (
-            channel_specs[ecg_idx]["unit"] if ecg_idx < len(channel_specs) else "uV"
-        )
-        sampling_rate = float(reader.getSampleFrequency(ecg_idx))
-        ecg = np.asarray(reader.readSignal(ecg_idx), dtype=float)
-        if ecg.size == 0:
-            return None
+    labels = [spec["label"] for spec in channel_specs]
+    ecg_idx = next(
+        (i for i, label in enumerate(labels) if "ecg" in label.lower() or "ekg" in label.lower()), 0
+    )
+    ecg_label = labels[ecg_idx]
+    ecg_unit = channel_specs[ecg_idx]["unit"]
+    sampling_rate = channel_specs[ecg_idx]["fs"]
+    ecg = channel_specs[ecg_idx]["signal"]
+    if ecg.size == 0:
+        return None
 
     sidecar_path = _find_physio_sidecar(output_folder, converted.task or "", edf_path)
     sidecar_info = {}
@@ -956,7 +919,7 @@ def convert_physio_file(
 
     try:
         if folder != "physio":
-            # Task-bound: BIDS tsv.gz + flat sidecar in the chosen folder (never pyedflib).
+            # Task-bound: BIDS tsv.gz + flat sidecar in the chosen folder (no EDF file is written).
             if ext == "edf":
                 from src.physio_bids import edf_to_bids_physio
 
@@ -1022,7 +985,7 @@ def convert_physio_file(
                 # Fallback: just copy file and create minimal sidecar
                 if log_callback:
                     log_callback(
-                        f"  ⚠️ Cannot convert RAW to EDF: {ie}. Missing pyedflib? Install with: pip install pyedflib",
+                        f"  ⚠️ Cannot convert RAW to EDF: {ie}. Missing a package? Run the setup script again",
                         "warning",
                     )
                     log_callback(

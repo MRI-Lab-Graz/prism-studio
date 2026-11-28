@@ -41,7 +41,7 @@ def _studio_post(path, view_name, project, table, **fields):
 
 
 def _same_but_for_the_folder(cli_payload, cli_project, studio_payload, studio_project):
-    swap = lambda payload, root: json.loads(json.dumps(payload).replace(str(root), "<project>"))  # noqa: E731
+    swap = lambda payload, root: json.loads(json.dumps(payload).replace(json.dumps(str(root))[1:-1], "<project>"))  # noqa: E731
     assert swap(cli_payload, cli_project) == swap(studio_payload, studio_project)
 
 

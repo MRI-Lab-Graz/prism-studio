@@ -83,8 +83,8 @@
 
 <script>
     // Template variables - must be rendered server-side
-    window.currentProjectPath = "{{ current_project.path or '' }}";
-    window.currentProjectName = "{{ current_project.name or '' }}";
-    window.currentProjectIcon = "{{ current_project.icon or '' }}";
+    window.currentProjectPath = {{ (current_project.path or '') | tojson }};
+    window.currentProjectName = {{ (current_project.name or '') | tojson }};
+    window.currentProjectIcon = {{ (current_project.icon or '') | tojson }};
 </script>
 {% endblock %}

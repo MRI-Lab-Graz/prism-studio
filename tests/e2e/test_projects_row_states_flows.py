@@ -11,7 +11,7 @@ from playwright.sync_api import expect
 @pytest.fixture
 def _no_authors_yet(project):
     """The shared project is complete (it has an author); these tests start with an empty author list."""
-    meta = json.loads((project / "project.json").read_text())
+    meta = json.loads((project / "project.json").read_text(encoding="utf-8"))
     del meta["Basics"]["Authors"]
     del meta["governance"]  # its contact would bring the author back
     (project / "project.json").write_text(json.dumps(meta))
@@ -100,16 +100,16 @@ def test_saving_a_loaded_project_without_touching_rows_keeps_authors_and_funding
     expect(page.locator("#metadataFundingList .chip-badge")).to_have_count(1)  # loaded = a chip
     page.click("#createProjectSubmitBtn")
     expect(page.locator("#metadataSaveStatus")).to_contain_text("aved")
-    saved = json.loads((project / "dataset_description.json").read_text())
+    saved = json.loads((project / "dataset_description.json").read_text(encoding="utf-8"))
     assert saved["Funding"] == ["FWF, P12345"]
-    assert "Lovelace" in (project / "project.json").read_text()  # authors live in project.json
+    assert "Lovelace" in (project / "project.json").read_text(encoding="utf-8")  # authors live in project.json
 
 
 
 
 @pytest.mark.usefixtures("_no_authors_yet")
 def test_location_picker_add_button_is_the_green_check_and_loaded_locations_are_chips(app_page, studio_url, project):
-    meta = json.loads((project / "project.json").read_text())
+    meta = json.loads((project / "project.json").read_text(encoding="utf-8"))
     meta["Recruitment"] = {"Location": "Graz, Austria"}
     (project / "project.json").write_text(json.dumps(meta))
     open_sections(app_page, studio_url, "#smRecruitmentExecutionGroupBody", "#smRecruitment")
@@ -123,7 +123,7 @@ def test_location_picker_add_button_is_the_green_check_and_loaded_locations_are_
 
 
 def _project_json_text(project):
-    return (project / "project.json").read_text()
+    return (project / "project.json").read_text(encoding="utf-8")
 
 
 def _fill_draft_author(page):
@@ -287,7 +287,7 @@ def test_accepting_an_author_searches_the_orcid_when_it_is_empty(app_page, studi
 
 
 def test_new_project_starts_without_the_previous_projects_criteria(app_page, studio_url, project):
-    meta = json.loads((project / "project.json").read_text())
+    meta = json.loads((project / "project.json").read_text(encoding="utf-8"))
     meta["Eligibility"] = {"Criteria": [{"id": "age", "label": "Age", "term": "nb:Age", "type": "numeric",
                                          "mode": "include", "min": 18, "max": 35, "unit": "years"}]}
     (project / "project.json").write_text(json.dumps(meta))
@@ -396,7 +396,7 @@ def test_a_duplicate_entry_is_not_added_twice(app_page, studio_url):
 
 
 def test_loaded_list_values_show_as_chips_and_count_towards_core(app_page, studio_url, project):
-    meta = json.loads((project / "project.json").read_text())
+    meta = json.loads((project / "project.json").read_text(encoding="utf-8"))
     meta["Eligibility"] = {"InclusionCriteria": ["Adults", "Healthy"]}
     (project / "project.json").write_text(json.dumps(meta))
     open_sections(app_page, studio_url, "#smRecruitmentExecutionGroupBody", "#smEligibility")

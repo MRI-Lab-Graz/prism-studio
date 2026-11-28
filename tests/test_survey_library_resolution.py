@@ -86,7 +86,7 @@ def test_cli_convert_without_library_uses_the_projects_own_templates(tmp_path):
     result = subprocess.run(
         [sys.executable, str(ROOT / "prism_tools.py"), "survey", "convert", "--input", str(table),
          "--output", str(project), "--id-column", "ID", "--lang", "en", "--dry-run", "--force"],
-        capture_output=True, text=True, timeout=180, cwd=ROOT,
+        capture_output=True, encoding="utf-8", timeout=180, cwd=ROOT,
     )
 
     assert "Could not find a survey template library" not in result.stdout
