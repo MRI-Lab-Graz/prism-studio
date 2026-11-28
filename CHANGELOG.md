@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - EDF files are read and written with `edfio` (installed by default) instead of `pyedflib`. Converted Varioport files now name microvolts `uV` (before: `AuV`) and leave the unknown start date empty (before: the time of conversion).
 
 ### Fixed
+- Export page: an output folder typed while the saved preferences were still loading was blanked, so the ZIP was written next to the project.
 - **Windows: the Projects, DataLad, Settings and Export pages lost the backslashes of the current project's path** (`C:\Users\...`), so their requests failed with "Invalid project path".
 - Windows: `spec propose-new-kind` with a sample file that has Windows line endings no longer writes doubled line breaks.
 - Recipe formulas can use `participants.tsv` columns: saving and scoring no longer reject them as unknown items, and the Recipe Builder offers them. A template item is never filled from a participant column of the same name. `recipes validate-file` takes `--project`.

@@ -249,6 +249,7 @@ def test_the_summary_says_what_is_proposed_and_what_is_only_context(bare_page, s
 
 
 def test_no_measurement_pulldown_is_wider_than_its_card(bare_page, studio_url):
+    bare_page.set_viewport_size({"width": 700, "height": 900})  # narrower than the longest label
     choose_kind(bare_page, studio_url, "environment")
     bare_page.locator("#spec-m-group").select_option("Sun and light")
     card = bare_page.locator("#spec-contribute").bounding_box()

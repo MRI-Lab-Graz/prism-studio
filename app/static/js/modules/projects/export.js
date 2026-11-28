@@ -1420,6 +1420,7 @@ export async function loadExportPreferences() {
     }
 
     const requestToken = ++exportPreferencesLoadToken;
+    const folderBefore = outputFolderInput?.value;  // typed while loading: keep it
 
     try {
         const resp = await fetchWithApiFallback(
@@ -1439,7 +1440,7 @@ export async function loadExportPreferences() {
         };
 
         lastLoadedExportPreferences = normalized;
-        if (outputFolderInput) {
+        if (outputFolderInput && outputFolderInput.value === folderBefore) {
             outputFolderInput.value = normalized.output_folder;
         }
         applyExportPreferencesToFilters(normalized);
@@ -1454,7 +1455,7 @@ export async function loadExportPreferences() {
             repository_mode: false,
             defacing_confirmation_mode: false,
         };
-        if (outputFolderInput) {
+        if (outputFolderInput && outputFolderInput.value === folderBefore) {
             outputFolderInput.value = '';
         }
         applyExportPreferencesToFilters(lastLoadedExportPreferences);
