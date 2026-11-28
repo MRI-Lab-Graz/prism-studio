@@ -52,8 +52,8 @@
 {% block scripts %}
 <script type="module" src="{{ url_for('static', filename='js/main.js', v=prism_static_asset_token) }}"></script>
 <script>
-    window.currentProjectPath = "{{ current_project.path or '' }}";
-    window.currentProjectName = "{{ current_project.name or '' }}";
-    window.currentProjectIcon = "{{ current_project.icon or '' }}";
+    window.currentProjectPath = {{ (current_project.path or '') | tojson }};
+    window.currentProjectName = {{ (current_project.name or '') | tojson }};
+    window.currentProjectIcon = {{ (current_project.icon or '') | tojson }};
 </script>
 {% endblock %}

@@ -327,7 +327,7 @@ def test_a_repeated_entry_field_exits_1():
 
 def test_spec_propose_new_kind_json_and_out(tmp_path):
     sample = tmp_path / "s.tsv"
-    sample.write_text("time\ttemp\n0\t33.1\n", encoding="utf-8")
+    sample.write_bytes(b"time\ttemp\n0\t33.1\n")
     out = tmp_path / "proposal.txt"
     code, text = _run("spec", "propose-new-kind", "--description", "Skin temperature", "--sample", str(sample),
                       "--closest", "physio", "--out", str(out), "--json")
@@ -595,3 +595,13 @@ def test_add_term_link_writes_the_project_mapping_and_shares_it(tmp_path):
     assert json.loads(mapping.read_text(encoding="utf-8")) == {"local:dhea-s.saliva": {"SameAs": {"loinc": "https://loinc.org/2191-5"}}}
     code, out = _run("spec", "propose", "--project", str(project), "--all", "--json")
     assert code == 0 and "mappings/biosample/dhea-s.json" in json.loads(out)["document"]["files"]
+
+
+def test_spec_propose_new_kind_text_has_one_line_ending_for_a_windows_sample(tmp_path):
+    sample = tmp_path / "s.tsv"
+    sample.write_bytes(b"time\ttemp\r\n0\t33.1\r\n")
+    out = tmp_path / "proposal.txt"
+    code, text = _run("spec", "propose-new-kind", "--description", "Skin temperature", "--sample", str(sample),
+                      "--out", str(out), "--json")
+    assert code == 0 and "\r" not in json.loads(text)["text"]
+    assert b"\r\r" not in out.read_bytes()

@@ -31,6 +31,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A survey's `OriginalName` and `Instructions` take any language; no `en` entry is needed (survey schema 2.1.7, specification v1.5.25). The template editor says which fields are English and which keep the original language.
 
 ### Fixed
+- **Windows: the Projects, DataLad, Settings and Export pages lost the backslashes of the current project's path** (`C:\Users\...`), so their requests failed with "Invalid project path".
+- Windows: `spec propose-new-kind` with a sample file that has Windows line endings no longer writes doubled line breaks.
 - Recipe formulas can use `participants.tsv` columns: saving and scoring no longer reject them as unknown items, and the Recipe Builder offers them. A template item is never filled from a participant column of the same name. `recipes validate-file` takes `--project`.
 - Template editor: after an import with another primary language, `Study.Description`, `RecallPeriod` and `License` offer the English entry the schema requires, so the template can be completed.
 - **PRISM validation is much faster** on projects with many files (a 121-subject project: 19 s to 1.4 s, same messages). Each schema is now prepared once per run, and identical sidecars are checked once.

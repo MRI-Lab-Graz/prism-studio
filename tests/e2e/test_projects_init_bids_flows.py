@@ -51,7 +51,7 @@ def test_init_names_the_project_after_the_dataset(bare_page, studio_url, bids):
     bare_page.click("#initBidsSubmitBtn")
 
     expect(bare_page.locator("#initBidsResult")).to_contain_text("project.json", timeout=60000)
-    assert json.loads((bids / "project.json").read_text())["name"] == "My BIDS"
+    assert json.loads((bids / "project.json").read_text(encoding="utf-8"))["name"] == "My BIDS"
     current = bare_page.request.get(f"{studio_url}/api/projects/current").json()
     assert current["name"] == "My BIDS"
 
@@ -80,7 +80,7 @@ def test_init_twice_keeps_the_existing_project_metadata(bare_page, studio_url, b
     bare_page.click("#initBidsSubmitBtn")
 
     expect(bare_page.locator("#initBidsResult")).to_be_visible(timeout=60000)
-    project = json.loads((bids / "project.json").read_text())
+    project = json.loads((bids / "project.json").read_text(encoding="utf-8"))
     assert project["Basics"]["Name"] == "Hand written"
     assert project["StudyDesign"]["Timepoints"] == "single"
 

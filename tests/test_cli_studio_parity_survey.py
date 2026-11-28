@@ -31,7 +31,7 @@ def _tree(root: Path) -> dict[str, str]:
 
 
 def _normalized(body, root):
-    return json.loads(json.dumps(body).replace(str(root), "<root>"))
+    return json.loads(json.dumps(body).replace(json.dumps(str(root))[1:-1], "<root>"))
 
 
 def _cli(project, source, capsys):

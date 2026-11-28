@@ -134,7 +134,7 @@ def test_project_page_no_longer_shows_datalad():
 def test_no_page_hardcodes_the_wcag_green():
     # The darker green belongs to the WCAG enhanced view only; pages take the theme colour so the switch changes them.
     hits = [
-        str(path.relative_to(APP))
+        path.relative_to(APP).as_posix()
         for pattern in ("static/css/**/*.css", "static/js/*.js", "templates/**/*.html")
         for path in APP.glob(pattern)
         if path.name != "studio-theme.css" and "#1a744d" in _text(path)

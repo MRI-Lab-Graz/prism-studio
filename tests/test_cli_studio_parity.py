@@ -80,7 +80,7 @@ def _written(project: Path) -> dict[str, str]:
     """Every file a conversion leaves in the project: name -> content."""
     wanted = ["task-*_survey.json", "code/library/survey/*.json", "sub-*/ses-*/survey/*.tsv", "participants.*"]
     return {
-        str(p.relative_to(project)): p.read_text(encoding="utf-8")
+        p.relative_to(project).as_posix(): p.read_text(encoding="utf-8")
         for pattern in wanted
         for p in sorted(project.glob(pattern))
     }
@@ -455,7 +455,7 @@ def test_listing_fixable_issues_answers_the_same_in_the_cli_and_in_studio(tmp_pa
     cli_issues = json.loads(capsys.readouterr().out)
     assert status == 200 and body["issues"]
     # the paths differ per project folder: compare with the folder name taken out
-    norm = lambda issues, root: json.loads(json.dumps(issues).replace(str(root), "<root>"))
+    norm = lambda issues, root: json.loads(json.dumps(issues).replace(json.dumps(str(root))[1:-1], "<root>"))
     assert norm(cli_issues, cli) == norm(body["issues"], studio)
 
 

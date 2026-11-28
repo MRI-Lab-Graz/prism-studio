@@ -31,7 +31,7 @@ def test_recent_chip_switches_projects_without_the_busy_alert(bare_page, studio_
     first, second, dialogs = _open_two_projects(bare_page, studio_url, tmp_path)
     bare_page.wait_for_timeout(1000)  # let the first project's metadata finish loading
 
-    bare_page.locator(f'#recentProjectsList [data-path="{second}"]').first.click()
+    bare_page.locator(f'#recentProjectsList [data-path={json.dumps(str(second), ensure_ascii=False)}]').first.click()
 
     expect(bare_page.locator("#currentProjectBanner, #projectBoxDeleteBtn").first).to_be_visible()
     current = bare_page.request.get(f"{studio_url}/api/projects/current").json()
@@ -44,14 +44,15 @@ def test_recent_chip_switches_away_from_a_project_whose_folder_is_gone(bare_page
     import shutil
 
     first, second, dialogs = _open_two_projects(bare_page, studio_url, tmp_path)
+    bare_page.wait_for_timeout(1000)  # its metadata load may still hold a file open (Windows)
     shutil.rmtree(first)
     bare_page.allowed_http = {400: "/api/projects/"}
     bare_page.goto(f"{studio_url}/projects")  # still "current", but its folder is gone
     bare_page.wait_for_timeout(1000)
 
     bare_page.click("#card-open")
-    expect(bare_page.locator(f'#recentProjectsList [data-path="{first}"]')).to_have_count(0)
-    bare_page.locator(f'#recentProjectsList [data-path="{second}"]').first.click()
+    expect(bare_page.locator(f'#recentProjectsList [data-path={json.dumps(str(first), ensure_ascii=False)}]')).to_have_count(0)
+    bare_page.locator(f'#recentProjectsList [data-path={json.dumps(str(second), ensure_ascii=False)}]').first.click()
 
     bare_page.wait_for_timeout(1500)
     assert dialogs == []

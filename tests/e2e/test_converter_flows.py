@@ -1,6 +1,7 @@
 """Converter page: convert real input files the way a user does."""
 
 import json
+from pathlib import Path
 
 import pytest
 from playwright.sync_api import expect
@@ -109,7 +110,7 @@ def test_previewing_with_only_the_official_template_names_what_is_missing_and_le
 
     error = app_page.locator("#convertError")
     expect(error).to_contain_text("Technical/Respondent", timeout=30000)
-    expect(error).to_contain_text("code/library/survey/survey-demo.json")
+    expect(error).to_contain_text(str(Path("code/library/survey/survey-demo.json")))
     assert (project / "code" / "library" / "survey" / "survey-demo.json").is_file()  # to fill in, in the Template editor
     expect(app_page.locator("#convertBtn")).to_be_disabled()
     assert written_files(project) == []

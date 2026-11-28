@@ -69,7 +69,7 @@ def test_studio_owned_files_are_allowed(tmp_path):
 def test_crlf_checkout_passes(tmp_path):
     studio, lock = _studio(tmp_path)
     p = studio / "docs/specs/survey.md"
-    p.write_bytes(p.read_bytes().replace(b"\n", b"\r\n"))
+    p.write_bytes(b"text\r\n")
     assert check_mod.check(studio, lock) == []
 
 

@@ -49,7 +49,7 @@ def test_hostile_values_do_not_appear_unescaped(tmp_path):
 def test_parsed_r_contains_no_system_call(tmp_path):
     out = _write(tmp_path)
     res = subprocess.run(
-        ["Rscript", "-e", f"cat('system' %in% all.names(parse(file='{out}')))"],
+        ["Rscript", "-e", f"cat('system' %in% all.names(parse(file='{out.as_posix()}')))"],
         capture_output=True,
         text=True,
         timeout=60,

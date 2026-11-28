@@ -122,6 +122,7 @@ def test_open_project_with_a_wrong_path_shows_an_error(bare_page, studio_url, tm
     bare_page.goto(f"{studio_url}/projects")
     bare_page.click("#card-open")
     bare_page.fill("#existingPath", str(tmp_path / "does_not_exist"))
+    bare_page.allowed_http = {400: "/api/projects/current"}
 
     bare_page.click("#loadProjectBtn")
 
@@ -165,7 +166,7 @@ def test_switching_projects_from_the_recent_list_replaces_the_metadata_form(bare
     bare_page.fill("#metadataName", "Unsaved edit of the first project")
 
     bare_page.click("#projectsDropdown")
-    bare_page.locator(f'#projectsRecentList .navbar-recent-project[data-path="{other}"]').click()
+    bare_page.locator(f'#projectsRecentList .navbar-recent-project[data-path={json.dumps(str(other), ensure_ascii=False)}]').click()
 
     bare_page.wait_for_url("**/projects?preserve_current=1")
     open_study_metadata(bare_page)
