@@ -6,7 +6,7 @@
 #
 #   docker build -t prism-validator .
 #   docker run --rm --user "$(id -u):$(id -g)" -v "$(pwd)":/data prism-validator /data --json
-FROM python:3.13-slim
+FROM python:3.14-slim
 
 WORKDIR /opt/prism
 

@@ -7,8 +7,7 @@ Get PRISM Studio running. Most people only need the first section below (the ins
 `install.sh` (macOS/Linux) and `install.cmd` (Windows) set everything up on your own
 machine: a virtual environment, the dependencies and a **PRISM Studio** shortcut. They work
 on any Linux distribution, need no code signing, and also give you the CLI tools and the
-source tree for local changes. Requires **Python 3.10-3.12** (3.9 and older are unsupported; 3.13+ has no
-wheels yet for some pinned dependencies). `install.cmd`
+source tree for local changes. Requires **Python 3.14**. `install.cmd`
 pins the version via `.python-version` when uv is available.
 
 Pick your OS:
@@ -176,9 +175,6 @@ gentler alternative if you'd rather not.
   by pointing the shortcut at that file instead of `app\static\prism2026.ico`,
   which despite its extension is a PNG (fine as a browser favicon, not valid
   as a Windows icon).
-- **`Writing EDF output requires pyedflib`** — `pyedflib` is not installed by
-  default (it has no wheels for Python 3.13+). Only EDF output needs it:
-  `pip install pyedflib` inside the activated `.venv`.
 - **Defacing structural MRI on export** — not installed by default. Without it,
   structural images are **not defaced**: deface them before you share the data
   (the export warns "not ready for public sharing"). To deface from Studio,

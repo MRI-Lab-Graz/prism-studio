@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A survey's `OriginalName` and `Instructions` take any language; no `en` entry is needed (survey schema 2.1.7, specification v1.5.25). The template editor says which fields are English and which keep the original language.
 
 ### Changed (EDF)
+- **PRISM runs on Python 3.14**: the installers require it (they rebuild an older `.venv`), and the release builds and Docker validator use it. The PyPI `prism-validator` still supports Python 3.10 and later.
 - EDF files are read and written with `edfio` (installed by default) instead of `pyedflib`. Converted Varioport files now name microvolts `uV` (before: `AuV`) and leave the unknown start date empty (before: the time of conversion).
 
 ### Fixed

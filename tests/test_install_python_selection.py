@@ -1,4 +1,4 @@
-"""install.sh must prefer an installed Python 3.10-3.12 over a uv-managed one.
+"""install.sh must prefer an installed Python 3.14 over a uv-managed one.
 
 uv-managed Python cannot build a copied venv on some macOS setups (ensurepip
 aborts), so install.sh falls back to a symlinked venv.
@@ -21,13 +21,13 @@ def _fake(path, body):
     path.chmod(0o755)
 
 
-def test_prefers_installed_python312_over_uv(tmp_path):
+def test_prefers_installed_python314_over_uv(tmp_path):
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
     too_new = tmp_path / "python3"
     _fake(too_new, "exit 1\n")  # stands in for an unsupported default python3
-    _fake(bin_dir / "python3.12", 'echo 3.12.0\n')
-    _fake(bin_dir / "uv", 'echo "/uv/python3.12"\n')
+    _fake(bin_dir / "python3.14", 'echo 3.14.0\n')
+    _fake(bin_dir / "uv", 'echo "/uv/python3.14"\n')
 
     script = f"""
 echo_info() {{ :; }}; echo_success() {{ :; }}; echo_error() {{ :; }}
@@ -42,7 +42,7 @@ echo "$VENV_CREATOR_PYTHON"
         env={"PATH": f"{bin_dir}:/usr/bin:/bin"},
         capture_output=True, text=True,
     )
-    assert out.stdout.strip() == str(bin_dir / "python3.12"), out.stderr
+    assert out.stdout.strip() == str(bin_dir / "python3.14"), out.stderr
 
 
 def _run_reset_existing_venv(venv_dir):
@@ -89,7 +89,7 @@ def test_broken_symlinked_venv_is_removed(tmp_path):
 
 
 def test_symlinked_python_is_resolved_to_its_real_path(tmp_path):
-    """A venv made through a symlink (e.g. uv's ~/.local/bin/python3.12 shim)
+    """A venv made through a symlink (e.g. uv's ~/.local/bin/python3.14 shim)
     records the symlink's directory as `home` and cannot find its stdlib."""
     bin_dir = tmp_path / "bin"
     real_dir = tmp_path / "uv" / "bin"
@@ -97,9 +97,9 @@ def test_symlinked_python_is_resolved_to_its_real_path(tmp_path):
     real_dir.mkdir(parents=True)
     too_new = tmp_path / "python3"
     _fake(too_new, "exit 1\n")
-    real = real_dir / "python3.12"
-    _fake(real, 'echo 3.12.0\n')
-    (bin_dir / "python3.12").symlink_to(real)
+    real = real_dir / "python3.14"
+    _fake(real, 'echo 3.14.0\n')
+    (bin_dir / "python3.14").symlink_to(real)
 
     script = f"""
 echo_info() {{ :; }}; echo_success() {{ :; }}; echo_error() {{ :; }}
@@ -115,3 +115,16 @@ echo "$VENV_CREATOR_PYTHON"
         capture_output=True, text=True,
     )
     assert out.stdout.strip() == str(real), out.stderr
+
+
+def test_venv_of_an_older_python_is_removed(tmp_path):
+    """Everything runs on 3.14: a venv left from 3.12 is rebuilt, as windows.ps1 does."""
+    venv = tmp_path / ".venv"
+    (venv / "bin").mkdir(parents=True)
+    (venv / "bin" / "activate").write_text("")
+    _fake(venv / "bin" / "python", '[[ "$2" == *version_info* ]] && exit 1\nexit 0\n')
+
+    out = _run_reset_existing_venv(venv)
+
+    assert out.returncode == 0, out.stderr
+    assert not venv.exists()
